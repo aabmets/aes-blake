@@ -14,12 +14,7 @@ from abc import ABC, abstractmethod
 from .constants import SBox
 
 
-__all__ = [
-	"UnsignedIntegerType",
-	"Uint8",
-	"Uint16",
-	"Uint32"
-]
+__all__ = ["Uint8", "Uint32"]
 
 
 class UnsignedIntegerType(ABC):
@@ -36,15 +31,15 @@ class UnsignedIntegerType(ABC):
 		bb_list = []
 		for bb_str in self.binary_bytes:
 			value = int(bb_str, base=2)
-			high = value >> 4
-			low = value & 0x0F
-			value = sbox.value[high][low]
+			row = value >> 4    # high nibble
+			col = value & 0x0F  # low nibble
+			value = sbox.value[row][col]
 			bb_str = format(value, "08b")
 			bb_list.append(bb_str)
 		concat_bb = ''.join(bb_list)
 		self._value = int(concat_bb, base=2)
 
-	def __init__(self, value: int | bytes | bytearray):
+	def __init__(self, value: int | bytes | bytearray = 0):
 		if not isinstance(value, (int, bytes, bytearray)):
 			n1, n2 = (type(x).__name__ for x in [self, value])
 			msg = f"{n1} does not support input type {n2}"
@@ -95,12 +90,6 @@ class Uint8(UnsignedIntegerType):
 	@property
 	def bit_count(self):
 		return 8
-
-
-class Uint16(UnsignedIntegerType):
-	@property
-	def bit_count(self):
-		return 16
 
 
 class Uint32(UnsignedIntegerType):
