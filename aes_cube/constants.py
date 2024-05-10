@@ -1,3 +1,13 @@
+#
+#   MIT License
+#   
+#   Copyright (c) 2024, Mattias Aabmets
+#   
+#   The contents of this file are subject to the terms and conditions defined in the License.
+#   You may not use, modify, or distribute this file except in compliance with the License.
+#   
+#   SPDX-License-Identifier: MIT
+#
 from enum import Enum
 
 
@@ -38,9 +48,3 @@ class SBox(Enum):
         (0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61),
         (0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D),
     )
-
-
-def sub_byte(input_byte, sub_box: SBox):
-    high_nibble = input_byte >> 4
-    low_nibble = input_byte & 0x0F
-    return sub_box.value[high_nibble][low_nibble]
