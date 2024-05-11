@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 import pytest
-from aes_cube.constants import SBox
+from aes_cube.sbox import SBox
 
 
 @pytest.fixture(name="sbox", scope="module")
@@ -62,8 +62,9 @@ def compute_inverse_sbox(sbox):
 def test_sbox(sbox):
 	for row in range(16):
 		for col in range(16):
-			computed_value = sbox[row * 16 + col]
-			hardcoded_value = SBox.ENC.value[row][col]
+			index = row * 16 + col
+			computed_value = sbox[index]
+			hardcoded_value = SBox.ENC.value[index]
 			assert computed_value == hardcoded_value
 
 
@@ -71,6 +72,7 @@ def test_inv_sbox(sbox):
 	inv_sbox = compute_inverse_sbox(sbox)
 	for row in range(16):
 		for col in range(16):
-			computed_value = inv_sbox[row * 16 + col]
-			hardcoded_value = SBox.DEC.value[row][col]
+			index = row * 16 + col
+			computed_value = inv_sbox[index]
+			hardcoded_value = SBox.DEC.value[index]
 			assert computed_value == hardcoded_value
