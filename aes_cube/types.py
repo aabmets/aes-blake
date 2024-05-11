@@ -11,7 +11,7 @@
 from __future__ import annotations
 import typing as t
 from abc import ABC, abstractmethod
-from .constants import SBox
+from .sbox import SBox
 
 
 __all__ = ["Uint8", "Uint32"]
@@ -22,6 +22,18 @@ class UnsignedIntegerType(ABC):
 	@abstractmethod
 	def bit_count(self): ...
 
+	@classmethod
+	def from_bytes(cls, value: bytes | bytearray, *, byteorder: t.Literal["little", "big"] = "big"):
+		if not isinstance(value, (bytes, bytearray)):
+			raise TypeError
+		return cls(int.from_bytes(value, byteorder, signed=False))
+
+	def __init__(self, value: int = 0):
+		if not isinstance(value, int):
+			raise TypeError
+		self._max_value = (1 << self.bit_count) - 1
+		self._value = value & self._max_value
+
 	@property
 	def binary_bytes(self) -> t.List[str]:
 		bit_str = format(self._value, f"0{self.bit_count}b")
@@ -31,27 +43,11 @@ class UnsignedIntegerType(ABC):
 		bb_list = []
 		for bb_str in self.binary_bytes:
 			value = int(bb_str, base=2)
-			row = value >> 4    # high nibble
-			col = value & 0x0F  # low nibble
-			value = sbox.value[row][col]
+			value = sbox.value[value]
 			bb_str = format(value, "08b")
 			bb_list.append(bb_str)
 		concat_bb = ''.join(bb_list)
 		self._value = int(concat_bb, base=2)
-
-	def __init__(self, value: int | bytes | bytearray = 0):
-		if not isinstance(value, (int, bytes, bytearray)):
-			n1, n2 = (type(x).__name__ for x in [self, value])
-			msg = f"{n1} does not support input type {n2}"
-			raise TypeError(msg)
-		elif isinstance(value, (bytes, bytearray)):
-			value: int = int.from_bytes(
-				bytes=value,
-				byteorder="big",
-				signed=False
-			)
-		self._max_value = (1 << self.bit_count) - 1
-		self._value = value & self._max_value
 
 	def __add__(self, other: UnsignedIntegerType) -> UnsignedIntegerType:
 		return self.__class__(self._value + other._value)

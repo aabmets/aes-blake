@@ -11,7 +11,7 @@
 import pytest
 from typing import cast
 import aes_cube.types as t
-from aes_cube.constants import SBox
+from aes_cube.sbox import SBox
 
 
 def test_uint_attrs():
@@ -20,6 +20,7 @@ def test_uint_attrs():
 		assert hasattr(v, "bit_count")
 		assert hasattr(v, "binary_bytes")
 		assert hasattr(v, "sub_bytes")
+		assert hasattr(v, "from_bytes")
 		assert hasattr(v, "__init__")
 		assert hasattr(v, "__add__")
 		assert hasattr(v, "__and__")
@@ -129,3 +130,20 @@ def test_uint32():
 	v2.sub_bytes(SBox.DEC)
 	assert int(v2) == 33_44_55_66_77
 	assert v2.binary_bytes == ["11000111", "01011001", "11100010", "10000101"]
+
+
+def test_from_bytes():
+	with pytest.raises(TypeError):
+		t.Uint8.from_bytes(cast(bytes, 123))
+	with pytest.raises(TypeError):
+		t.Uint32.from_bytes(cast(bytes, 11_22_33_44_55))
+
+	v = t.Uint8.from_bytes(b"\x7B", byteorder="big")
+	assert int(v) == 123
+	v = t.Uint8.from_bytes(b"\x7B", byteorder="little")
+	assert int(v) == 123
+
+	v = t.Uint32.from_bytes(b"\x42\xE5\x76\xF7", byteorder="big")
+	assert int(v) == 11_22_33_44_55
+	v = t.Uint32.from_bytes(b"\x42\xE5\x76\xF7", byteorder="little")
+	assert int(v) == 41_51_76_42_90
