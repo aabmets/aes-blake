@@ -26,6 +26,16 @@ class BaseUint(ABC):
 	@abstractmethod
 	def max_value(self): ...
 
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, value: int):
+		if not isinstance(value, int):
+			raise TypeError
+		self._value = value & self.max_value
+
 	@classmethod
 	def from_bytes(cls, value: bytes | bytearray, *, byteorder: t.Literal["little", "big"] = "big"):
 		if not isinstance(value, (bytes, bytearray)):
@@ -33,14 +43,12 @@ class BaseUint(ABC):
 		return cls(int.from_bytes(value, byteorder, signed=False))
 
 	def __init__(self, value: int = 0):
-		if not isinstance(value, int):
-			raise TypeError
-		self._value = value & self.max_value
+		self.value = value
 
 	@property
 	def binary_bytes(self) -> t.List[str]:
 		bit_str = format(self._value, f"0{self.bit_count}b")
-		return [bit_str[i:i + 8] for i in range(0, len(bit_str), 8)]
+		return [bit_str[i:i+8] for i in range(0, len(bit_str), 8)]
 
 	def sub_bytes(self, sbox: SBox):
 		bb_list = []
