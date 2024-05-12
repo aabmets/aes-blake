@@ -22,6 +22,10 @@ class BaseUint(ABC):
 	@abstractmethod
 	def bit_count(self): ...
 
+	@property
+	@abstractmethod
+	def max_value(self): ...
+
 	@classmethod
 	def from_bytes(cls, value: bytes | bytearray, *, byteorder: t.Literal["little", "big"] = "big"):
 		if not isinstance(value, (bytes, bytearray)):
@@ -31,8 +35,7 @@ class BaseUint(ABC):
 	def __init__(self, value: int = 0):
 		if not isinstance(value, int):
 			raise TypeError
-		self._max_value = (1 << self.bit_count) - 1
-		self._value = value & self._max_value
+		self._value = value & self.max_value
 
 	@property
 	def binary_bytes(self) -> t.List[str]:
@@ -62,14 +65,14 @@ class BaseUint(ABC):
 		other = other % self.bit_count
 		rs = self._value >> other
 		ls = self._value << (self.bit_count - other)
-		res = (rs | ls) & self._max_value
+		res = (rs | ls) & self.max_value
 		return self.__class__(res)
 
 	def __lshift__(self, other: int) -> BaseUint:
 		other = other % self.bit_count
 		rs = self._value >> (self.bit_count - other)
 		ls = self._value << other
-		res = (rs | ls) & self._max_value
+		res = (rs | ls) & self.max_value
 		return self.__class__(res)
 
 	def __int__(self):
@@ -87,8 +90,16 @@ class Uint8(BaseUint):
 	def bit_count(self):
 		return 8
 
+	@property
+	def max_value(self):
+		return 255
+
 
 class Uint32(BaseUint):
 	@property
 	def bit_count(self):
 		return 32
+
+	@property
+	def max_value(self):
+		return 4_294_967_295
