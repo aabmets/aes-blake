@@ -10,7 +10,7 @@
 #
 import re
 from rich.console import Console
-from .types import UnsignedIntegerType
+from .uint import BaseUint
 
 
 __all__ = [
@@ -22,7 +22,7 @@ __all__ = [
 _console = Console()
 
 
-def pretty_print_bin(uit: UnsignedIntegerType, color_0: str = "blue", color_1: str = "red") -> None:
+def pretty_print_bin(uit: BaseUint, color_0: str = "blue", color_1: str = "red") -> None:
 	bb_list = []
 	for bb_str in uit.binary_bytes:
 		first_color = color_0 if bb_str.startswith('0') else color_1
@@ -34,7 +34,7 @@ def pretty_print_bin(uit: UnsignedIntegerType, color_0: str = "blue", color_1: s
 	_console.print(concat_bb)
 
 
-def pretty_print_hex(uit: UnsignedIntegerType, color: str = "green") -> None:
+def pretty_print_hex(uit: BaseUint, color: str = "green") -> None:
 	hex_list = []
 	for bb_str in uit.binary_bytes:
 		value = int(bb_str, base=2)

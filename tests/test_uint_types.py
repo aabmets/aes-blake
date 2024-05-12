@@ -9,13 +9,13 @@
 #   SPDX-License-Identifier: MIT
 #
 import pytest
-from typing import cast
-import aes_cube.types as t
+import typing as t
+from aes_cube import uint
 from aes_cube.sbox import SBox
 
 
 def test_uint_attrs():
-	for c in [t.Uint8, t.Uint32]:
+	for c in [uint.Uint8, uint.Uint32]:
 		v = c()
 		assert hasattr(v, "bit_count")
 		assert hasattr(v, "binary_bytes")
@@ -34,18 +34,18 @@ def test_uint_attrs():
 
 def test_uint8():
 	with pytest.raises(TypeError):
-		t.Uint8(cast(int, "asdfg"))
+		uint.Uint8(t.cast(int, "asdfg"))
 
-	v0 = t.Uint8()
+	v0 = uint.Uint8()
 	assert int(v0) == 0
 	assert v0.bit_count == 8
 	assert v0.binary_bytes == ["00000000"]
 
-	v1 = t.Uint8(123)
+	v1 = uint.Uint8(123)
 	assert int(v1) == 123
 	assert v1.binary_bytes == ["01111011"]
 
-	v2 = t.Uint8(234)
+	v2 = uint.Uint8(234)
 	assert int(v2) == 234
 	assert v2.binary_bytes == ["11101010"]
 
@@ -84,18 +84,18 @@ def test_uint8():
 
 def test_uint32():
 	with pytest.raises(TypeError):
-		t.Uint32(cast(int, "asdfg"))
+		uint.Uint32(t.cast(int, "asdfg"))
 
-	v0 = t.Uint32()
+	v0 = uint.Uint32()
 	assert int(v0) == 0
 	assert v0.bit_count == 32
 	assert v0.binary_bytes == ["00000000", "00000000", "00000000", "00000000"]
 
-	v1 = t.Uint32(11_22_33_44_55)
+	v1 = uint.Uint32(11_22_33_44_55)
 	assert int(v1) == 11_22_33_44_55
 	assert v1.binary_bytes == ["01000010", "11100101", "01110110", "11110111"]
 
-	v2 = t.Uint32(33_44_55_66_77)
+	v2 = uint.Uint32(33_44_55_66_77)
 	assert int(v2) == 33_44_55_66_77
 	assert v2.binary_bytes == ["11000111", "01011001", "11100010", "10000101"]
 
@@ -134,16 +134,16 @@ def test_uint32():
 
 def test_from_bytes():
 	with pytest.raises(TypeError):
-		t.Uint8.from_bytes(cast(bytes, 123))
+		uint.Uint8.from_bytes(t.cast(bytes, 123))
 	with pytest.raises(TypeError):
-		t.Uint32.from_bytes(cast(bytes, 11_22_33_44_55))
+		uint.Uint32.from_bytes(t.cast(bytes, 11_22_33_44_55))
 
-	v = t.Uint8.from_bytes(b"\x7B", byteorder="big")
+	v = uint.Uint8.from_bytes(b"\x7B", byteorder="big")
 	assert int(v) == 123
-	v = t.Uint8.from_bytes(b"\x7B", byteorder="little")
+	v = uint.Uint8.from_bytes(b"\x7B", byteorder="little")
 	assert int(v) == 123
 
-	v = t.Uint32.from_bytes(b"\x42\xE5\x76\xF7", byteorder="big")
+	v = uint.Uint32.from_bytes(b"\x42\xE5\x76\xF7", byteorder="big")
 	assert int(v) == 11_22_33_44_55
-	v = t.Uint32.from_bytes(b"\x42\xE5\x76\xF7", byteorder="little")
+	v = uint.Uint32.from_bytes(b"\x42\xE5\x76\xF7", byteorder="little")
 	assert int(v) == 41_51_76_42_90

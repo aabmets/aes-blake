@@ -14,10 +14,10 @@ from abc import ABC, abstractmethod
 from .sbox import SBox
 
 
-__all__ = ["Uint8", "Uint32"]
+__all__ = ["BaseUint", "Uint8", "Uint32"]
 
 
-class UnsignedIntegerType(ABC):
+class BaseUint(ABC):
 	@property
 	@abstractmethod
 	def bit_count(self): ...
@@ -49,23 +49,23 @@ class UnsignedIntegerType(ABC):
 		concat_bb = ''.join(bb_list)
 		self._value = int(concat_bb, base=2)
 
-	def __add__(self, other: UnsignedIntegerType) -> UnsignedIntegerType:
+	def __add__(self, other: BaseUint) -> BaseUint:
 		return self.__class__(self._value + other._value)
 
-	def __and__(self, other: UnsignedIntegerType) -> UnsignedIntegerType:
+	def __and__(self, other: BaseUint) -> BaseUint:
 		return self.__class__(self._value & other._value)
 
-	def __xor__(self, other: UnsignedIntegerType) -> UnsignedIntegerType:
+	def __xor__(self, other: BaseUint) -> BaseUint:
 		return self.__class__(self._value ^ other._value)
 
-	def __rshift__(self, other: int) -> UnsignedIntegerType:
+	def __rshift__(self, other: int) -> BaseUint:
 		other = other % self.bit_count
 		rs = self._value >> other
 		ls = self._value << (self.bit_count - other)
 		res = (rs | ls) & self._max_value
 		return self.__class__(res)
 
-	def __lshift__(self, other: int) -> UnsignedIntegerType:
+	def __lshift__(self, other: int) -> BaseUint:
 		other = other % self.bit_count
 		rs = self._value >> (self.bit_count - other)
 		ls = self._value << other
@@ -82,13 +82,13 @@ class UnsignedIntegerType(ABC):
 		return self._value
 
 
-class Uint8(UnsignedIntegerType):
+class Uint8(BaseUint):
 	@property
 	def bit_count(self):
 		return 8
 
 
-class Uint32(UnsignedIntegerType):
+class Uint32(BaseUint):
 	@property
 	def bit_count(self):
 		return 32
