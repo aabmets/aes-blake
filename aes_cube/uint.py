@@ -42,9 +42,6 @@ class BaseUint(ABC):
 			raise TypeError
 		return cls(int.from_bytes(data, byteorder, signed=False))
 
-	def __init__(self, value: int = 0):
-		self.value = value
-
 	@property
 	def binary_bytes(self) -> t.List[str]:
 		bit_str = format(self._value, f"0{self.bit_count}b")
@@ -59,6 +56,9 @@ class BaseUint(ABC):
 			bb_list.append(bb_str)
 		concat_bb = ''.join(bb_list)
 		self._value = int(concat_bb, base=2)
+
+	def __init__(self, value: int = 0):
+		self.value = value
 
 	def __add__(self, other: BaseUint) -> BaseUint:
 		return self.__class__(self._value + other._value)
