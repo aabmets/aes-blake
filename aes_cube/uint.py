@@ -37,10 +37,10 @@ class BaseUint(ABC):
 		self._value = value & self.max_value
 
 	@classmethod
-	def from_bytes(cls, value: bytes | bytearray, *, byteorder: t.Literal["little", "big"] = "big"):
-		if not isinstance(value, (bytes, bytearray)):
+	def from_bytes(cls, data: bytes | bytearray, *, byteorder: t.Literal["little", "big"] = "big"):
+		if not isinstance(data, (bytes, bytearray)):
 			raise TypeError
-		return cls(int.from_bytes(value, byteorder, signed=False))
+		return cls(int.from_bytes(data, byteorder, signed=False))
 
 	def __init__(self, value: int = 0):
 		self.value = value
