@@ -42,6 +42,9 @@ class BaseUint(ABC):
 			raise TypeError
 		return cls(int.from_bytes(data, byteorder, signed=False))
 
+	def to_bytes(self, *, byteorder: t.Literal["little", "big"] = "big") -> bytes:
+		return self.value.to_bytes(self.bit_count // 8, byteorder)
+
 	@property
 	def binary_bytes(self) -> t.List[str]:
 		bit_str = format(self._value, f"0{self.bit_count}b")
