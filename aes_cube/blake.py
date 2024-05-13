@@ -8,6 +8,7 @@
 #   
 #   SPDX-License-Identifier: MIT
 #
+from copy import deepcopy
 from aes_cube.uint import Uint32
 
 
@@ -64,6 +65,12 @@ class BlakeKeyGen:
 		# compute initial 10 rounds
 		for i in range(10):
 			self.compress(key_ints)
+
+	def clone(self):
+		_clone = deepcopy(self)
+		raw_data = [v.to_bytes(byteorder="little") for v in self.vector]
+		_clone.vector = [Uint32.from_bytes(d) for d in raw_data]
+		return _clone
 
 	@staticmethod
 	def convert_bytes(source: bytes | bytearray) -> list[Uint32]:
