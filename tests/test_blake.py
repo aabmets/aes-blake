@@ -9,18 +9,19 @@
 #   SPDX-License-Identifier: MIT
 #
 from aes_cube.blake import BlakeKeyGen
+from aes_cube.uint import Uint32
 
 
-def test_bytes_to_int_list():
+def test_convert_bytes():
 	uint32_str = b"\x01\x02\x03\x04"
-	int_value = int.from_bytes(uint32_str, byteorder="little")
-	assert int_value == 67_305_985
+	uint = Uint32.from_bytes(uint32_str, byteorder="little")
+	assert uint.value == 67_305_985
 
-	res = BlakeKeyGen.bytes_to_int_list(uint32_str * 10)
+	res = BlakeKeyGen.convert_bytes(uint32_str * 10)
 	assert len(res) == 16
 
 	for i in range(16):
 		if i < 10:
-			assert res[i] == 67_305_985
+			assert res[i].value == 67_305_985
 		else:
-			assert res[i] == 0
+			assert res[i].value == 0
