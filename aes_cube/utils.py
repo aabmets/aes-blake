@@ -39,11 +39,7 @@ def pretty_print_bin(
 	_console.print(concat_bb, end=end)
 
 
-def pretty_print_hex(
-		uint: BaseUint,
-		color: str = "green",
-		end='\n'
-) -> None:
+def pretty_print_hex(uint: BaseUint, color: str = "green", end='\n') -> None:
 	hex_list = []
 	for bb_str in uint.binary_bytes:
 		value = int(bb_str, base=2)
@@ -52,3 +48,14 @@ def pretty_print_hex(
 	concat_hex = ' '.join(hex_list)
 	hex_str = f"[{color}]{concat_hex}"
 	_console.print(hex_str, end=end)
+
+
+def pretty_print_vector(vector: list[BaseUint], color: str = "yellow") -> None:
+	for i, v in enumerate(vector):
+		if i % 4 == 0 and i != 0:
+			print()
+		print(f"{i:02}: ", end='')
+		pretty_print_hex(v, color=color, end='')
+		if i not in [3, 7, 11, 15]:
+			print('  ', end='')
+	print()
