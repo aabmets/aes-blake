@@ -37,9 +37,9 @@ class BlakeKeyGen:
 		vec[c] = vec[c] + vec[d]
 		vec[b] = (vec[b] ^ vec[c]) >> 7
 
-	def round(self, data: list[int]):
+	def compress(self, data: list[int]) -> None:
 		"""
-		The F (compression) function of the Blake hash algorithm.
+		The E (compression) function of the Blake hash algorithm.
 		Note: Only components essential to the current use case are retained.
 		"""
 		self.mix(0, 4, 8, 12, data[0], data[1])
@@ -53,21 +53,31 @@ class BlakeKeyGen:
 		self.mix(3, 4, 9, 14, data[14], data[15])
 
 	def __init__(self, key: bytes | bytearray = b'', salt: bytes | bytearray = b'') -> None:
-		self.key_ints: list[int] = [0] * 16
-		salt_ints: list[int] = [0] * 16
+		key_ints: list[int] = self.bytes_to_int_list(key)
+		salt_ints: list[int] = self.bytes_to_int_list(salt)
 
-		for source, target in [(key, self.key_ints), (salt, salt_ints)]:
-			s_len = len(source)
-			if s_len % 4 != 0 or s_len > 64:
-				raise ValueError
-			for i, value in enumerate([
-				int.from_bytes(source[i:i+4], byteorder="little")
-				for i in range(0, s_len, 4)
-			]):
-				target[i] = value
-
+		# initialize state vector
 		self.vector = []
 		for i in range(16):
 			iv = Uint32(self.ivs[i])
 			sv = Uint32(salt_ints[i])
-			self.vector.append(iv + sv)
+			self.vector.append(iv ^ sv)
+
+		# compute initial 10 rounds
+		for i in range(10):
+			self.compress(key_ints)
+
+	@staticmethod
+	def bytes_to_int_list(source: bytes | bytearray) -> list[int]:
+		src_len = len(source)
+		if src_len % 4 != 0 or src_len > 64:
+			raise ValueError
+		output: list[int] = []
+		for i in range(0, src_len, 4):
+			output.append(int.from_bytes(
+				bytes=source[i:i + 4],
+				byteorder="little"
+			))
+		while len(output) < 16:
+			output.append(0)
+		return output
