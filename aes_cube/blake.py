@@ -10,7 +10,8 @@
 #
 from __future__ import annotations
 from copy import deepcopy
-from aes_cube.uint import Uint32
+from aes_cube.sbox import SBox
+from aes_cube.uint import Uint32, Uint64
 
 
 class BlakeKeyGen:
@@ -55,17 +56,23 @@ class BlakeKeyGen:
 		self.mix(3, 4, 9, 14, data[14], data[15])
 
 	def __init__(self, key: bytes | bytearray = b'', salt: bytes | bytearray = b'') -> None:
-		key_ints: list[Uint32] = self.convert_bytes(key)
-		salt_ints: list[Uint32] = self.convert_bytes(salt)
+		_key: list[Uint32] = self.convert_bytes(key)
+		_salt: list[Uint32] = self.convert_bytes(salt)
 
 		# initialize state vector
 		self.vector = [
-			self.ivs[i] ^ salt_ints[i]
+			self.ivs[i] ^ _salt[i]
 			for i in range(16)
 		]
 		# compute initial 10 rounds
 		for i in range(10):
-			self.compress(key_ints)
+			self.compress(_key)
+
+		# initialize block counter
+		self.counter = Uint64.from_bytes(
+			self.vector[4].to_bytes() +
+			self.vector[5].to_bytes()
+		).sub_bytes(SBox.ENC)
 
 	@staticmethod
 	def convert_bytes(source: bytes | bytearray) -> list[Uint32]:
@@ -79,7 +86,7 @@ class BlakeKeyGen:
 				byteorder="little"
 			))
 		while len(output) < 16:
-			output.append(Uint32())
+			output.append(Uint32(0))
 		return output
 
 	def clone(self) -> BlakeKeyGen:
