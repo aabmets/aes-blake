@@ -10,6 +10,7 @@
 #
 from __future__ import annotations
 import typing as t
+import operator as opr
 from abc import ABC, abstractmethod
 from .sbox import SBox
 
@@ -63,14 +64,20 @@ class BaseUint(ABC):
 	def __init__(self, value: int = 0):
 		self.value = value
 
-	def __add__(self, other: BaseUint) -> BaseUint:
-		return self.__class__(self._value + other._value)
+	def _operate(self, operator: t.Callable, other: int | BaseUint) -> BaseUint:
+		if isinstance(other, BaseUint):
+			other = other.value
+		value = operator(self._value, other)
+		return self.__class__(value)
 
-	def __and__(self, other: BaseUint) -> BaseUint:
-		return self.__class__(self._value & other._value)
+	def __add__(self, other: int | BaseUint) -> BaseUint:
+		return self._operate(opr.add, other)
 
-	def __xor__(self, other: BaseUint) -> BaseUint:
-		return self.__class__(self._value ^ other._value)
+	def __and__(self, other: int | BaseUint) -> BaseUint:
+		return self._operate(opr.and_, other)
+
+	def __xor__(self, other: int | BaseUint) -> BaseUint:
+		return self._operate(opr.xor, other)
 
 	def __rshift__(self, other: int) -> BaseUint:
 		other = other % self.bit_count
@@ -114,3 +121,13 @@ class Uint32(BaseUint):
 	@property
 	def max_value(self):
 		return 4_294_967_295
+
+
+class Uint64(BaseUint):
+	@property
+	def bit_count(self):
+		return 64
+
+	@property
+	def max_value(self):
+		return 18_446_744_073_709_551_615
