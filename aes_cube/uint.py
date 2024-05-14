@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from .sbox import SBox
 
 
-__all__ = ["BaseUint", "Uint8", "Uint32"]
+__all__ = ["BaseUint", "Uint8", "Uint32", "Uint64"]
 
 
 class BaseUint(ABC):
@@ -51,7 +51,7 @@ class BaseUint(ABC):
 		bit_str = format(self._value, f"0{self.bit_count}b")
 		return [bit_str[i:i+8] for i in range(0, len(bit_str), 8)]
 
-	def sub_bytes(self, sbox: SBox):
+	def sub_bytes(self, sbox: SBox) -> BaseUint:
 		bb_list = []
 		for bb_str in self.binary_bytes:
 			value = int(bb_str, base=2)
@@ -60,6 +60,7 @@ class BaseUint(ABC):
 			bb_list.append(bb_str)
 		concat_bb = ''.join(bb_list)
 		self._value = int(concat_bb, base=2)
+		return self
 
 	def __init__(self, value: int = 0):
 		self.value = value
