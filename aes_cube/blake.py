@@ -15,7 +15,7 @@ from aes_cube.sbox import SBox
 from aes_cube.uint import Uint8, Uint32, Uint64
 
 
-KDF_MODE = t.Literal["extract", "expand", "finalize"]
+KDFMode = t.Literal["extract", "expand", "finalize"]
 Bytes = t.Union[bytes | bytearray]
 
 
@@ -45,7 +45,7 @@ class BlakeKeyGen:
 		vec[c] = vec[c] + vec[d]
 		vec[b] = (vec[b] ^ vec[c]) >> 7
 
-	def compress(self, mode: KDF_MODE, key: list[Uint32] = None) -> None:
+	def compress(self, mode: KDFMode, key: list[Uint32] = None) -> None:
 		"""
 		The E (compression) function of the Blake hash algorithm.
 		Note: Only components essential to the current use case are retained.
