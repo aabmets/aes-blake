@@ -17,10 +17,11 @@ def test_convert_bytes():
 	uint = Uint32.from_bytes(uint32_str, byteorder="little")
 	assert uint.value == 67_305_985
 
-	res = BlakeKeyGen.convert_bytes(uint32_str * 10)
+	res = BlakeKeyGen.to_uint_list(uint32_str * 10)
 	assert len(res) == 16
 
 	for i in range(16):
+		assert isinstance(res[i], Uint32)
 		if i < 10:
 			assert res[i].value == 67_305_985
 		else:
