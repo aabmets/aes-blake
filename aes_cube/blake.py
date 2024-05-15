@@ -68,15 +68,19 @@ class BlakeKeyGen:
 		self.mix(3, 4, 9, 14, bil or key[14], bih or key[15])
 
 	def __init__(self, key: Bytes = b'', nonce: Bytes = b'') -> None:
-		_key = self.to_uint_list(key)
-		_nonce = self.to_uint_list(nonce)
+		if len(key) > 64:
+			raise ValueError("Key length must be less than or equal to 64 bytes")
+		if len(nonce) > 32:
+			raise ValueError("Nonce length must be less than or equal to 32 bytes")
 
 		# Initialize state vector
+		_nonce = self.to_uint_list(nonce)
 		self.vector = [
 			_nonce[i] ^ self.ivs[i]
 			for i in range(16)
 		]
 		# Compute initial 10 rounds
+		_key = self.to_uint_list(key)
 		for i in range(10):
 			self.compress(mode="extract", key=_key)
 
@@ -87,15 +91,15 @@ class BlakeKeyGen:
 		).sub_bytes(SBox.ENC)
 
 		# Obtain AES IV from altered vector
-		self.aes_iv = self.aes_vector()
+		self.aes_iv: list[Uint8] = self.aes_vector
 
 	@staticmethod
 	def to_uint_list(source: Bytes) -> list[Uint32]:
-		src_len = len(source)
-		if src_len % 4 != 0 or src_len > 64:
-			raise ValueError
+		s_len = len(source)
+		count = 4 - (s_len % 4)
+		source += b'\x00' * count
 		output: list[Uint32] = []
-		for i in range(0, src_len, 4):
+		for i in range(0, s_len, 4):
 			output.append(Uint32.from_bytes(
 				data=source[i:i + 4],
 				byteorder="little"
@@ -128,6 +132,7 @@ class BlakeKeyGen:
 	def set_block_index(self, value: int):
 		self.block_index += value
 
+	@property
 	def aes_vector(self) -> list[Uint8]:
 		out = []
 		for uint32 in self.vector[4:8]:
