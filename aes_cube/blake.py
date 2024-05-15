@@ -67,13 +67,13 @@ class BlakeKeyGen:
 		self.mix(2, 7, 8, 13, bil or key[12], bih or key[13])
 		self.mix(3, 4, 9, 14, bil or key[14], bih or key[15])
 
-	def __init__(self, key: Bytes = b'', salt: Bytes = b'') -> None:
+	def __init__(self, key: Bytes = b'', nonce: Bytes = b'') -> None:
 		_key = self.to_uint_list(key)
-		_salt = self.to_uint_list(salt)
+		_nonce = self.to_uint_list(nonce)
 
 		# Initialize state vector
 		self.vector = [
-			_salt[i] ^ self.ivs[i]
+			_nonce[i] ^ self.ivs[i]
 			for i in range(16)
 		]
 		# Compute initial 10 rounds
