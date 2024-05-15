@@ -14,22 +14,42 @@ from .uint import BaseUint
 
 
 __all__ = [
-	"pretty_print_bin",
-	"pretty_print_hex"
+	"to_binary_bytes",
+	"to_binary_string",
+	"to_hex_bytes",
+	"to_hex_string",
+	"pretty_print_binary",
+	"pretty_print_hex",
+	"pretty_print_vector"
 ]
 
 
 _console = Console()
 
 
-def pretty_print_bin(
-		uint: BaseUint,
-		color_0: str = "blue",
-		color_1: str = "red",
-		end='\n'
-) -> None:
+def to_binary_bytes(uint: BaseUint) -> list[str]:
+	bit_str = format(uint.value, f"0{uint.bit_count}b")
+	return [bit_str[i:i + 8] for i in range(0, len(bit_str), 8)]
+
+
+def to_binary_string(uint: BaseUint, sep=' ') -> str:
+	return sep.join(to_binary_bytes(uint))
+
+
+def to_hex_bytes(uint: BaseUint) -> list[str]:
+	out = []
+	for bb_str in to_binary_bytes(uint):
+		out.append(f"{int(bb_str, base=2):02X}")
+	return out
+
+
+def to_hex_string(uint: BaseUint, sep=' ') -> str:
+	return sep.join(to_hex_bytes(uint))
+
+
+def pretty_print_binary(uint: BaseUint, color_0="blue", color_1="red", end='\n') -> None:
 	bb_list = []
-	for bb_str in uint.binary_bytes:
+	for bb_str in to_binary_bytes(uint):
 		first_color = color_0 if bb_str.startswith('0') else color_1
 		bb_str = re.sub(r"1(0)", rf"1[{color_0}]\1", bb_str)
 		bb_str = re.sub(r"0(1)", rf"0[{color_1}]\1", bb_str)
@@ -39,18 +59,13 @@ def pretty_print_bin(
 	_console.print(concat_bb, end=end)
 
 
-def pretty_print_hex(uint: BaseUint, color: str = "green", end='\n') -> None:
-	hex_list = []
-	for bb_str in uint.binary_bytes:
-		value = int(bb_str, base=2)
-		hex_int = int(hex(value), 16)
-		hex_list.append(f"{hex_int:02X}")
-	concat_hex = ' '.join(hex_list)
+def pretty_print_hex(uint: BaseUint, color="green", end='\n') -> None:
+	concat_hex = to_hex_string(uint)
 	hex_str = f"[{color}]{concat_hex}"
 	_console.print(hex_str, end=end)
 
 
-def pretty_print_vector(vector: list[BaseUint], color: str = "yellow") -> None:
+def pretty_print_vector(vector: list[BaseUint], color="yellow") -> None:
 	for i, v in enumerate(vector):
 		if i % 4 == 0 and i != 0:
 			print()
