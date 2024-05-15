@@ -16,6 +16,7 @@ from aes_cube.uint import Uint8, Uint32, Uint64
 
 
 KDF_MODE = t.Literal["extract", "expand", "finalize"]
+Bytes = t.Union[bytes | bytearray]
 
 
 class BlakeKeyGen:
@@ -44,7 +45,7 @@ class BlakeKeyGen:
 		vec[c] = vec[c] + vec[d]
 		vec[b] = (vec[b] ^ vec[c]) >> 7
 
-	def compress(self, key: list[Uint32] = None, mode: KDF_MODE = "extract") -> None:
+	def compress(self, mode: KDF_MODE, key: list[Uint32] = None) -> None:
 		"""
 		The E (compression) function of the Blake hash algorithm.
 		Note: Only components essential to the current use case are retained.
@@ -65,7 +66,7 @@ class BlakeKeyGen:
 		self.mix(2, 7, 8, 13, bil or key[12], bih or key[13])
 		self.mix(3, 4, 9, 14, bil or key[14], bih or key[15])
 
-	def __init__(self, key: bytes | bytearray = b'', salt: bytes | bytearray = b'') -> None:
+	def __init__(self, key: Bytes = b'', salt: Bytes = b'') -> None:
 		_key = self.to_uint_list(key)
 		_salt = self.to_uint_list(salt)
 
@@ -76,7 +77,7 @@ class BlakeKeyGen:
 		]
 		# compute initial 10 rounds
 		for i in range(10):
-			self.compress(_key)
+			self.compress(mode="extract", key=_key)
 
 		# initialize block index from altered vector
 		self.block_index = Uint64.from_bytes(
@@ -85,7 +86,7 @@ class BlakeKeyGen:
 		).sub_bytes(SBox.ENC)
 
 	@staticmethod
-	def to_uint_list(source: bytes | bytearray) -> list[Uint32]:
+	def to_uint_list(source: Bytes) -> list[Uint32]:
 		src_len = len(source)
 		if src_len % 4 != 0 or src_len > 64:
 			raise ValueError
