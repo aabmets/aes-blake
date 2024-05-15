@@ -9,9 +9,13 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
+import typing as t
 from copy import deepcopy
 from aes_cube.sbox import SBox
-from aes_cube.uint import Uint32, Uint64
+from aes_cube.uint import Uint8, Uint32, Uint64
+
+
+KDF_MODE = t.Literal["extract", "expand", "finalize"]
 
 
 class BlakeKeyGen:
@@ -40,29 +44,30 @@ class BlakeKeyGen:
 		vec[c] = vec[c] + vec[d]
 		vec[b] = (vec[b] ^ vec[c]) >> 7
 
-	def compress(
-			self,
-			key: list[Uint32] = None,
-			cl: Uint32 | None = None,  # counter low
-			ch: Uint32 | None = None   # counter high
-	) -> None:
+	def compress(self, key: list[Uint32] = None, mode: KDF_MODE = "extract") -> None:
 		"""
 		The E (compression) function of the Blake hash algorithm.
 		Note: Only components essential to the current use case are retained.
-		"""
-		self.mix(0, 4, 8, 12, cl or key[0], ch or key[1])
-		self.mix(1, 5, 9, 13, cl or key[2], ch or key[3])
-		self.mix(2, 6, 10, 14, cl or key[4], ch or key[5])
-		self.mix(3, 7, 11, 15, cl or key[6], ch or key[7])
 
-		self.mix(0, 5, 10, 15, cl or key[8], ch or key[9])
-		self.mix(1, 6, 11, 12, cl or key[10], ch or key[11])
-		self.mix(2, 7, 8, 13, cl or key[12], ch or key[13])
-		self.mix(3, 4, 9, 14, cl or key[14], ch or key[15])
+		If mode == "extract", then BIL and BIH are None, otherwise they are Uint32.
+		If mode == "expand", then vector[14] bits have been flipped.
+		If mode == "finalize", then vector[15] bits have been flipped.
+		"""
+		bil, bih = self.separate_domains(mode)
+
+		self.mix(0, 4, 8, 12, bil or key[0], bih or key[1])
+		self.mix(1, 5, 9, 13, bil or key[2], bih or key[3])
+		self.mix(2, 6, 10, 14, bil or key[4], bih or key[5])
+		self.mix(3, 7, 11, 15, bil or key[6], bih or key[7])
+
+		self.mix(0, 5, 10, 15, bil or key[8], bih or key[9])
+		self.mix(1, 6, 11, 12, bil or key[10], bih or key[11])
+		self.mix(2, 7, 8, 13, bil or key[12], bih or key[13])
+		self.mix(3, 4, 9, 14, bil or key[14], bih or key[15])
 
 	def __init__(self, key: bytes | bytearray = b'', salt: bytes | bytearray = b'') -> None:
-		_key: list[Uint32] = self.to_uint_list(key)
-		_salt: list[Uint32] = self.to_uint_list(salt)
+		_key = self.to_uint_list(key)
+		_salt = self.to_uint_list(salt)
 
 		# initialize state vector
 		self.vector = [
@@ -73,10 +78,10 @@ class BlakeKeyGen:
 		for i in range(10):
 			self.compress(_key)
 
-		# initialize block counter from altered vector
-		self.counter = Uint64.from_bytes(
-			self.vector[4].to_bytes() +
-			self.vector[5].to_bytes()
+		# initialize block index from altered vector
+		self.block_index = Uint64.from_bytes(
+			self.vector[12].to_bytes() +
+			self.vector[13].to_bytes()
 		).sub_bytes(SBox.ENC)
 
 	@staticmethod
@@ -93,6 +98,37 @@ class BlakeKeyGen:
 		while len(output) < 16:
 			output.append(Uint32(0))
 		return output
+
+	def flip_bits(self, index: int):
+		uint32 = self.vector[index]
+		flipped = uint32 ^ uint32.max_value
+		self.vector[index] = flipped
+
+	def separate_domains(self, mode: str) -> tuple[Uint32 | None, Uint32 | None]:
+		bil = None  # block index, low 32 bytes
+		bih = None  # block index, high 32 bytes
+		match mode:
+			case "extract":
+				return bil, bih
+			case "expand":
+				self.flip_bits(14)
+			case "finalize":
+				self.flip_bits(15)
+
+		bib = self.block_index.to_bytes()
+		bil = Uint32.from_bytes(bib[4:])
+		bih = Uint32.from_bytes(bib[:4])
+		return bil, bih
+
+	def set_block_index(self, value: int):
+		self.block_index += value
+
+	def aes_vector(self) -> list[Uint8]:
+		out = []
+		for uint32 in self.vector[4:8]:
+			for b in uint32.to_bytes():
+				out.append(Uint8(b))
+		return out
 
 	def clone(self) -> BlakeKeyGen:
 		return deepcopy(self)
