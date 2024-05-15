@@ -18,52 +18,45 @@ from .sbox import SBox
 __all__ = ["BaseUint", "Uint8", "Uint32", "Uint64"]
 
 
+T = t.TypeVar("T", bound="BaseUint")
+ByteOrder = t.Literal["little", "big"]
+
+
 class BaseUint(ABC):
 	@property
 	@abstractmethod
-	def bit_count(self): ...
+	def bit_count(self) -> int: ...
 
 	@property
 	@abstractmethod
-	def max_value(self): ...
+	def max_value(self) -> int: ...
 
 	@property
-	def value(self):
+	def value(self) -> int:
 		return self._value
 
 	@value.setter
-	def value(self, value: int):
+	def value(self, value: int) -> None:
 		if not isinstance(value, int):
 			raise TypeError
 		self._value = value & self.max_value
 
+	def __init__(self, value: int = 0) -> None:
+		self.value = value
+
 	@classmethod
-	def from_bytes(cls, data: bytes | bytearray, *, byteorder: t.Literal["little", "big"] = "big"):
+	def from_bytes(cls: t.Type[T], data: bytes | bytearray, *, byteorder: ByteOrder = "big") -> T:
 		if not isinstance(data, (bytes, bytearray)):
 			raise TypeError
 		return cls(int.from_bytes(data, byteorder, signed=False))
 
-	def to_bytes(self, *, byteorder: t.Literal["little", "big"] = "big") -> bytes:
+	def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
 		return self.value.to_bytes(self.bit_count // 8, byteorder)
 
-	@property
-	def binary_bytes(self) -> t.List[str]:
-		bit_str = format(self._value, f"0{self.bit_count}b")
-		return [bit_str[i:i+8] for i in range(0, len(bit_str), 8)]
-
 	def sub_bytes(self, sbox: SBox) -> BaseUint:
-		bb_list = []
-		for bb_str in self.binary_bytes:
-			value = int(bb_str, base=2)
-			value = sbox.value[value]
-			bb_str = format(value, "08b")
-			bb_list.append(bb_str)
-		concat_bb = ''.join(bb_list)
-		self._value = int(concat_bb, base=2)
+		sb = [sbox.value[b] for b in self.to_bytes()]
+		self._value = int.from_bytes(sb)
 		return self
-
-	def __init__(self, value: int = 0):
-		self.value = value
 
 	def _operate(self, operator: t.Callable, other: int | BaseUint) -> BaseUint:
 		if isinstance(other, BaseUint):
@@ -81,6 +74,7 @@ class BaseUint(ABC):
 		return self._operate(opr.xor, other)
 
 	def __rshift__(self, other: int) -> BaseUint:
+		"""Rotates bits out from right and back into left"""
 		other = other % self.bit_count
 		rs = self._value >> other
 		ls = self._value << (self.bit_count - other)
@@ -88,20 +82,21 @@ class BaseUint(ABC):
 		return self.__class__(res)
 
 	def __lshift__(self, other: int) -> BaseUint:
+		"""Rotates bits out from left and back into right"""
 		other = other % self.bit_count
 		rs = self._value >> (self.bit_count - other)
 		ls = self._value << other
 		res = (rs | ls) & self.max_value
 		return self.__class__(res)
 
-	def __int__(self):
+	def __index__(self) -> int:
 		return self._value
 
-	def __str__(self):
+	def __int__(self) -> int:
+		return self._value
+
+	def __str__(self) -> str:
 		return str(self._value)
-
-	def __index__(self):
-		return self._value
 
 
 class Uint8(BaseUint):
