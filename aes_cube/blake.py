@@ -31,7 +31,8 @@ class BlakeKeyGen:
 	def mix(self, a: int, b: int, c: int, d: int, x: Uint32, y: Uint32) -> None:
 		"""
 		The G (mixing) function of the Blake hash algorithm.
-		Note: Automatic mod 2**32 is applied for Uint32 arithmetic!
+		Note: Automatic mod 2**32 is applied for Uint32 arithmetic and
+		<<, >> operators rotate with circular shift.
 		"""
 		vec = self.vector
 
@@ -47,8 +48,8 @@ class BlakeKeyGen:
 
 	def compress(self, mode: KDFMode, key: list[Uint32] = None) -> None:
 		"""
-		The E (compression) function of the Blake hash algorithm.
-		Note: Only components essential to the current use case are retained.
+		The E (compression) function of the Blake hash algorithm with minor alterations.
+		Note: Only components essential for the KDF use case have been retained.
 
 		If mode == "extract", then BIL and BIH are None, otherwise they are Uint32.
 		If mode == "expand", then vector[14] bits have been flipped.
@@ -70,20 +71,23 @@ class BlakeKeyGen:
 		_key = self.to_uint_list(key)
 		_salt = self.to_uint_list(salt)
 
-		# initialize state vector
+		# Initialize state vector
 		self.vector = [
 			_salt[i] ^ self.ivs[i]
 			for i in range(16)
 		]
-		# compute initial 10 rounds
+		# Compute initial 10 rounds
 		for i in range(10):
 			self.compress(mode="extract", key=_key)
 
-		# initialize block index from altered vector
+		# Initialize block index from altered vector
 		self.block_index = Uint64.from_bytes(
 			self.vector[12].to_bytes() +
 			self.vector[13].to_bytes()
 		).sub_bytes(SBox.ENC)
+
+		# Obtain AES IV from altered vector
+		self.aes_iv = self.aes_vector()
 
 	@staticmethod
 	def to_uint_list(source: Bytes) -> list[Uint32]:
