@@ -106,7 +106,7 @@ class Uint8(BaseUint):
 
 	@property
 	def max_value(self):
-		return 255
+		return 0xFF
 
 
 class Uint32(BaseUint):
@@ -116,7 +116,7 @@ class Uint32(BaseUint):
 
 	@property
 	def max_value(self):
-		return 4_294_967_295
+		return 0xFFFFFFFF
 
 
 class Uint64(BaseUint):
@@ -126,4 +126,4 @@ class Uint64(BaseUint):
 
 	@property
 	def max_value(self):
-		return 18_446_744_073_709_551_615
+		return 0xFFFFFFFFFFFFFFFF
