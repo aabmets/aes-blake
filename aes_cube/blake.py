@@ -22,11 +22,9 @@ Bytes = t.Union[bytes | bytearray]
 class BlakeKeyGen:
 	vector: list[Uint32]
 	ivs = (
-		0x6A09E667, 0xF3BCC908, 0xBB67AE85, 0x84CAA73B,  # 0,  1,  2,  3
-		0x3C6EF372, 0xFE94F82B, 0xA54FF53A, 0x5F1D36F1,  # 4,  5,  6,  7
-		0x510E527F, 0xADE682D1, 0x9B05688C, 0x2B3E6C1F,  # 8,  9,  10, 11
-		0x1F83D9AB, 0xFB41BD6B, 0x5BE0CD19, 0x137E2179,  # 12, 13, 14, 15
-	)  # From SHA-512, split into 32-bit integers
+		0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,  # 08, 09, 10, 11
+		0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,  # 12, 13, 14, 15
+	)
 
 	def mix(self, a: int, b: int, c: int, d: int, x: Uint32, y: Uint32) -> None:
 		"""
@@ -74,11 +72,10 @@ class BlakeKeyGen:
 			raise ValueError("Nonce length must be less than or equal to 32 bytes")
 
 		# Initialize state vector
-		_nonce = self.to_uint_list(nonce)
-		self.vector = [
-			_nonce[i] ^ self.ivs[i]
-			for i in range(16)
-		]
+		self.vector = self.to_uint_list(nonce)
+		for i in range(8):
+			self.vector[i+8] = Uint32(self.ivs[i])
+
 		# Compute initial 10 rounds
 		_key = self.to_uint_list(key)
 		for i in range(10):
