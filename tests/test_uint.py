@@ -39,9 +39,22 @@ def test_uint8():
 	assert v1.value == 0xAA
 	assert v2.value == 0xCC
 
+	assert (-v1).value == 0x56
+	assert (-v2).value == 0x34
+
 	assert (v1 + v2).value == 0x76  # mod 2**8
+	assert (v1 - v2).value == 0xDE  # mod 2**8
+
 	assert (v1 & v2).value == 0x88
+	assert (v1 | v2).value == 0xEE
 	assert (v1 ^ v2).value == 0x66
+
+	assert (v1 == v2) is False
+	assert (v1 != v2) is True
+	assert (v1 > v2) is False
+	assert (v1 < v2) is True
+	assert (v1 >= v2) is False
+	assert (v1 <= v2) is True
 
 	assert (v1 >> 1).value == 0x55  # rotate right by 1 bit
 	assert (v1 << 1).value == 0x55  # rotate left by 1 bit
@@ -66,9 +79,22 @@ def test_uint32():
 	assert v1.value == 0xAABBCCDD
 	assert v2.value == 0xCCDDEEFF
 
-	assert (v1 + v2).value == 0x7799BBDC    # mod 2**32
+	assert (-v1).value == 0x00000023
+	assert (-v2).value == 0x00000001
+
+	assert (v1 + v2).value == 0x7799BBDC  # mod 2**32
+	assert (v1 - v2).value == 0xDDDDDDDE  # mod 2**32
+
 	assert (v1 & v2).value == 0x8899CCDD
+	assert (v1 | v2).value == 0xEEFFEEFF
 	assert (v1 ^ v2).value == 0x66662222
+
+	assert (v1 == v2) is False
+	assert (v1 != v2) is True
+	assert (v1 > v2) is False
+	assert (v1 < v2) is True
+	assert (v1 >= v2) is False
+	assert (v1 <= v2) is True
 
 	assert (v1 >> 1).value == 0xD55DE66E   # rotate right by 1 bit
 	assert (v1 << 1).value == 0x557799BB   # rotate left by 1 bit
@@ -93,9 +119,22 @@ def test_uint64():
 	assert v1.value == 0xAABBCCDDEEFFAABB
 	assert v2.value == 0xCCDDEEFFAABBCCDD
 
+	assert (-v1).value == 0x0000000000000045
+	assert (-v2).value == 0x0000000000000023
+
 	assert (v1 + v2).value == 0x7799BBDD99BB7798  # mod 2**64
+	assert (v1 - v2).value == 0xDDDDDDDE4443DDDE  # mod 2**64
+
 	assert (v1 & v2).value == 0x8899CCDDAABB8899
+	assert (v1 | v2).value == 0xEEFFEEFFEEFFEEFF
 	assert (v1 ^ v2).value == 0x6666222244446666
+
+	assert (v1 == v2) is False
+	assert (v1 != v2) is True
+	assert (v1 > v2) is False
+	assert (v1 < v2) is True
+	assert (v1 >= v2) is False
+	assert (v1 <= v2) is True
 
 	assert (v1 >> 1).value == 0xD55DE66EF77FD55D   # rotate right by 1 bit
 	assert (v1 << 1).value == 0x557799BBDDFF5577   # rotate left by 1 bit

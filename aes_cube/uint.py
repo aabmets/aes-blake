@@ -58,20 +58,49 @@ class BaseUint(ABC):
 		self._value = int.from_bytes(sb)
 		return self
 
-	def _operate(self, operator: t.Callable, other: int | BaseUint) -> BaseUint:
+	def _operate(self, operator: t.Callable, other: int | BaseUint, cls: t.Type = None) -> t.Any:
 		if isinstance(other, BaseUint):
 			other = other.value
+		if cls is None:
+			cls = self.__class__
 		value = operator(self._value, other)
-		return self.__class__(value)
+		return cls(value)
 
 	def __add__(self, other: int | BaseUint) -> BaseUint:
 		return self._operate(opr.add, other)
 
+	def __sub__(self, other: int | BaseUint) -> BaseUint:
+		return self._operate(opr.sub, other)
+
 	def __and__(self, other: int | BaseUint) -> BaseUint:
 		return self._operate(opr.and_, other)
 
+	def __or__(self, other: int | BaseUint) -> BaseUint:
+		return self._operate(opr.or_, other)
+
 	def __xor__(self, other: int | BaseUint) -> BaseUint:
 		return self._operate(opr.xor, other)
+
+	def __eq__(self, other: int | BaseUint) -> bool:
+		return self._operate(opr.eq, other, bool)
+
+	def __ne__(self, other: int | BaseUint) -> bool:
+		return self._operate(opr.ne, other, bool)
+
+	def __gt__(self, other: int | BaseUint) -> bool:
+		return self._operate(opr.gt, other, bool)
+
+	def __lt__(self, other: int | BaseUint) -> bool:
+		return self._operate(opr.lt, other, bool)
+
+	def __ge__(self, other: int | BaseUint) -> bool:
+		return self._operate(opr.ge, other, bool)
+
+	def __le__(self, other: int | BaseUint) -> bool:
+		return self._operate(opr.le, other, bool)
+
+	def __neg__(self) -> BaseUint:
+		return Uint8(-self.value & self.max_value)
 
 	def __rshift__(self, other: int) -> BaseUint:
 		"""Rotates bits out from right and back into left"""
