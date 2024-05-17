@@ -66,10 +66,10 @@ class BlakeKeyGen:
 		self.mix(3, 4, 9, 14, bil or key[14], bih or key[15])
 
 	def __init__(self, key: Bytes = b'', nonce: Bytes = b'') -> None:
-		if len(key) > 64:
-			raise ValueError("Key length must be less than or equal to 64 bytes")
-		if len(nonce) > 32:
-			raise ValueError("Nonce length must be less than or equal to 32 bytes")
+		if not (32 <= len(key) <= 64):
+			raise ValueError("Key length must be >= 32 and <= 64 bytes")
+		if not (16 <= len(nonce) <= 32):
+			raise ValueError("Nonce length must be >= 16 and <= 32 bytes")
 
 		# Initialize state vector
 		self.vector = self.to_uint_list(nonce)
