@@ -1,18 +1,16 @@
 [tool.poetry]
-name = "aes-cube"
+name = "aes-blake"
 version = "0.1.0"
 description = ""
 authors = ["Mattias Aabmets <mattias.aabmets@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [
-    { include = "aes_cube" }
-]
+package-mode = false
 
 [tool.poetry.urls]
-"Repository" = "https://github.com/aabmets/aes-cube"
-"Documentation" = "https://github.com/aabmets/aes-cube/wiki"
-"Bug Tracker" = "https://github.com/aabmets/aes-cube/issues"
+"Repository" = "https://github.com/aabmets/aes-blake"
+"Documentation" = "https://github.com/aabmets/aes-blake/wiki"
+"Bug Tracker" = "https://github.com/aabmets/aes-blake/issues"
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -26,30 +24,26 @@ coverage = "^7.5.1"
 pytest = "^8.2.0"
 pytest-cov = "^5.0.0"
 pytest-pyright = "^0.0.6"
-pytest-xdist = {extras = ["psutil"], version = "^3.6.1"}
 matplotlib = "^3.8.4"
 rich = "^13.7.1"
 
 [tool.pytest.ini_options]
 console_output_style = "count"
 filterwarnings = ["ignore::DeprecationWarning"]
-testpaths = ["tests"]
+testpaths = ["py_ref/tests"]
 addopts = [
-    "--cov=aes_cube",
+    "--cov=py_ref/src",
     "--cov-report=html",
     "--no-cov-on-fail",
-    "--import-mode=append",
-#    "--numprocesses=auto",
-#    "--maxprocesses=8",
-#    "--dist=worksteal"
+    "--import-mode=append"
 ]
 pythonpath = [
     ".",
-    "./aes_cube"
+    "./py_ref"
 ]
 
 [tool.coverage.run]
-source = ["aes_cube"]
+source = ["py_ref/src"]
 branch = true
 
 [tool.coverage.report]
