@@ -11,20 +11,20 @@
 from __future__ import annotations
 import typing as t
 from copy import deepcopy
-from aes_cube.sbox import SBox
-from aes_cube.uint import Uint8, Uint32, Uint64
+from .aes_sbox import SBox
+from .uint import Uint8, Uint32, Uint64
 
 
 KDFMode = t.Literal["extract", "expand", "finalize"]
 Bytes = t.Union[bytes | bytearray]
 
 
-class BlakeKeyGen:
+class KeyGen:
 	vector: list[Uint32]
 	ivs = (
 		0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,  # 08, 09, 10, 11
 		0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,  # 12, 13, 14, 15
-	)
+	)  # From BLAKE3, which in turn took them from SHA-256
 
 	def mix(self, a: int, b: int, c: int, d: int, x: Uint32, y: Uint32) -> None:
 		"""
@@ -132,5 +132,5 @@ class BlakeKeyGen:
 		for i in range(16):
 			self.vector[i] ^= data[i]
 
-	def clone(self) -> BlakeKeyGen:
+	def clone(self) -> KeyGen:
 		return deepcopy(self)

@@ -12,7 +12,7 @@ from __future__ import annotations
 import typing as t
 import operator as opr
 from abc import ABC, abstractmethod
-from .sbox import SBox
+from .aes_sbox import SBox
 
 
 __all__ = ["BaseUint", "Uint8", "Uint32", "Uint64"]
