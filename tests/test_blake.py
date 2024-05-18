@@ -133,11 +133,11 @@ def test_separate_domains_finalize(blank_blake):
 	assert blake.vector[15].value == 0xFFFFFFFF
 
 
-def test_aes_vector(blank_blake):
+def test_to_uint8_list(blank_blake):
 	blake = blank_blake.clone()
 	for i in range(4, 9):
 		blake.vector[i] = Uint32(0xAABBCCDD)
-	vec = blake.aes_vector
+	vec = blake.to_uint8_list()
 	for i in [0, 4, 8, 12]:
 		assert vec[i].value == 0xAA
 	for i in [1, 5, 9, 13]:
@@ -148,12 +148,12 @@ def test_aes_vector(blank_blake):
 		assert vec[i].value == 0xDD
 
 
-def test_to_uint_list():
+def test_uint32_list_from_bytes():
 	uint32_str = b"\xAA\xBB\xCC\xDD"
 	uint = Uint32.from_bytes(uint32_str, byteorder="little")
 	assert uint.value == 0xDDCCBBAA
 
-	res = BlakeKeyGen.to_uint_list(uint32_str * 9)
+	res = BlakeKeyGen.uint32_list_from_bytes(uint32_str * 9)
 	assert len(res) == 16
 
 	for i in range(16):
@@ -175,3 +175,17 @@ def test_normal_init():
 	for i in range(16):
 		assert blake.vector[i].value == expected_vector[i]
 	assert blake.block_index.value == 0x91CF6A14C51AADD0
+
+
+def test_xor_with(blank_blake):
+	blake = blank_blake.clone()
+	for uint32 in blake.vector:
+		assert uint32.value == 0
+
+	blake.xor_with([0x1234ABCD] * 16)
+	for i, uint32 in enumerate(blake.vector):
+		assert uint32.value == 0x1234ABCD
+
+	blake.xor_with([0xFEDC9876] * 16)
+	for i, uint32 in enumerate(blake.vector):
+		assert uint32.value == 0xECE833BB

@@ -67,12 +67,12 @@ class BlakeKeyGen:
 
 	def __init__(self, key: Bytes = b'', nonce: Bytes = b'') -> None:
 		# Initialize state vector
-		self.vector = self.to_uint_list(nonce)
+		self.vector = self.uint32_list_from_bytes(nonce)
 		for i in range(8):
 			self.vector[i+8] = Uint32(self.ivs[i])
 
 		# Compute initial 10 rounds
-		_key = self.to_uint_list(key)
+		_key = self.uint32_list_from_bytes(key)
 		for i in range(10):
 			self.compress(mode="extract", key=_key)
 
@@ -83,7 +83,7 @@ class BlakeKeyGen:
 		).sub_bytes(SBox.ENC)
 
 	@staticmethod
-	def to_uint_list(source: Bytes) -> list[Uint32]:
+	def uint32_list_from_bytes(source: Bytes) -> list[Uint32]:
 		s_len = len(source)
 		count = 4 - (s_len % 4)
 		source += b'\x00' * count
@@ -121,13 +121,16 @@ class BlakeKeyGen:
 	def set_block_index(self, value: int):
 		self.block_index += value
 
-	@property
-	def aes_vector(self) -> list[Uint8]:
+	def to_uint8_list(self) -> list[Uint8]:
 		out = []
 		for uint32 in self.vector[4:8]:
 			for b in uint32.to_bytes():
 				out.append(Uint8(b))
 		return out
+
+	def xor_with(self, data: list[int | Uint32]) -> None:
+		for i in range(16):
+			self.vector[i] ^= data[i]
 
 	def clone(self) -> BlakeKeyGen:
 		return deepcopy(self)
