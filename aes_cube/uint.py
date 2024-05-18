@@ -20,6 +20,7 @@ __all__ = ["BaseUint", "Uint8", "Uint32", "Uint64"]
 
 T = t.TypeVar("T", bound="BaseUint")
 ByteOrder = t.Literal["little", "big"]
+IterNum = t.Union[t.Iterable[t.SupportsIndex], t.SupportsBytes]
 
 
 class BaseUint(ABC):
@@ -45,9 +46,7 @@ class BaseUint(ABC):
 		self.value = value
 
 	@classmethod
-	def from_bytes(cls: t.Type[T], data: bytes | bytearray, *, byteorder: ByteOrder = "big") -> T:
-		if not isinstance(data, (bytes, bytearray)):
-			raise TypeError
+	def from_bytes(cls: t.Type[T], data: IterNum, *, byteorder: ByteOrder = "big") -> T:
 		return cls(int.from_bytes(data, byteorder, signed=False))
 
 	def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
