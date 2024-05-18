@@ -19,7 +19,7 @@ KDFMode = t.Literal["extract", "expand", "finalize"]
 Bytes = t.Union[bytes | bytearray]
 
 
-class KeyGen:
+class BlakeKeyGen:
 	vector: list[Uint32]
 	ivs = (
 		0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,  # 08, 09, 10, 11
@@ -132,5 +132,5 @@ class KeyGen:
 		for i in range(16):
 			self.vector[i] ^= data[i]
 
-	def clone(self) -> KeyGen:
+	def clone(self) -> BlakeKeyGen:
 		return deepcopy(self)

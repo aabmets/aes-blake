@@ -10,7 +10,7 @@
 #
 import typing as t
 from .uint import Uint8
-from .blake_keygen import KeyGen
+from .blake_keygen import BlakeKeyGen
 from .aes_sbox import SBox
 
 
@@ -20,20 +20,20 @@ Bytes = t.Union[bytes | bytearray]
 class AESBlock:
 	vector: list[Uint8]
 
-	def __init__(self, blake: KeyGen, index: int, data: Bytes) -> None:
-		self.blake = blake.clone()
+	def __init__(self, keygen: BlakeKeyGen, index: int, data: Bytes) -> None:
+		self.keygen = keygen.clone()
 		self.vector = [Uint8(b) for b in data]
 		self.keys = self.precompute_keys(index)
 
 	def precompute_keys(self, index: int) -> list[list[Uint8]]:
-		self.blake.set_block_index(index)
+		self.keygen.set_block_index(index)
 		keys = []
 		for _ in range(10):
-			self.blake.compress("expand")
-			key = self.blake.to_uint8_list()
+			self.keygen.compress("expand")
+			key = self.keygen.to_uint8_list()
 			keys.append(key)
-		self.blake.compress("finalize")
-		key = self.blake.to_uint8_list()
+		self.keygen.compress("finalize")
+		key = self.keygen.to_uint8_list()
 		keys.append(key)
 		return keys
 

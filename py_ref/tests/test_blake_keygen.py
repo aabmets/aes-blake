@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 import pytest
-from src.blake_keygen import KeyGen
+from src.blake_keygen import BlakeKeyGen
 from src.uint import Uint32, Uint64
 
 
@@ -18,7 +18,7 @@ ONE, ZERO = Uint32(1), Uint32(0)
 
 @pytest.fixture(name="blank_keygen", scope="module")
 def fixture_blank_keygen():
-	keygen = KeyGen()
+	keygen = BlakeKeyGen()
 	keygen.vector = [Uint32(0)] * 16
 	keygen.block_index = Uint64(0)
 	return keygen
@@ -153,7 +153,7 @@ def test_uint32_list_from_bytes():
 	uint = Uint32.from_bytes(uint32_str, byteorder="little")
 	assert uint.value == 0xDDCCBBAA
 
-	res = KeyGen.uint32_list_from_bytes(uint32_str * 9)
+	res = BlakeKeyGen.uint32_list_from_bytes(uint32_str * 9)
 	assert len(res) == 16
 
 	for i in range(16):
@@ -165,7 +165,7 @@ def test_uint32_list_from_bytes():
 
 
 def test_normal_init():
-	keygen = KeyGen(key=b'', nonce=b'')
+	keygen = BlakeKeyGen(key=b'', nonce=b'')
 	expected_vector = [
 		0x8116C17C, 0xC7D2B9EE, 0x0B565DD4, 0x18C51225,
 		0xAB24CCB6, 0x24A50A4A, 0x4F6BA54D, 0xA405D678,
