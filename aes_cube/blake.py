@@ -87,9 +87,6 @@ class BlakeKeyGen:
 			self.vector[13].to_bytes()
 		).sub_bytes(SBox.ENC)
 
-		# Obtain AES IV from altered vector
-		self.aes_iv: list[Uint8] = self.aes_vector
-
 	@staticmethod
 	def to_uint_list(source: Bytes) -> list[Uint32]:
 		s_len = len(source)
