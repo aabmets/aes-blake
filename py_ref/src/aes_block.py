@@ -18,9 +18,7 @@ Bytes = t.Union[bytes | bytearray]
 
 
 class AESBlock:
-	vector: list[Uint8]
-
-	def __init__(self, keygen: BlakeKeyGen, index: int, data: Bytes) -> None:
+	def __init__(self, keygen: BlakeKeyGen, data: Bytes, index: int) -> None:
 		self.keygen = keygen.clone()
 		self.vector = [Uint8(b) for b in data]
 		self.keys = self.precompute_keys(index)
@@ -38,7 +36,8 @@ class AESBlock:
 		return keys
 
 	def encrypt_block(self) -> None:
-		for i in range(10):
+		self.add_round_key(0)
+		for i in range(1, 10):
 			self.sub_bytes(SBox.ENC)
 			self.shift_rows()
 			self.mix_columns()
@@ -57,22 +56,6 @@ class AESBlock:
 			self.inv_shift_rows()
 			self.sub_bytes(SBox.DEC)
 		self.add_round_key(0)
-
-	def sub_bytes(self, sbox: SBox) -> None:
-		for uint8 in self.vector:
-			uint8.sub_bytes(sbox)
-
-	def shift_rows(self) -> None:
-		vec = self.vector
-		vec[1], vec[5], vec[9], vec[13] = vec[5], vec[9], vec[13], vec[1]
-		vec[2], vec[6], vec[10], vec[14] = vec[10], vec[14], vec[2], vec[6]
-		vec[3], vec[7], vec[11], vec[15] = vec[15], vec[3], vec[7], vec[11]
-
-	def inv_shift_rows(self) -> None:
-		vec = self.vector
-		vec[1], vec[5], vec[9], vec[13] = vec[13], vec[1], vec[5], vec[9]
-		vec[2], vec[6], vec[10], vec[14] = vec[10], vec[14], vec[2], vec[6]
-		vec[3], vec[7], vec[11], vec[15] = vec[7], vec[11], vec[15], vec[3]
 
 	@staticmethod
 	def xtime(a: Uint8) -> Uint8:
@@ -106,6 +89,22 @@ class AESBlock:
 			vec[i + 3] ^= y
 		self.mix_columns()
 
+	def shift_rows(self) -> None:
+		vec = self.vector
+		vec[1], vec[5], vec[9], vec[13] = vec[5], vec[9], vec[13], vec[1]
+		vec[2], vec[6], vec[10], vec[14] = vec[10], vec[14], vec[2], vec[6]
+		vec[3], vec[7], vec[11], vec[15] = vec[15], vec[3], vec[7], vec[11]
+
+	def inv_shift_rows(self) -> None:
+		vec = self.vector
+		vec[1], vec[5], vec[9], vec[13] = vec[13], vec[1], vec[5], vec[9]
+		vec[2], vec[6], vec[10], vec[14] = vec[10], vec[14], vec[2], vec[6]
+		vec[3], vec[7], vec[11], vec[15] = vec[7], vec[11], vec[15], vec[3]
+
 	def add_round_key(self, index: int) -> None:
 		for i, uint8 in enumerate(self.keys[index]):
 			self.vector[i] ^= uint8
+
+	def sub_bytes(self, sbox: SBox) -> None:
+		for uint8 in self.vector:
+			uint8.sub_bytes(sbox)
