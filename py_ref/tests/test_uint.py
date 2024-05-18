@@ -10,8 +10,8 @@
 #
 import pytest
 import typing as t
-from aes_cube.sbox import SBox
-from aes_cube.uint import BaseUint, Uint8, Uint32, Uint64
+from src.aes_sbox import SBox
+from src.uint import BaseUint, Uint8, Uint32, Uint64
 
 
 def test_uint_inheritance():

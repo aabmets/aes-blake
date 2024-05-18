@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 import pytest
-from aes_cube.sbox import SBox
+from src.aes_sbox import SBox
 
 
 @pytest.fixture(name="sbox", scope="module")

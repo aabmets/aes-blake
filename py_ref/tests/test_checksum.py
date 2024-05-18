@@ -8,8 +8,8 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from aes_cube.checksum import CheckSum
-from aes_cube.uint import Uint8, Uint32
+from src.checksum import CheckSum
+from src.uint import Uint8, Uint32
 
 
 __all__ = ["test_checksum"]
