@@ -20,7 +20,6 @@ ONE, ZERO = Uint32(1), Uint32(0)
 def fixture_blank_blake():
 	blake = BlakeKeyGen()
 	blake.vector = [Uint32(0)] * 16
-	blake.aes_iv = [Uint8(0)] * 16
 	blake.block_index = Uint64(0)
 	return blake
 
@@ -173,21 +172,6 @@ def test_normal_init():
 		0xEF307156, 0x617539E3, 0x5AED265D, 0x07C4C974,
 		0xAC5F589B, 0x07431860, 0xEC16EDAC, 0xCA051126
 	]
-	expected_aes_vector = [
-		0xAB, 0x24, 0xCC, 0xB6,
-		0x24, 0xA5, 0x0A, 0x4A,
-		0x4F, 0x6B, 0xA5, 0x4D,
-		0xA4, 0x05, 0xD6, 0x78
-	]
 	for i in range(16):
 		assert blake.vector[i].value == expected_vector[i]
-	for i in range(16):
-		assert blake.aes_iv[i].value == expected_aes_vector[i]
 	assert blake.block_index.value == 0x91CF6A14C51AADD0
-
-
-def test_init_errors():
-	with pytest.raises(ValueError):
-		BlakeKeyGen(key=b'x' * 65)
-	with pytest.raises(ValueError):
-		BlakeKeyGen(nonce=b'x' * 33)
