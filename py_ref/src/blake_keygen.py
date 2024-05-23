@@ -11,6 +11,7 @@
 from __future__ import annotations
 from enum import Enum
 from copy import deepcopy
+from .aes_sbox import SBox
 from .uint import Uint32, Uint64
 from . import utils
 
@@ -60,48 +61,52 @@ class BlakeKeyGen:
 			output.append(m[i])
 		return output
 
-	def set_params(self, domain: KDFDomain = None, block_index: int = None) -> None:
+	def set_params(self, domain: KDFDomain = None, counter: int = None) -> None:
 		if domain is not None:
 			for i in range(8, 12):
 				self.state[i] ^= domain.value
-		if block_index is not None:
-			bcb = (self.block_index_base + block_index).to_bytes()
-			bc_low = Uint32.from_bytes(bcb[4:], byteorder="little")
-			bc_high = Uint32.from_bytes(bcb[:4], byteorder="little")
+		if counter is not None:
+			bcb = (self.block_counter_base + counter).to_bytes()
+			ctr_low = Uint32.from_bytes(bcb[4:], byteorder="little")
+			ctr_high = Uint32.from_bytes(bcb[:4], byteorder="little")
 			for i in range(4):
-				self.state[i] ^= bc_low + i
-				self.state[i + 12] ^= bc_high
+				self.state[i] ^= ctr_low + i
+				self.state[i + 12] ^= ctr_high
 
 	def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
 		self.key = utils.bytes_to_uint32_vector(key, size=16)
 		self.state = utils.bytes_to_uint32_vector(nonce, size=16)
-		self.block_index_base = self.compute_bib()
+		self.block_counter_base = self.compute_bcb(key, nonce)
 		for i in range(8):
 			self.state[i + 8] = Uint32(self.ivs[i])
 		self.state = self.digest_context(context)
 
-	def compute_bib(self) -> Uint64:
-		bi1 = (self.state[0] ^ self.key[0]).to_bytes()
-		bi2 = (self.state[1] ^ self.key[1]).to_bytes()
-		return Uint64.from_bytes(bi1 + bi2, byteorder="little")
+	@staticmethod
+	def compute_bcb(key: bytes, nonce: bytes) -> Uint64:
+		key = utils.zero_pad_to_size(key, size=8)
+		nonce = utils.zero_pad_to_size(nonce, size=8)
+		key = [SBox.ENC.value[b] for b in key[:8]]
+		nonce = [SBox.DEC.value[b] for b in nonce[:8]]
+		bcb = [x ^ y for x, y in zip(key, nonce)]
+		return Uint64.from_bytes(bcb, byteorder="little")
 
 	def digest_context(self, context: bytes) -> list[Uint32]:
 		ctx = utils.bytes_to_uint32_vector(context, size=32)
 		clone = self.clone()
-		clone.compress(ctx[:16], index=0)
-		clone.compress(ctx[16:], index=1)
+		clone.compress(ctx[:16], counter=0x00FF_0000_00FF_0000)
+		clone.compress(ctx[16:], counter=0xFF00_0000_FF00_0000)
 		return clone.state
 
-	def compress(self, message: list[Uint32], index: int) -> None:
-		self.set_params(KDFDomain.DIGEST_CTX, index)
+	def compress(self, message: list[Uint32], counter: int) -> None:
+		self.set_params(KDFDomain.DIGEST_CTX, counter)
 		for _ in range(6):
 			self.mix_into_state(message)
 			message = self.permute(message)
 		self.set_params(KDFDomain.LAST_ROUND)
 		self.mix_into_state(message)
 
-	def derive_keys(self, index: int) -> list[list[Uint32]]:
-		self.set_params(KDFDomain.DERIVE_KEY, index + 2)
+	def derive_keys(self, counter: int) -> list[list[Uint32]]:
+		self.set_params(KDFDomain.DERIVE_KEY, counter)
 		for _ in range(10):
 			self.mix_into_state(self.key)
 			self.key = self.permute(self.key)

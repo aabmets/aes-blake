@@ -17,7 +17,7 @@ from src import utils
 @pytest.fixture(name="blank_keygen", scope="module")
 def fixture_blank_keygen():
 	keygen = BlakeKeyGen(key=b'', nonce=b'', context=b'')
-	keygen.block_index_base = Uint64(0)
+	keygen.block_counter_base = Uint64(0)
 	keygen.state = [Uint32(0)] * 16
 	keygen.key = [Uint32(0)] * 16
 	return keygen
@@ -28,16 +28,16 @@ def test_mix_method(blank_keygen):
 	one, zero = Uint32(1), Uint32(0)
 
 	keygen.mix(0, 4, 8, 12, one, zero)
-	assert keygen.state[0].value == 0x00000011   # 0000 0000 0000 0000 0000 0000 0001 0001
-	assert keygen.state[4].value == 0x20220202   # 0010 0000 0010 0010 0000 0010 0000 0010
-	assert keygen.state[8].value == 0x11010100   # 0001 0001 0000 0001 0000 0001 0000 0000
-	assert keygen.state[12].value == 0x11000100  # 0001 0001 0000 0000 0000 0001 0000 0000
+	assert keygen.state[0].value == 0x00000011
+	assert keygen.state[4].value == 0x20220202
+	assert keygen.state[8].value == 0x11010100
+	assert keygen.state[12].value == 0x11000100
 
 	keygen.mix(0, 4, 8, 12, one, zero)
-	assert keygen.state[0].value == 0x22254587   # 0010 0010 0010 0101 0100 0101 1000 0111
-	assert keygen.state[4].value == 0xCB766A41   # 1100 1011 0111 0110 0110 1010 0100 0001
-	assert keygen.state[8].value == 0xB9366396   # 1011 1001 0011 0110 0110 0011 1001 0110
-	assert keygen.state[12].value == 0xA5213174  # 1010 0101 0010 0001 0011 0001 0111 0100
+	assert keygen.state[0].value == 0x22254587
+	assert keygen.state[4].value == 0xCB766A41
+	assert keygen.state[8].value == 0xB9366396
+	assert keygen.state[12].value == 0xA5213174
 
 	for i in [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15]:
 		assert keygen.state[i].value == 0
@@ -49,19 +49,24 @@ def test_mix_into_state(blank_keygen):
 	message[0] = Uint32(1)
 
 	keygen.mix_into_state(message)
-	assert keygen.state[0].value == 0x00000121  # 0000 0000 0000 0000 0000 0001 0010 0001
-	assert keygen.state[1].value == 0x10001001  # 0001 0000 0000 0000 0001 0000 0000 0001
-	assert keygen.state[2].value == 0x10011010  # 0001 0000 0000 0001 0001 0000 0001 0000
-	assert keygen.state[3].value == 0x42242404  # 0100 0010 0010 0100 0010 0100 0000 0100
+	expected = [
+		0x00000121, 0x10001001, 0x10011010, 0x42242404,
+		0x481480C8, 0x22422220, 0x00242202, 0x00622024,
+		0x21110210, 0x28424626, 0x21111101, 0x02111101,
+		0x01110001, 0x10100110, 0x26402604, 0x21001101,
+	]
+	for i in range(16):
+		assert keygen.state[i].value == expected[i]
 
 	keygen.mix_into_state(message)
-	assert keygen.state[0].value == 0xCA362DD6  # 1100 1010 0011 0110 0010 1101 1101 0110
-	assert keygen.state[1].value == 0x137F4EC0  # 0001 0011 0111 1111 0100 1110 1100 0000
-	assert keygen.state[2].value == 0xC494A2BB  # 1100 0100 1001 0100 1010 0010 1011 1011
-	assert keygen.state[3].value == 0x646EF8F0  # 0110 0100 0110 1110 1111 1000 1111 0000
-
-	for i in range(4, 16):
-		assert keygen.state[i].value != 0
+	expected = [
+		0xCA362DD6, 0x137F4EC0, 0xC494A2BB, 0x646EF8F0,
+		0x5F1FCA7F, 0x63736C1D, 0xF57FACCC, 0x30DDBBAE,
+		0xFA440A96, 0x5DB9BE06, 0x94C333CD, 0x5C9DB225,
+		0x7771670D, 0xA5F95EEA, 0x906D9D47, 0xCFA8B69A,
+	]
+	for i in range(16):
+		assert keygen.state[i].value == expected[i]
 
 
 def test_permute(blank_keygen):
@@ -83,7 +88,7 @@ def test_set_params_digest_ctx_domain(blank_keygen):
 	for i in range(8, 12):
 		assert keygen.state[i].value == 0x20
 	for i in [0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15]:
-		assert keygen.state[i].value == 0x0
+		assert keygen.state[i].value == 0
 
 
 def test_set_params_derive_keys_domain(blank_keygen):
@@ -106,7 +111,7 @@ def test_set_params_last_round_domain(blank_keygen):
 
 def test_set_params_block_index(blank_keygen):
 	keygen = blank_keygen.clone()
-	keygen.set_params(block_index=0xAABBCCDDEEFFAABB)
+	keygen.set_params(counter=0xAABBCCDDEEFFAABB)
 	for i in range(4):
 		assert keygen.state[i].value == 0xBBAAFFEE + i
 		assert keygen.state[i + 4].value == 0
@@ -116,58 +121,77 @@ def test_set_params_block_index(blank_keygen):
 
 def test_compute_bib(blank_keygen):
 	clone = blank_keygen.clone()
-	clone.key[0] = Uint32(0xAABBCCDD)
-	clone.key[1] = Uint32(0x11223344)
-	bib = clone.compute_bib()
-	assert bib.value == 0x44332211DDCCBBAA
+
+	bib = clone.compute_bcb(key=b'', nonce=b'')
+	assert bib.value == 0x3131_3131_3131_3131
+
+	bib = clone.compute_bcb(key=b'abcdefgh', nonce=b'12345678')
+	assert bib.value == 0x3337_1794_6B9D_0BC1
 
 
 def test_digest_context(blank_keygen):
 	keygen = blank_keygen.clone()
 	state = keygen.digest_context(b'')
-	for i in range(4):
-		assert state[0].value == 0x668F50FF  # 0110 0110 1000 1111 0101 0000 1111 1111
-		assert state[1].value == 0xDBF71E3C  # 1101 1011 1111 0111 0001 1110 0011 1100
-		assert state[2].value == 0x5AB31C59  # 0101 1010 1011 0011 0001 1100 0101 1001
-		assert state[3].value == 0x63997B7A  # 0110 0011 1001 1001 0111 1011 0111 1010
-	for i in range(4, 16):
-		assert state[i].value != 0
+	expected = [
+		0xECB86367, 0xBFD3DD4A, 0xFF8285A7, 0xC22FF92C,
+		0x859C06E4, 0x87B663A1, 0x84EA7C51, 0x4E0F2BB1,
+		0xBDF19A21, 0x6C05C3EA, 0x2878731D, 0x44C08C32,
+		0x3924C540, 0x0D51AF40, 0x178F244F, 0x1CA0EB45,
+	]
+	for i in range(16):
+		assert state[i].value == expected[i]
 
 
 def test_compress(blank_keygen):
 	keygen = blank_keygen.clone()
-	vector = utils.bytes_to_uint32_vector(data=b'', size=16)
-	keygen.compress(vector, index=0)
-	for i in range(4):
-		assert keygen.state[0].value == 0xF8D374A2  # 1111 1000 1101 0011 0111 0100 1010 0010
-		assert keygen.state[1].value == 0x8159CAF7  # 1000 0001 0101 1001 1100 1010 1111 0111
-		assert keygen.state[2].value == 0x8A917AD3  # 1000 1010 1001 0001 0111 1010 1101 0011
-		assert keygen.state[3].value == 0x335959CF  # 0011 0011 0101 1001 0101 1001 1100 1111
-	keygen.compress(vector, index=1)
-	for i in range(4):
-		assert keygen.state[0].value == 0x668F50FF  # 0110 0110 1000 1111 0101 0000 1111 1111
-		assert keygen.state[1].value == 0xDBF71E3C  # 1101 1011 1111 0111 0001 1110 0011 1100
-		assert keygen.state[2].value == 0x5AB31C59  # 0101 1010 1011 0011 0001 1100 0101 1001
-		assert keygen.state[3].value == 0x63997B7A  # 0110 0011 1001 1001 0111 1011 0111 1010
+	message = utils.bytes_to_uint32_vector(data=b'', size=16)
+
+	keygen.compress(message, counter=0)
+	expected = [
+		0xF8D374A2, 0x8159CAF7, 0x8A917AD3, 0x335959CF,
+		0xECD24E79, 0x7631BEB0, 0x16EE1CD4, 0xCC697A22,
+		0xC72572FF, 0x54B46F14, 0xF55B9D12, 0x040943BD,
+		0xF6F215ED, 0xF419CF01, 0x2EEACB51, 0x3047B2FC,
+	]
+	for i in range(16):
+		assert keygen.state[i].value == expected[i]
+
+	keygen.compress(message, counter=1)
+	expected = [
+		0x668F50FF, 0xDBF71E3C, 0x5AB31C59, 0x63997B7A,
+		0x297170CC, 0x4D9B6D6A, 0xDCFC2859, 0x65C3EB7C,
+		0xBC48C590, 0xFA64C1F6, 0x087B143B, 0x8EE83077,
+		0x5C214ADC, 0x372474BB, 0xEF3A0986, 0x69CE7695,
+	]
+	for i in range(16):
+		assert keygen.state[i].value == expected[i]
+
+
+# def test_derive_keys(blank_keygen):
+# 	keygen = blank_keygen.clone()
+# 	from src import debug
+# 	for chunk in keygen.derive_keys(index=0xFF):
+# 		print()
+# 		debug.pretty_print_vector(chunk)
 
 
 def test_normal_init():
 	keygen = BlakeKeyGen(key=b'\x00', nonce=b'', context=b'')
-	expected_vector = [
-		0x7CC478F8, 0x83600387, 0x05978CFF, 0xF262DFA2,
-		0xF4827C0B, 0xD3486425, 0x3BDAF984, 0x4872FA2D,
-		0x35F67271, 0xC92E4CD4, 0x0C2630FB, 0x890E7575,
-		0xDCE1B748, 0x9299A71D, 0xB2F854DF, 0x5EF83F1B,
+	expected = [
+		0x33029E3D, 0x4AABCAB1, 0x99C2E269, 0x04D6FAD7,
+		0x7D8F596A, 0x84DD6804, 0x7B445B09, 0x5C6D3762,
+		0x72333951, 0x9E163E3A, 0x91332068, 0xE385CF51,
+		0xAC97B26C, 0x6E567A49, 0xF43CAB0E, 0x881E43AF,
 	]
 	for i in range(16):
-		assert keygen.state[i].value == expected_vector[i]
+		assert keygen.state[i].value == expected[i]
 
 	keygen = BlakeKeyGen(key=b'\x01', nonce=b'', context=b'')
-	expected_vector = [
-		0x461001DD, 0x7ED3C892, 0x8E06803F, 0xED5723C2,
-		0x154CBC66, 0x1F240F4D, 0x967197D5, 0x182F80B1,
-		0x5E648A63, 0xFFB6FB92, 0x21B14993, 0x9F8DCD64,
-		0x9DAECC3A, 0xA0766278, 0xA3F5FA55, 0x0F9546AD,
+	expected = [
+		0x1020D1D9, 0x71CA2DDF, 0xB0104484, 0x750EF079,
+		0xA67D1FDC, 0x03015AD3, 0x3DE8E17C, 0xE42D81B9,
+		0x9236024F, 0x90C389CA, 0x50305FB5, 0xFE64C926,
+		0x5F1797A2, 0x9F7D2026, 0x6020F6DF, 0xEF1C0D80
 	]
 	for i in range(16):
-		assert keygen.state[i].value == expected_vector[i]
+		assert keygen.state[i].value == expected[i]
