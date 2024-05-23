@@ -9,128 +9,108 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-import typing as t
+from enum import Enum
 from copy import deepcopy
-from .aes_sbox import SBox
-from .uint import Uint8, Uint32, Uint64
+from .uint import Uint32, Uint64
+from . import utils
 
 
-KDFMode = t.Literal["extract", "expand", "finalize"]
-Bytes = t.Union[bytes | bytearray]
+class KDFDomain(Enum):
+	DIGEST_CTX = 0x20  # 0010 0000
+	DERIVE_KEY = 0x40  # 0100 0000
+	LAST_ROUND = 0x80  # 1000 0000
 
 
 class BlakeKeyGen:
-	vector: list[Uint32]
+	state: list[Uint32]
 	ivs = (
 		0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,  # 08, 09, 10, 11
 		0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,  # 12, 13, 14, 15
 	)  # From BLAKE3, which in turn took them from SHA-256
 
-	def mix(self, a: int, b: int, c: int, d: int, x: Uint32, y: Uint32) -> None:
-		"""
-		The G (mixing) function of the Blake hash algorithm.
-		Note: Automatic mod 2**32 is applied for Uint32 arithmetic and
-		<<, >> operators rotate with circular shift.
-		"""
-		vec = self.vector
-
-		vec[a] = vec[a] + vec[b] + x
+	def mix(self, a: int, b: int, c: int, d: int, mx: Uint32, my: Uint32) -> None:
+		vec = self.state
+		# first mixing
+		vec[a] = vec[a] + vec[b] + mx
 		vec[d] = (vec[d] ^ vec[a]) >> 16
 		vec[c] = vec[c] + vec[d]
 		vec[b] = (vec[b] ^ vec[c]) >> 12
-
-		vec[a] = vec[a] + vec[b] + y
+		# second mixing
+		vec[a] = vec[a] + vec[b] + my
 		vec[d] = (vec[d] ^ vec[a]) >> 8
 		vec[c] = vec[c] + vec[d]
 		vec[b] = (vec[b] ^ vec[c]) >> 7
 
-	def compress(self, mode: KDFMode, key: list[Uint32] = None) -> None:
-		"""
-		The E (compression) function of the Blake hash algorithm with minor alterations.
-		Note: Only components essential for the KDF use case have been retained.
-
-		If mode == "extract", then BIL and BIH are None, otherwise they are Uint32.
-		If mode == "expand", then vector[14] bits have been flipped.
-		If mode == "finalize", then vector[15] bits have been flipped.
-		"""
-		bil, bih = self.separate_domains(mode)
-
-		self.mix(0, 4, 8, 12, bil or key[0], bih or key[1])
-		self.mix(1, 5, 9, 13, bil or key[2], bih or key[3])
-		self.mix(2, 6, 10, 14, bil or key[4], bih or key[5])
-		self.mix(3, 7, 11, 15, bil or key[6], bih or key[7])
-
-		self.mix(0, 5, 10, 15, bil or key[8], bih or key[9])
-		self.mix(1, 6, 11, 12, bil or key[10], bih or key[11])
-		self.mix(2, 7, 8, 13, bil or key[12], bih or key[13])
-		self.mix(3, 4, 9, 14, bil or key[14], bih or key[15])
-
-	def __init__(self, key: Bytes = b'', nonce: Bytes = b'') -> None:
-		# Initialize state vector
-		self.vector = self.uint32_list_from_bytes(nonce)
-		for i in range(8):
-			self.vector[i+8] = Uint32(self.ivs[i])
-
-		# Compute initial 10 rounds
-		_key = self.uint32_list_from_bytes(key)
-		for i in range(10):
-			self.compress(mode="extract", key=_key)
-
-		# Initialize block index from altered vector
-		self.block_index = Uint64.from_bytes(
-			self.vector[12].to_bytes() +
-			self.vector[13].to_bytes()
-		).sub_bytes(SBox.ENC)
+	def mix_into_state(self, m: list[Uint32]) -> None:
+		# columnar mixing
+		self.mix(0, 4, 8, 12, m[0], m[1])
+		self.mix(1, 5, 9, 13, m[2], m[3])
+		self.mix(2, 6, 10, 14, m[4], m[5])
+		self.mix(3, 7, 11, 15, m[6], m[7])
+		# diagonal mixing
+		self.mix(0, 5, 10, 15, m[8], m[9])
+		self.mix(1, 6, 11, 12, m[10], m[11])
+		self.mix(2, 7, 8, 13, m[12], m[13])
+		self.mix(3, 4, 9, 14, m[14], m[15])
 
 	@staticmethod
-	def uint32_list_from_bytes(source: Bytes) -> list[Uint32]:
-		s_len = len(source)
-		count = 4 - (s_len % 4)
-		source += b'\x00' * count
-		output: list[Uint32] = []
-		for i in range(0, s_len, 4):
-			output.append(Uint32.from_bytes(
-				data=source[i:i + 4],
-				byteorder="little"
-			))
-		while len(output) < 16:
-			output.append(Uint32(0))
+	def permute(m: list[Uint32]) -> list[Uint32]:
+		output = []
+		for i in [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]:
+			output.append(m[i])
 		return output
 
-	def flip_bits(self, index: int):
-		uint32 = self.vector[index]
-		flipped = uint32 ^ uint32.max_value
-		self.vector[index] = flipped
+	def set_params(self, domain: KDFDomain = None, block_index: int = None) -> None:
+		if domain is not None:
+			for i in range(8, 12):
+				self.state[i] ^= domain.value
+		if block_index is not None:
+			bcb = (self.block_index_base + block_index).to_bytes()
+			bc_low = Uint32.from_bytes(bcb[4:], byteorder="little")
+			bc_high = Uint32.from_bytes(bcb[:4], byteorder="little")
+			for i in range(4):
+				self.state[i] ^= bc_low + i
+				self.state[i + 12] ^= bc_high
 
-	def separate_domains(self, mode: str) -> tuple[Uint32 | None, Uint32 | None]:
-		bil = None  # block index, low 32 bytes
-		bih = None  # block index, high 32 bytes
-		match mode:
-			case "extract":
-				return bil, bih
-			case "expand":
-				self.flip_bits(14)
-			case "finalize":
-				self.flip_bits(15)
+	def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
+		self.key = utils.bytes_to_uint32_vector(key, size=16)
+		self.state = utils.bytes_to_uint32_vector(nonce, size=16)
+		self.block_index_base = self.compute_bib()
+		for i in range(8):
+			self.state[i + 8] = Uint32(self.ivs[i])
+		self.state = self.digest_context(context)
 
-		bib = self.block_index.to_bytes()
-		bil = Uint32.from_bytes(bib[4:])
-		bih = Uint32.from_bytes(bib[:4])
-		return bil, bih
+	def compute_bib(self) -> Uint64:
+		bi1 = (self.state[0] ^ self.key[0]).to_bytes()
+		bi2 = (self.state[1] ^ self.key[1]).to_bytes()
+		return Uint64.from_bytes(bi1 + bi2, byteorder="little")
 
-	def set_block_index(self, value: int):
-		self.block_index += value
+	def digest_context(self, context: bytes) -> list[Uint32]:
+		ctx = utils.bytes_to_uint32_vector(context, size=32)
+		clone = self.clone()
+		clone.compress(ctx[:16], index=0)
+		clone.compress(ctx[16:], index=1)
+		return clone.state
 
-	def to_uint8_list(self) -> list[Uint8]:
-		out = []
-		for uint32 in self.vector[4:8]:
-			for b in uint32.to_bytes():
-				out.append(Uint8(b))
-		return out
+	def compress(self, message: list[Uint32], index: int) -> None:
+		self.set_params(KDFDomain.DIGEST_CTX, index)
+		for _ in range(6):
+			self.mix_into_state(message)
+			message = self.permute(message)
+		self.set_params(KDFDomain.LAST_ROUND)
+		self.mix_into_state(message)
 
-	def xor_with(self, data: list[int | Uint32]) -> None:
-		for i in range(16):
-			self.vector[i] ^= data[i]
+	def derive_keys(self, index: int) -> list[list[Uint32]]:
+		self.set_params(KDFDomain.DERIVE_KEY, index + 2)
+		keys = []
+		for _ in range(10):
+			self.mix_into_state(self.key)
+			self.key = self.permute(self.key)
+			keys.append(self.state[4:8])
+		self.set_params(KDFDomain.LAST_ROUND)
+		self.mix_into_state(self.key)
+		keys.append(self.state[4:8])
+		return keys
 
 	def clone(self) -> BlakeKeyGen:
 		return deepcopy(self)
