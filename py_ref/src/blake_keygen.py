@@ -102,15 +102,13 @@ class BlakeKeyGen:
 
 	def derive_keys(self, index: int) -> list[list[Uint32]]:
 		self.set_params(KDFDomain.DERIVE_KEY, index + 2)
-		keys = []
 		for _ in range(10):
 			self.mix_into_state(self.key)
 			self.key = self.permute(self.key)
-			keys.append(self.state[4:8])
+			yield self.state[4:8]
 		self.set_params(KDFDomain.LAST_ROUND)
 		self.mix_into_state(self.key)
-		keys.append(self.state[4:8])
-		return keys
+		yield self.state[4:8]
 
 	def clone(self) -> BlakeKeyGen:
 		return deepcopy(self)
