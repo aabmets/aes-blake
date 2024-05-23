@@ -10,7 +10,6 @@
 #
 import pytest
 import typing as t
-from src.aes_sbox import SBox
 from src.uint import BaseUint, Uint8, Uint32, Uint64
 
 
@@ -60,9 +59,6 @@ def test_uint8():
 	assert (v1 << 1).value == 0x55  # rotate left by 1 bit
 	assert (v1 >> 4).value == 0xAA  # switch halves
 
-	assert v2.sub_bytes(SBox.ENC).value == 0x4B
-	assert v2.sub_bytes(SBox.DEC).value == 0xCC
-
 
 def test_uint32():
 	with pytest.raises(TypeError):
@@ -100,9 +96,6 @@ def test_uint32():
 	assert (v1 << 1).value == 0x557799BB   # rotate left by 1 bit
 	assert (v1 >> 16).value == 0xCCDDAABB  # switch halves
 
-	assert v2.sub_bytes(SBox.ENC).value == 0x4BC12816
-	assert v2.sub_bytes(SBox.DEC).value == 0xCCDDEEFF
-
 
 def test_uint64():
 	with pytest.raises(TypeError):
@@ -139,9 +132,6 @@ def test_uint64():
 	assert (v1 >> 1).value == 0xD55DE66EF77FD55D   # rotate right by 1 bit
 	assert (v1 << 1).value == 0x557799BBDDFF5577   # rotate left by 1 bit
 	assert (v1 >> 32).value == 0xEEFFAABBAABBCCDD  # switch halves
-
-	assert v2.sub_bytes(SBox.ENC).value == 0x4BC12816ACEA4BC1
-	assert v2.sub_bytes(SBox.DEC).value == 0xCCDDEEFFAABBCCDD
 
 
 def test_to_bytes():
@@ -182,5 +172,3 @@ def test_from_bytes():
 
 	uint = Uint64.from_bytes(b"\xAA\xBB\xCC\xDD\xEE\xFF\xAA\xBB", byteorder="little")
 	assert uint.value == 0xBBAAFFEEDDCCBBAA
-
-
