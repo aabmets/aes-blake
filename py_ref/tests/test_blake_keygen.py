@@ -167,12 +167,11 @@ def test_compress(blank_keygen):
 		assert keygen.state[i].value == expected[i]
 
 
-# def test_derive_keys(blank_keygen):
-# 	keygen = blank_keygen.clone()
-# 	from src import debug
-# 	for chunk in keygen.derive_keys(index=0xFF):
-# 		print()
-# 		debug.pretty_print_vector(chunk)
+def test_derive_keys(blank_keygen):
+	keygen = blank_keygen.clone()
+	for chunk in keygen.derive_keys(counter=0xFF):
+		assert chunk == [0xE89D66BC, 0x91CA531C, 0x3D812AC6, 0xFEF36AA9]
+		break
 
 
 def test_normal_init():
