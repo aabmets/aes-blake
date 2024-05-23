@@ -8,32 +8,22 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-import typing as t
 from .uint import Uint8
-from .blake_keygen import BlakeKeyGen
 from .aes_sbox import SBox
-
-
-Bytes = t.Union[bytes | bytearray]
+from .blake_keygen import BlakeKeyGen
+from .uint import IterNum
 
 
 class AESBlock:
-	def __init__(self, keygen: BlakeKeyGen, data: Bytes, index: int) -> None:
-		self.keygen = keygen.clone()
+	def __init__(self, keygen: BlakeKeyGen, data: IterNum, counter: int) -> None:
 		self.vector = [Uint8(b) for b in data]
-		self.keys = self.precompute_keys(index)
-
-	def precompute_keys(self, index: int) -> list[list[Uint8]]:
-		self.keygen.set_block_index(index)
-		keys = []
-		for _ in range(10):
-			self.keygen.compress("expand")
-			key = self.keygen.to_uint8_list()
-			keys.append(key)
-		self.keygen.compress("finalize")
-		key = self.keygen.to_uint8_list()
-		keys.append(key)
-		return keys
+		self.keys = []
+		for chunk in keygen.clone().derive_keys(counter):
+			key = []
+			for uint32 in chunk:
+				for byte in uint32.to_bytes():
+					key.append(Uint8(byte))
+			self.keys.append(key)
 
 	def encrypt_block(self) -> None:
 		self.add_round_key(0)
@@ -107,4 +97,4 @@ class AESBlock:
 
 	def sub_bytes(self, sbox: SBox) -> None:
 		for uint8 in self.vector:
-			uint8.sub_bytes(sbox)
+			uint8.value = sbox.value[uint8.value]

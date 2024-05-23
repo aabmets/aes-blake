@@ -14,7 +14,7 @@ import operator as opr
 from abc import ABC, abstractmethod
 
 
-__all__ = ["BaseUint", "Uint8", "Uint32", "Uint64"]
+__all__ = ["IterNum", "BaseUint", "Uint8", "Uint32", "Uint64"]
 
 
 T = t.TypeVar("T", bound="BaseUint")
