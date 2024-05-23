@@ -12,7 +12,6 @@ from __future__ import annotations
 import typing as t
 import operator as opr
 from abc import ABC, abstractmethod
-from .aes_sbox import SBox
 
 
 __all__ = ["BaseUint", "Uint8", "Uint32", "Uint64"]
@@ -51,11 +50,6 @@ class BaseUint(ABC):
 
 	def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
 		return self.value.to_bytes(self.bit_count // 8, byteorder)
-
-	def sub_bytes(self, sbox: SBox) -> BaseUint:
-		sb = [sbox.value[b] for b in self.to_bytes()]
-		self._value = int.from_bytes(sb)
-		return self
 
 	def _operate(self, operator: t.Callable, other: int | BaseUint, cls: t.Type = None) -> t.Any:
 		if isinstance(other, BaseUint):
