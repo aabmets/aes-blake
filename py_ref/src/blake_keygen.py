@@ -17,9 +17,10 @@ from . import utils
 
 
 class KDFDomain(Enum):
-	DIGEST_CTX = 0x20  # 0010 0000
-	DERIVE_KEY = 0x40  # 0100 0000
-	LAST_ROUND = 0x80  # 1000 0000
+	DIGEST_CTX = 0x10   # 0001 0000
+	DERIVE_KEYS = 0x20  # 0010 0000
+	COMPUTE_CHK = 0x40  # 0100 0000
+	LAST_ROUND = 0x80   # 1000 0000
 
 
 class BlakeKeyGen:
@@ -92,12 +93,25 @@ class BlakeKeyGen:
 	def digest_context(self, context: bytes) -> list[Uint32]:
 		ctx = utils.bytes_to_uint32_vector(context, size=32)
 		clone = self.clone()
-		clone.compress(ctx[:16], counter=0x00FF_0000_00FF_0000)
-		clone.compress(ctx[16:], counter=0xFF00_0000_FF00_0000)
+		clone.compress(
+			message=ctx[:16],
+			counter=0x00FF_0000_00FF_0000,
+			domain=KDFDomain.DIGEST_CTX
+		)
+		clone.compress(
+			message=ctx[16:],
+			counter=0xFF00_0000_FF00_0000,
+			domain=KDFDomain.DIGEST_CTX
+		)
 		return clone.state
 
-	def compress(self, message: list[Uint32], counter: int) -> None:
-		self.set_params(KDFDomain.DIGEST_CTX, counter)
+	def compress(
+			self,
+			message: list[Uint32],
+			counter: int,
+			domain: KDFDomain
+	) -> None:
+		self.set_params(domain, counter)
 		for _ in range(6):
 			self.mix_into_state(message)
 			message = self.permute(message)
@@ -105,7 +119,7 @@ class BlakeKeyGen:
 		self.mix_into_state(message)
 
 	def derive_keys(self, counter: int) -> list[list[Uint32]]:
-		self.set_params(KDFDomain.DERIVE_KEY, counter)
+		self.set_params(KDFDomain.DERIVE_KEYS, counter)
 		for _ in range(10):
 			self.mix_into_state(self.key)
 			self.key = self.permute(self.key)
