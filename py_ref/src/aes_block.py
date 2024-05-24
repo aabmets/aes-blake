@@ -19,7 +19,7 @@ __all__ = ["AESBlock"]
 
 class AESBlock:
 	def __init__(self, keygen: BlakeKeyGen, data: IterNum, counter: int) -> None:
-		self.vector = [Uint8(b) for b in data]
+		self.state = [Uint8(b) for b in data]
 		self.keys = []
 		for chunk in keygen.clone().derive_keys(counter):
 			key = []
@@ -57,47 +57,47 @@ class AESBlock:
 		return Uint8(x ^ y)
 
 	def mix_single_column(self, a: int, b: int, c: int, d: int) -> None:
-		vec = self.vector
-		x = vec[a] ^ vec[b] ^ vec[c] ^ vec[d]
-		y = vec[a].value
-		vec[a] ^= x ^ self.xtime(vec[a] ^ vec[b])
-		vec[b] ^= x ^ self.xtime(vec[b] ^ vec[c])
-		vec[c] ^= x ^ self.xtime(vec[c] ^ vec[d])
-		vec[d] ^= x ^ self.xtime(vec[d] ^ y)
+		s = self.state
+		x = s[a] ^ s[b] ^ s[c] ^ s[d]
+		y = s[a].value
+		s[a] ^= x ^ self.xtime(s[a] ^ s[b])
+		s[b] ^= x ^ self.xtime(s[b] ^ s[c])
+		s[c] ^= x ^ self.xtime(s[c] ^ s[d])
+		s[d] ^= x ^ self.xtime(s[d] ^ y)
 
 	def mix_columns(self) -> None:
 		for i in range(0, 16, 4):
 			self.mix_single_column(i, i+1, i+2, i+3)
 
 	def inv_mix_columns(self) -> None:
-		vec = self.vector
+		s = self.state
 		for i in range(0, 16, 4):
-			m = vec[i] ^ vec[i + 2]
-			n = vec[i + 1] ^ vec[i + 3]
+			m = s[i] ^ s[i + 2]
+			n = s[i + 1] ^ s[i + 3]
 			x = self.xtime(self.xtime(m))
 			y = self.xtime(self.xtime(n))
-			vec[i] ^= x
-			vec[i + 1] ^= y
-			vec[i + 2] ^= x
-			vec[i + 3] ^= y
+			s[i] ^= x
+			s[i + 1] ^= y
+			s[i + 2] ^= x
+			s[i + 3] ^= y
 		self.mix_columns()
 
 	def shift_rows(self) -> None:
-		vec = self.vector
-		vec[1], vec[5], vec[9], vec[13] = vec[5], vec[9], vec[13], vec[1]
-		vec[2], vec[6], vec[10], vec[14] = vec[10], vec[14], vec[2], vec[6]
-		vec[3], vec[7], vec[11], vec[15] = vec[15], vec[3], vec[7], vec[11]
+		s = self.state
+		s[1], s[5], s[9], s[13] = s[5], s[9], s[13], s[1]
+		s[2], s[6], s[10], s[14] = s[10], s[14], s[2], s[6]
+		s[3], s[7], s[11], s[15] = s[15], s[3], s[7], s[11]
 
 	def inv_shift_rows(self) -> None:
-		vec = self.vector
-		vec[1], vec[5], vec[9], vec[13] = vec[13], vec[1], vec[5], vec[9]
-		vec[2], vec[6], vec[10], vec[14] = vec[10], vec[14], vec[2], vec[6]
-		vec[3], vec[7], vec[11], vec[15] = vec[7], vec[11], vec[15], vec[3]
+		s = self.state
+		s[1], s[5], s[9], s[13] = s[13], s[1], s[5], s[9]
+		s[2], s[6], s[10], s[14] = s[10], s[14], s[2], s[6]
+		s[3], s[7], s[11], s[15] = s[7], s[11], s[15], s[3]
 
 	def add_round_key(self, index: int) -> None:
 		for i, uint8 in enumerate(self.keys[index]):
-			self.vector[i] ^= uint8
+			self.state[i] ^= uint8
 
 	def sub_bytes(self, sbox: SBox) -> None:
-		for uint8 in self.vector:
+		for uint8 in self.state:
 			uint8.value = sbox.value[uint8.value]
