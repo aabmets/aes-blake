@@ -123,10 +123,10 @@ def test_compute_bib(blank_keygen):
 	clone = blank_keygen.clone()
 
 	bib = clone.compute_bcb(key=b'', nonce=b'')
-	assert bib.value == 0x3131_3131_3131_3131
+	assert bib.value == 0x6363_6363_6363_6363
 
 	bib = clone.compute_bcb(key=b'abcdefgh', nonce=b'12345678')
-	assert bib.value == 0x3337_1794_6B9D_0BC1
+	assert bib.value == 0x7DB2_0578_77C8_98DE
 
 
 def test_digest_context(blank_keygen):
@@ -177,20 +177,20 @@ def test_derive_keys(blank_keygen):
 def test_normal_init():
 	keygen = BlakeKeyGen(key=b'\x00', nonce=b'', context=b'')
 	expected = [
-		0x33029E3D, 0x4AABCAB1, 0x99C2E269, 0x04D6FAD7,
-		0x7D8F596A, 0x84DD6804, 0x7B445B09, 0x5C6D3762,
-		0x72333951, 0x9E163E3A, 0x91332068, 0xE385CF51,
-		0xAC97B26C, 0x6E567A49, 0xF43CAB0E, 0x881E43AF,
+		0x12B6DC99, 0x283A4ECD, 0x71AFA85C, 0x3A26A768,
+		0xC8C3F8F4, 0x30BAFFCC, 0x50900167, 0x2982986C,
+		0xE7327C06, 0xD80CAF0A, 0xB847336D, 0xF7ECDCF6,
+		0x09A4C33E, 0x3B73AA08, 0xEB6ECA6E, 0xF8A6167C,
 	]
 	for i in range(16):
 		assert keygen.state[i].value == expected[i]
 
 	keygen = BlakeKeyGen(key=b'\x01', nonce=b'', context=b'')
 	expected = [
-		0x1020D1D9, 0x71CA2DDF, 0xB0104484, 0x750EF079,
-		0xA67D1FDC, 0x03015AD3, 0x3DE8E17C, 0xE42D81B9,
-		0x9236024F, 0x90C389CA, 0x50305FB5, 0xFE64C926,
-		0x5F1797A2, 0x9F7D2026, 0x6020F6DF, 0xEF1C0D80
+		0x2426286B, 0x692F0422, 0xC8593E02, 0xC08ED732,
+		0x3678BFAB, 0x4827F32D, 0x54EE3EDB, 0x262DA37C,
+		0xA505FD5D, 0x4A69B53B, 0x891F8AA9, 0xCAAE2DED,
+		0x649AEFCD, 0xBF955E8D, 0x3D401A37, 0x91F65838,
 	]
 	for i in range(16):
 		assert keygen.state[i].value == expected[i]

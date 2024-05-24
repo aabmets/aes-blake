@@ -83,10 +83,9 @@ class BlakeKeyGen:
 
 	@staticmethod
 	def compute_bcb(key: bytes, nonce: bytes) -> Uint64:
-		key = utils.zero_pad_to_size(key, size=8)
 		nonce = utils.zero_pad_to_size(nonce, size=8)
+		key = utils.zero_pad_to_size(key, size=8)
 		key = [SBox.ENC.value[b] for b in key[:8]]
-		nonce = [SBox.DEC.value[b] for b in nonce[:8]]
 		bcb = [x ^ y for x, y in zip(key, nonce)]
 		return Uint64.from_bytes(bcb, byteorder="little")
 
