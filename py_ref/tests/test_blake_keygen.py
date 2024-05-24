@@ -14,6 +14,26 @@ from src.uint import Uint32, Uint64
 from src import utils
 
 
+__all__ = [
+	"fixture_blank_keygen",
+	"test_mix_method",
+	"test_mix_into_state",
+	"test_permute",
+	"test_set_params_digest_ctx_domain",
+	"test_set_params_derive_keys_domain",
+	"test_set_params_compute_chk_domain",
+	"test_set_params_last_round_domain",
+	"test_set_params_block_index",
+	"test_compute_bib",
+	"test_digest_context",
+	"test_compress_digest_ctx_domain",
+	"test_compress_derive_keys_domain",
+	"test_compress_compute_chk_domain",
+	"test_derive_keys",
+	"test_normal_init"
+]
+
+
 @pytest.fixture(name="blank_keygen", scope="module")
 def fixture_blank_keygen():
 	keygen = BlakeKeyGen(key=b'', nonce=b'', context=b'')
@@ -86,14 +106,23 @@ def test_set_params_digest_ctx_domain(blank_keygen):
 	keygen = blank_keygen.clone()
 	keygen.set_params(domain=KDFDomain.DIGEST_CTX)
 	for i in range(8, 12):
-		assert keygen.state[i].value == 0x20
+		assert keygen.state[i].value == 0x10
 	for i in [0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15]:
 		assert keygen.state[i].value == 0
 
 
 def test_set_params_derive_keys_domain(blank_keygen):
 	keygen = blank_keygen.clone()
-	keygen.set_params(domain=KDFDomain.DERIVE_KEY)
+	keygen.set_params(domain=KDFDomain.DERIVE_KEYS)
+	for i in range(8, 12):
+		assert keygen.state[i].value == 0x20
+	for i in [0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15]:
+		assert keygen.state[i].value == 0
+
+
+def test_set_params_compute_chk_domain(blank_keygen):
+	keygen = blank_keygen.clone()
+	keygen.set_params(domain=KDFDomain.COMPUTE_CHK)
 	for i in range(8, 12):
 		assert keygen.state[i].value == 0x40
 	for i in [0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15]:
@@ -133,35 +162,55 @@ def test_digest_context(blank_keygen):
 	keygen = blank_keygen.clone()
 	state = keygen.digest_context(b'')
 	expected = [
-		0xECB86367, 0xBFD3DD4A, 0xFF8285A7, 0xC22FF92C,
-		0x859C06E4, 0x87B663A1, 0x84EA7C51, 0x4E0F2BB1,
-		0xBDF19A21, 0x6C05C3EA, 0x2878731D, 0x44C08C32,
-		0x3924C540, 0x0D51AF40, 0x178F244F, 0x1CA0EB45,
+		0x4066EEF0, 0xA932B6BE, 0x3F996FD7, 0x71078506,
+		0x5B206B6C, 0x3A7C157E, 0x3CCA8E2D, 0x1FDFC10B,
+		0x3E7922CD, 0x7F333E4F, 0x2470DFDB, 0xB60C79AF,
+		0x90D4BB1D, 0xA8FC153F, 0x68665CAA, 0xDDEB6721,
 	]
 	for i in range(16):
 		assert state[i].value == expected[i]
 
 
-def test_compress(blank_keygen):
+def test_compress_digest_ctx_domain(blank_keygen):
 	keygen = blank_keygen.clone()
 	message = utils.bytes_to_uint32_vector(data=b'', size=16)
 
-	keygen.compress(message, counter=0)
+	keygen.compress(message, counter=0xABCDEF, domain=KDFDomain.DIGEST_CTX)
 	expected = [
-		0xF8D374A2, 0x8159CAF7, 0x8A917AD3, 0x335959CF,
-		0xECD24E79, 0x7631BEB0, 0x16EE1CD4, 0xCC697A22,
-		0xC72572FF, 0x54B46F14, 0xF55B9D12, 0x040943BD,
-		0xF6F215ED, 0xF419CF01, 0x2EEACB51, 0x3047B2FC,
+		0x7E084F83, 0x32B3B75F, 0x6A3FE28B, 0x6D5A0C44,
+		0xE14DB6D2, 0xD434C21B, 0xF04DC021, 0xA184F5A6,
+		0xD8896AF3, 0x39579F96, 0xDB4C0F76, 0x56A63EC7,
+		0xC6B5EF3C, 0xE29CB1AC, 0xDF5F01DB, 0x21D43EDC,
 	]
 	for i in range(16):
 		assert keygen.state[i].value == expected[i]
 
-	keygen.compress(message, counter=1)
+
+def test_compress_derive_keys_domain(blank_keygen):
+	keygen = blank_keygen.clone()
+	message = utils.bytes_to_uint32_vector(data=b'', size=16)
+
+	keygen.compress(message, counter=0xABCDEF, domain=KDFDomain.DERIVE_KEYS)
 	expected = [
-		0x668F50FF, 0xDBF71E3C, 0x5AB31C59, 0x63997B7A,
-		0x297170CC, 0x4D9B6D6A, 0xDCFC2859, 0x65C3EB7C,
-		0xBC48C590, 0xFA64C1F6, 0x087B143B, 0x8EE83077,
-		0x5C214ADC, 0x372474BB, 0xEF3A0986, 0x69CE7695,
+		0xF2976620, 0x0C4502FB, 0xDB1DF282, 0xBA66F35E,
+		0x177E6104, 0xBBD4D067, 0xDB5FA814, 0x5B94AC47,
+		0x7BCC422B, 0x27B60B54, 0x82FBDE62, 0x26340A1E,
+		0x0B55B157, 0x915E8F1E, 0x750D7DCA, 0xB092C99E,
+	]
+	for i in range(16):
+		assert keygen.state[i].value == expected[i]
+
+
+def test_compress_compute_chk_domain(blank_keygen):
+	keygen = blank_keygen.clone()
+	message = utils.bytes_to_uint32_vector(data=b'', size=16)
+
+	keygen.compress(message, counter=0xABCDEF, domain=KDFDomain.COMPUTE_CHK)
+	expected = [
+		0x03964028, 0x1944D8D6, 0x80CB0A4B, 0xC73D1113,
+		0x47FA60EB, 0xF7BED8A3, 0xDD26012A, 0xFC0909D4,
+		0x3C5BDA7B, 0xAD09ECAB, 0xC4CCD04F, 0xB9FE611F,
+		0xDE288819, 0x95EB02A0, 0x9462CEE3, 0x17EE128A,
 	]
 	for i in range(16):
 		assert keygen.state[i].value == expected[i]
@@ -170,27 +219,27 @@ def test_compress(blank_keygen):
 def test_derive_keys(blank_keygen):
 	keygen = blank_keygen.clone()
 	for chunk in keygen.derive_keys(counter=0xFF):
-		assert chunk == [0xE89D66BC, 0x91CA531C, 0x3D812AC6, 0xFEF36AA9]
+		assert chunk == [0x51FC6266, 0x315B5CD0, 0x3B3E2E1A, 0x17D115CB]
 		break
 
 
 def test_normal_init():
 	keygen = BlakeKeyGen(key=b'\x00', nonce=b'', context=b'')
 	expected = [
-		0x12B6DC99, 0x283A4ECD, 0x71AFA85C, 0x3A26A768,
-		0xC8C3F8F4, 0x30BAFFCC, 0x50900167, 0x2982986C,
-		0xE7327C06, 0xD80CAF0A, 0xB847336D, 0xF7ECDCF6,
-		0x09A4C33E, 0x3B73AA08, 0xEB6ECA6E, 0xF8A6167C,
+		0x36EA6F8E, 0xD1D96C15, 0xCDE0704D, 0x1C5BA81C,
+		0x962AD8FE, 0x976D9DB4, 0x54997A13, 0xFDA31AAA,
+		0x6A4AF383, 0x504F1BA2, 0xE7626812, 0x75EE97E0,
+		0xD08A0BC8, 0x0F9690E7, 0x883A1E83, 0x09137F84,
 	]
 	for i in range(16):
 		assert keygen.state[i].value == expected[i]
 
 	keygen = BlakeKeyGen(key=b'\x01', nonce=b'', context=b'')
 	expected = [
-		0x2426286B, 0x692F0422, 0xC8593E02, 0xC08ED732,
-		0x3678BFAB, 0x4827F32D, 0x54EE3EDB, 0x262DA37C,
-		0xA505FD5D, 0x4A69B53B, 0x891F8AA9, 0xCAAE2DED,
-		0x649AEFCD, 0xBF955E8D, 0x3D401A37, 0x91F65838,
+		0x1A507B1D, 0x5322B0F5, 0x7CC05F76, 0x2DE26A09,
+		0x3F04F36A, 0xA5D761F4, 0x6C1E2F82, 0xC4F5539B,
+		0xAB195834, 0x9C4001A0, 0xA6327E94, 0x55DE1C72,
+		0x2A3B9E39, 0xCF6E4950, 0x58056C49, 0x98B3ABDF,
 	]
 	for i in range(16):
 		assert keygen.state[i].value == expected[i]

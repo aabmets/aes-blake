@@ -12,6 +12,9 @@ import pytest
 from src.aes_sbox import SBox
 
 
+__all__ = ["fixture_sbox", "test_sbox", "test_inv_sbox"]
+
+
 @pytest.fixture(name="sbox", scope="module")
 def fixture_sbox():
 	sbox = [0] * 256

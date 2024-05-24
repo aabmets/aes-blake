@@ -14,8 +14,19 @@ from src.aes_block import AESBlock
 from src.blake_keygen import BlakeKeyGen
 
 
+__all__ = [
+	"fixture_aes_block",
+	"test_aes_block_init",
+	"test_encrypt_decrypt",
+	"test_mix_columns",
+	"test_shift_rows",
+	"test_add_round_key",
+	"test_sub_bytes"
+]
+
+
 @pytest.fixture(name="aes_block", scope="function")
-def fixture_internal_state() -> AESBlock:
+def fixture_aes_block() -> AESBlock:
 	keygen = BlakeKeyGen(b'', b'', b'')
 	data = [
 		0x87, 0xF2, 0x4D, 0x97,
@@ -31,13 +42,12 @@ def test_aes_block_init():
 	block = AESBlock(keygen, [0] * 16, counter=0)
 	for uint8 in block.vector:
 		assert uint8.value == 0
-
 	assert len(block.keys) == 11
 	for key_set in block.keys:
 		assert len(key_set) == 16
 
 
-def test_aes_block_encrypt_decrypt(aes_block):
+def test_encrypt_decrypt(aes_block):
 	values = [obj.value for obj in aes_block.vector]
 	assert values == [
 		0x87, 0xF2, 0x4D, 0x97,
@@ -48,10 +58,10 @@ def test_aes_block_encrypt_decrypt(aes_block):
 	aes_block.encrypt_block()
 	values = [obj.value for obj in aes_block.vector]
 	assert values == [
-		0xCD, 0x1C, 0x8C, 0x33,
-		0xDE, 0xB9, 0x19, 0xA7,
-		0x19, 0x20, 0x0A, 0x8B,
-		0xD6, 0xCB, 0xB2, 0x58,
+		0xC4, 0xC5, 0x04, 0x84,
+		0x3F, 0x51, 0x6A, 0xED,
+		0xAC, 0xC3, 0x31, 0x12,
+		0x85, 0x54, 0xE6, 0x0B,
 	]
 	aes_block.decrypt_block()
 	values = [obj.value for obj in aes_block.vector]
@@ -63,7 +73,7 @@ def test_aes_block_encrypt_decrypt(aes_block):
 	]
 
 
-def test_aes_block_mix_columns(aes_block):
+def test_mix_columns(aes_block):
 	aes_block.mix_columns()
 	values = [obj.value for obj in aes_block.vector]
 	assert values == [
@@ -82,7 +92,7 @@ def test_aes_block_mix_columns(aes_block):
 	]
 
 
-def test_aes_block_shift_rows(aes_block):
+def test_shift_rows(aes_block):
 	aes_block.shift_rows()
 	values = [obj.value for obj in aes_block.vector]
 	assert values == [
@@ -101,14 +111,14 @@ def test_aes_block_shift_rows(aes_block):
 	]
 
 
-def test_aes_block_add_round_key(aes_block):
+def test_add_round_key(aes_block):
 	aes_block.add_round_key(0)
 	values = [obj.value for obj in aes_block.vector]
 	assert values == [
-		0xB4, 0xB0, 0xF7, 0x49,
-		0x0A, 0x2D, 0xA1, 0x0D,
-		0xE6, 0xFB, 0x8D, 0x46,
-		0x11, 0xBE, 0xC0, 0x9E,
+		0x8F, 0x80, 0x01, 0xB8,
+		0x2C, 0x26, 0xCC, 0xCB,
+		0x6A, 0x67, 0x02, 0x68,
+		0x30, 0xDD, 0xF5, 0x09,
 	]
 	aes_block.add_round_key(0)
 	values = [obj.value for obj in aes_block.vector]
@@ -120,7 +130,7 @@ def test_aes_block_add_round_key(aes_block):
 	]
 
 
-def test_aes_block_sub_bytes(aes_block):
+def test_sub_bytes(aes_block):
 	aes_block.sub_bytes(SBox.ENC)
 	values = [obj.value for obj in aes_block.vector]
 	assert values == [

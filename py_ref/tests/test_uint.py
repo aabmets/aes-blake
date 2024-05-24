@@ -13,6 +13,15 @@ import typing as t
 from src.uint import BaseUint, Uint8, Uint32, Uint64
 
 
+__all__ = [
+	"test_uint_inheritance",
+	"test_uint8",
+	"test_uint32",
+	"test_uint64",
+	"test_to_bytes"
+]
+
+
 def test_uint_inheritance():
 	for uint_type in [Uint8, Uint32, Uint64]:
 		uint = uint_type()
