@@ -38,12 +38,12 @@ def zero_pad_to_size(data: bytes, size: int) -> bytes:
 	return data + b'\x00' * (size - len(data))
 
 
-def pkcs7_pad(data):
-	pad_len = 16 - (len(data) % 16)
+def pkcs7_pad(data: bytes, size: int = 16) -> bytes:
+	pad_len = size - (len(data) % size)
 	padding = bytes([pad_len] * pad_len)
 	return data + padding
 
 
-def pkcs7_unpad(data):
+def pkcs7_unpad(data: bytes) -> bytes:
 	pad_len = data[-1]
 	return data[:-pad_len]

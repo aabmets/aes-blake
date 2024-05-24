@@ -14,6 +14,9 @@ from .blake_keygen import BlakeKeyGen
 from .uint import IterNum
 
 
+__all__ = ["AESBlock"]
+
+
 class AESBlock:
 	def __init__(self, keygen: BlakeKeyGen, data: IterNum, counter: int) -> None:
 		self.vector = [Uint8(b) for b in data]

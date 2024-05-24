@@ -16,6 +16,9 @@ from .uint import Uint32, Uint64
 from . import utils
 
 
+__all__ = ["KDFDomain", "BlakeKeyGen"]
+
+
 class KDFDomain(Enum):
 	DIGEST_CTX = 0x10   # 0001 0000
 	DERIVE_KEYS = 0x20  # 0010 0000
