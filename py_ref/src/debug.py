@@ -16,9 +16,9 @@ from .uint import BaseUint
 __all__ = [
 	"to_binary_bytes",
 	"to_binary_string",
+	"pretty_print_binary",
 	"to_hex_bytes",
 	"to_hex_string",
-	"pretty_print_binary",
 	"pretty_print_hex",
 	"pretty_print_vector"
 ]
@@ -36,17 +36,6 @@ def to_binary_string(uint: BaseUint, sep=' ') -> str:
 	return sep.join(to_binary_bytes(uint))
 
 
-def to_hex_bytes(uint: BaseUint) -> list[str]:
-	out = []
-	for bb_str in to_binary_bytes(uint):
-		out.append(f"{int(bb_str, base=2):02X}")
-	return out
-
-
-def to_hex_string(uint: BaseUint, sep=' ') -> str:
-	return sep.join(to_hex_bytes(uint))
-
-
 def pretty_print_binary(uint: BaseUint, color_0="blue", color_1="red", end='\n') -> None:
 	bb_list = []
 	for bb_str in to_binary_bytes(uint):
@@ -59,17 +48,55 @@ def pretty_print_binary(uint: BaseUint, color_0="blue", color_1="red", end='\n')
 	_console.print(concat_bb, end=end)
 
 
-def pretty_print_hex(uint: BaseUint, color="green", end='\n') -> None:
-	concat_hex = to_hex_string(uint)
-	hex_str = f"[{color}]{concat_hex}"
+def to_hex_bytes(uint: BaseUint) -> list[str]:
+	out = []
+	for bb_str in to_binary_bytes(uint):
+		out.append(f"{int(bb_str, base=2):02X}")
+	return out
+
+
+def to_hex_string(uint: BaseUint, sep=' ') -> str:
+	return sep.join(to_hex_bytes(uint))
+
+
+def pretty_print_hex(
+		uint: BaseUint,
+		color="green",
+		end='\n',
+		hex_prefix=False,
+		comma=False
+) -> None:
+	sep = '' if hex_prefix else ' '
+	prefix = '0x' if hex_prefix else ''
+	suffix = ',' if comma else ''
+	concat_hex = to_hex_string(uint, sep=sep)
+	hex_str = f"{prefix}[{color}]{concat_hex}[/]{suffix}"
 	_console.print(hex_str, end=end)
 
 
-def pretty_print_vector(vector: list[BaseUint], color="yellow") -> None:
-	for i, v in enumerate(vector):
+def pretty_print_vector(
+		vector: list[BaseUint],
+		color="yellow",
+		py_var: str = None,
+) -> None:
+	if py_var is not None:
+		print(f"\n{py_var} = [")
+	hex_prefix = bool(py_var)
+	for i, uint in enumerate(vector):
 		if i % 4 == 0 and i != 0:
 			print()
-		pretty_print_hex(v, color=color, end='')
+		if hex_prefix and i % 4 == 0:
+			print('    ', end='')
+		pretty_print_hex(
+			uint, color,
+			end='',
+			hex_prefix=hex_prefix,
+			comma=hex_prefix
+		)
 		if i not in [3, 7, 11, 15]:
-			print('  ', end='')
-	print()
+			sep = ' ' if hex_prefix else '  '
+			print(sep, end='')
+	if py_var is not None:
+		print(f"\n]")
+	else:
+		print()
