@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 from src.checksum import CheckSum
-from src.uint import Uint8, Uint32
+from src.uint import Uint8
 
 
 __all__ = ["test_checksum"]
@@ -28,32 +28,17 @@ def test_checksum():
 	chk.xor_with(data1)
 	for i in range(0, 16):
 		assert chk.checksum[i] == 0x27
-	for i in range(16, 32):
-		assert chk.checksum[i] == 0
 
 	chk.xor_with(data2)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0x27
-	for i in range(16, 32):
-		assert chk.checksum[i] == 0xEB
+		assert chk.checksum[i] == 0xCC
 
 	chk.xor_with(data3)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0xBD  # 0x27 ^ 0x9A
-	for i in range(16, 32):
-		assert chk.checksum[i] == 0xEB
+		assert chk.checksum[i] == 0x56
 
 	chk.xor_with(data4)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0xBD
-	for i in range(16, 32):
-		assert chk.checksum[i] == 0xB7  # 0xEB ^ 0x5C
+		assert chk.checksum[i] == 0x0A
 
-	vector = chk.to_uint32_list()
-	assert len(vector) == 8
-	for obj in vector:
-		assert isinstance(obj, Uint32)
-	for i in range(0, 4):
-		assert vector[i].value == 0xBDBDBDBD
-	for i in range(4, 8):
-		assert vector[i].value == 0xB7B7B7B7
+	assert chk.to_bytes() == b'\x0A' * 16

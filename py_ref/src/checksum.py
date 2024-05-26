@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-from .uint import IterNum, Uint8, Uint32
+from .uint import IterNum, Uint8
 
 
 __all__ = ["CheckSum"]
@@ -17,19 +17,11 @@ __all__ = ["CheckSum"]
 
 class CheckSum:
 	def __init__(self) -> None:
-		self.checksum = [Uint8(0) for _ in range(32)]
-		self.pointer = 0
+		self.checksum = [Uint8(0) for _ in range(16)]
 
 	def xor_with(self, data: IterNum) -> None:
 		for i, b in enumerate(data):
-			j = i + self.pointer
-			self.checksum[j] ^= b
-		self.pointer ^= 16
+			self.checksum[i] ^= b
 
-	def to_uint32_list(self) -> list[Uint32]:
-		out = []
-		for i in range(0, 32, 4):
-			chunk = self.checksum[i:i + 4]
-			obj = Uint32.from_bytes(chunk)
-			out.append(obj)
-		return out
+	def to_bytes(self) -> bytes:
+		return bytes(self.checksum)
