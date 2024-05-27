@@ -55,7 +55,8 @@ def test_encrypt_decrypt(aes_block):
 		0x46, 0xE7, 0x4A, 0xC3,
 		0xA6, 0x8C, 0xD8, 0x95,
 	]
-	aes_block.encrypt_block()
+	for _ in aes_block.encryption_generator():
+		pass
 	values = [obj.value for obj in aes_block.state]
 	assert values == [
 		0xC4, 0xC5, 0x04, 0x84,
@@ -63,7 +64,8 @@ def test_encrypt_decrypt(aes_block):
 		0xAC, 0xC3, 0x31, 0x12,
 		0x85, 0x54, 0xE6, 0x0B,
 	]
-	aes_block.decrypt_block()
+	for _ in aes_block.decryption_generator():
+		pass
 	values = [obj.value for obj in aes_block.state]
 	assert values == [
 		0x87, 0xF2, 0x4D, 0x97,

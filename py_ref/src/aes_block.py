@@ -8,6 +8,9 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from __future__ import annotations
+import collections.abc as c
+from copy import deepcopy
 from .uint import Uint8
 from .aes_sbox import SBox
 from .blake_keygen import BlakeKeyGen
@@ -28,9 +31,10 @@ class AESBlock:
 					key.append(Uint8(byte))
 			self.keys.append(key)
 
-	def encrypt_block(self) -> None:
+	def encryption_generator(self) -> c.Generator[bool, None, None]:
 		self.add_round_key(0)
 		for i in range(1, 10):
+			yield False  # exchange columns
 			self.sub_bytes(SBox.ENC)
 			self.shift_rows()
 			self.mix_columns()
@@ -39,7 +43,7 @@ class AESBlock:
 		self.shift_rows()
 		self.add_round_key(-1)
 
-	def decrypt_block(self) -> None:
+	def decryption_generator(self) -> c.Generator[bool, None, None]:
 		self.add_round_key(-1)
 		self.inv_shift_rows()
 		self.sub_bytes(SBox.DEC)
@@ -48,6 +52,7 @@ class AESBlock:
 			self.inv_mix_columns()
 			self.inv_shift_rows()
 			self.sub_bytes(SBox.DEC)
+			yield False  # inverse exchange columns
 		self.add_round_key(0)
 
 	@staticmethod
@@ -101,3 +106,6 @@ class AESBlock:
 	def sub_bytes(self, sbox: SBox) -> None:
 		for uint8 in self.state:
 			uint8.value = sbox.value[uint8.value]
+
+	def clone(self) -> AESBlock:
+		return deepcopy(self)

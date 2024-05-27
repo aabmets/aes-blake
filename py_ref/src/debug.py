@@ -70,7 +70,7 @@ def pretty_print_hex(
 	prefix = '0x' if hex_prefix else ''
 	suffix = ',' if comma else ''
 	concat_hex = to_hex_string(uint, sep=sep)
-	hex_str = f"{prefix}[{color}]{concat_hex}[/]{suffix}"
+	hex_str = f"[{color}]{prefix}{concat_hex}[/]{suffix}"
 	_console.print(hex_str, end=end)
 
 
