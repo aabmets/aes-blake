@@ -17,7 +17,7 @@ __all__ = ["test_checksum"]
 
 def test_checksum():
 	chk = CheckSum()
-	for obj in chk.checksum:
+	for obj in chk.state:
 		assert isinstance(obj, Uint8)
 
 	data1 = b'\x27' * 16
@@ -27,18 +27,18 @@ def test_checksum():
 
 	chk.xor_with(data1)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0x27
+		assert chk.state[i] == 0x27
 
 	chk.xor_with(data2)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0xCC
+		assert chk.state[i] == 0xCC
 
 	chk.xor_with(data3)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0x56
+		assert chk.state[i] == 0x56
 
 	chk.xor_with(data4)
 	for i in range(0, 16):
-		assert chk.checksum[i] == 0x0A
+		assert chk.state[i] == 0x0A
 
 	assert chk.to_bytes() == b'\x0A' * 16

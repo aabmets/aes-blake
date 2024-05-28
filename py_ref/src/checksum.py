@@ -17,11 +17,11 @@ __all__ = ["CheckSum"]
 
 class CheckSum:
 	def __init__(self) -> None:
-		self.checksum = [Uint8(0) for _ in range(16)]
+		self.state = [Uint8(0) for _ in range(16)]
 
 	def xor_with(self, data: IterNum) -> None:
 		for i, b in enumerate(data):
-			self.checksum[i] ^= b
+			self.state[i] ^= b
 
 	def to_bytes(self) -> bytes:
-		return bytes(self.checksum)
+		return bytes(self.state)
