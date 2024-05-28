@@ -14,6 +14,16 @@ from src.blake_keygen import BlakeKeyGen
 from src import utils
 
 
+__all__ = [
+	"fixture_get_padded_text",
+	"fixture_init_components",
+	"test_init_components_128",
+	"test_init_components_256",
+	"test_init_components_386",
+	"test_init_components_512"
+]
+
+
 @pytest.fixture(name="get_padded_text", scope='module')
 def fixture_get_padded_text():
 	def closure(size: int):

@@ -15,6 +15,16 @@ from src.blake_keygen import BlakeKeyGen
 from src.aes_block import AESBlock
 
 
+__all__ = [
+	"fixture_blocks_data",
+	"fixture_create_blocks",
+	"test_exchange_columns_128",
+	"test_exchange_columns_256",
+	"test_exchange_columns_384",
+	"test_exchange_columns_512"
+]
+
+
 @pytest.fixture(name="blocks_data", scope="function")
 def fixture_blocks_data() -> list[bytes]:
 	data1 = bytes([b for b in [0x1A, 0x2A, 0x3A, 0x4A] for _ in range(4)])
