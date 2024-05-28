@@ -46,7 +46,8 @@ class AESBlake:
 		ciphertext, counter = [], 0
 
 		for i in range(0, len(plaintext), bsv * 16):
-			chunks, blocks, gens = self.init_components(keygen, plaintext, i, counter, Operation.ENC)
+			args = (keygen, plaintext, i, counter, Operation.ENC)
+			chunks, blocks, gens = self.init_components(*args)
 			self.run_encryption_rounds(blocks, gens)
 
 			for chunk, block, checksum in zip(chunks, blocks, checksums):
@@ -64,7 +65,8 @@ class AESBlake:
 		plaintext, counter = [], 0
 
 		for i in range(0, len(ciphertext), bsv * 16):
-			chunks, blocks, gens = self.init_components(keygen, ciphertext, i, counter, Operation.DEC)
+			args = (keygen, ciphertext, i, counter, Operation.DEC)
+			chunks, blocks, gens = self.init_components(*args)
 			self.run_decryption_rounds(blocks, gens)
 
 			for chunk, block, checksum in zip(chunks, blocks, checksums):
@@ -102,7 +104,8 @@ class AESBlake:
 		checksums = [CheckSum() for _ in range(bsv)]
 
 		for i in range(0, len(header), bsv * 16):
-			chunks, blocks, gens = self.init_components(keygen, header, i, counter, Operation.ENC)
+			args = (keygen, header, i, counter, Operation.ENC)
+			chunks, blocks, gens = self.init_components(*args)
 			self.run_encryption_rounds(blocks, gens)
 
 			for chunk, block, checksum in zip(chunks, blocks, checksums):
