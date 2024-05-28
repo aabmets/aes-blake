@@ -48,6 +48,7 @@ class AESBlake:
 		for i in range(0, len(plaintext), bsv * 16):
 			chunks, blocks, gens = self.init_components(keygen, plaintext, i, counter, Operation.ENC)
 			self.run_encryption_rounds(blocks, gens)
+
 			for chunk, block, checksum in zip(chunks, blocks, checksums):
 				ciphertext.extend(block.state)
 				checksum.xor_with(chunk)
@@ -133,16 +134,16 @@ class AESBlake:
 	def run_encryption_rounds(self, blocks: list[AESBlock], gens: list[c.Generator]) -> None:
 		stop = False
 		while not stop:
-			self.exchange_columns(blocks)
 			for gen in gens:
 				stop = next(gen, True)
+			self.exchange_columns(blocks)
 
 	def run_decryption_rounds(self, blocks: list[AESBlock], gens: list[c.Generator]) -> None:
 		stop = False
 		while not stop:
+			self.exchange_columns(blocks, inverse=True)
 			for gen in gens:
 				stop = next(gen, True)
-			self.exchange_columns(blocks, inverse=True)
 
 	def exchange_columns(self, blocks: list[AESBlock], inverse=False) -> None:
 		enc, dec = [], []
