@@ -60,6 +60,9 @@ class AESBlake:
 
 	def decrypt(self, ciphertext: bytes, tag: bytes, nonce: bytes, header: bytes = b'') -> bytes:
 		bsv = self.block_size.value
+		if len(ciphertext) % (bsv * 16) != 0:
+			raise ValueError("Invalid ciphertext length!")
+
 		keygen = BlakeKeyGen(self.key, nonce, self.context)
 		checksums = [CheckSum() for _ in range(bsv)]
 		plaintext, counter = [], 0
