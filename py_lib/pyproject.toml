@@ -1,0 +1,112 @@
+[project]
+name = "aes-blake"
+version = "0.1.0"
+description = "AES cipher with the Blake hash function as key scheduling algorithm"
+authors = [
+   { name = "Mattias Aabmets", email = "mattias.aabmets@gmail.com" }
+]
+license = "Apache-2.0"
+readme = "../README.md"
+keywords = ["crypto", "cryptography", "security", "aes", "blake"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries"
+]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+"Repository" = "https://github.com/aabmets/aes-blake"
+"Documentation" = "https://github.com/aabmets/aes-blake/wiki"
+"Bug Tracker" = "https://github.com/aabmets/aes-blake/issues"
+
+[dependency-groups]
+dev = [
+    "cffi>=1.17.0",
+    "coverage>=7.6.0",
+    "isort>=6.0.1",
+    "hatchling>=1.24.0",
+    "packaging>=24.2",
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.1",
+    "psutil>=7.0.0",
+    "ruff>=0.11.5",
+    "setuptools>=70.0.0",
+]
+
+[tool.pytest.ini_options]
+console_output_style = "count"
+filterwarnings = ["ignore::DeprecationWarning"]
+testpaths = ["tests"]
+addopts = [
+    "--cov=aes_blake",
+    "--cov-report=html",
+    "--no-cov-on-fail",
+    "--import-mode=append",
+    "--numprocesses=auto",
+    "--maxprocesses=4",
+    "--dist=worksteal"
+]
+pythonpath = [
+    ".",
+    "./scripts",
+    "./aes_blake",
+    "./aes_blake/internal"
+]
+
+[tool.coverage.run]
+branch = true
+source = ["aes_blake"]
+
+[tool.coverage.html]
+directory = ".htmlcov"
+
+[tool.coverage.report]
+fail_under = 80
+skip_covered = true
+skip_empty = true
+ignore_errors = true
+exclude_lines = [
+    "@abstractmethod",
+    "pragma: no cover",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "def __repr__"
+]
+
+[build-system]
+requires = ["hatchling", "packaging"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["aes_blake", "scripts"]
+artifacts = [
+   "aes_blake/internal/bin/*.so",
+   "aes_blake/internal/bin/*.pyd"
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["aes_blake"]
+exclude = ["scripts"]
+artifacts = [
+   "aes_blake/internal/bin/*.so",
+   "aes_blake/internal/bin/*.pyd"
+]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "scripts/build.py"

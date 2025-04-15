@@ -1,0 +1,75 @@
+[project]
+name = "aes-blake"
+version = "0.1.0"
+description = "AES cipher with the Blake hash function as key scheduling algorithm"
+authors = [
+   { name = "Mattias Aabmets", email = "mattias.aabmets@gmail.com" }
+]
+license = "Apache-2.0"
+readme = "../README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "coverage>=7.6.0",
+    "isort>=6.0.1",
+    "matplotlib>=3.10.1",
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.1",
+    "psutil>=7.0.0",
+    "rich>=14.0.0",
+    "ruff>=0.11.5",
+]
+
+[tool.pytest.ini_options]
+console_output_style = "count"
+filterwarnings = ["ignore::DeprecationWarning"]
+testpaths = ["tests"]
+addopts = [
+    "--cov=src",
+    "--cov-report=html",
+    "--no-cov-on-fail",
+    "--import-mode=append",
+    "--numprocesses=auto",
+    "--maxprocesses=4",
+    "--dist=worksteal"
+]
+pythonpath = [
+    ".",
+    "./src"
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.html]
+directory = ".htmlcov"
+
+[tool.coverage.report]
+fail_under = 80
+skip_covered = true
+skip_empty = true
+ignore_errors = true
+exclude_lines = [
+    "@abstractmethod",
+    "pragma: no cover",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "def __repr__"
+]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = [
+   "ltr-backend/tests",
+   "ltr-backend/migration_scripts",
+   "ris_dashboard_backend/tests",
+   "ris_dashboard_backend/migration_scripts"
+]
+
+[tool.ruff.lint]
+extend-select = ["B", "SIM"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15

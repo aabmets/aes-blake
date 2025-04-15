@@ -37,6 +37,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+.htmlcov/
 htmlcov/
 .tox/
 .nox/
@@ -125,8 +126,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# PyCharm
+# IDE config
 .idea/
+.vscode/
 
 # Various
 .exclude
