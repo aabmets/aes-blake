@@ -40,9 +40,7 @@ class AESBlake:
         self.context = context
         self.block_size = block_size
 
-    def encrypt(
-        self, plaintext: bytes, nonce: bytes, header: bytes = b""
-    ) -> tuple[bytes, bytes]:
+    def encrypt(self, plaintext: bytes, nonce: bytes, header: bytes = b"") -> tuple[bytes, bytes]:
         bsv = self.block_size.value
         plaintext = utils.pkcs7_pad(plaintext, size=bsv * 16)
         keygen = BlakeKeyGen(self.key, nonce, self.context)
@@ -62,9 +60,7 @@ class AESBlake:
         tag = self.compute_auth_tag(keygen, checksums, header, counter)
         return bytes(ciphertext), tag
 
-    def decrypt(
-        self, ciphertext: bytes, tag: bytes, nonce: bytes, header: bytes = b""
-    ) -> bytes:
+    def decrypt(self, ciphertext: bytes, tag: bytes, nonce: bytes, header: bytes = b"") -> bytes:
         bsv = self.block_size.value
         if len(ciphertext) % (bsv * 16) != 0:
             raise ValueError("Invalid ciphertext length!")
@@ -102,9 +98,7 @@ class AESBlake:
             out.append(b1 ^ b2)
         return bytes(out)
 
-    def compute_header_checksum(
-        self, keygen: BlakeKeyGen, header: bytes, counter: int
-    ) -> bytes:
+    def compute_header_checksum(self, keygen: BlakeKeyGen, header: bytes, counter: int) -> bytes:
         bsv = self.block_size.value
         header = utils.pkcs7_pad(header, size=bsv * 16)
         checksums = [CheckSum() for _ in range(bsv)]
@@ -140,18 +134,14 @@ class AESBlake:
             pointer += 16
         return chunks, blocks, gens
 
-    def run_encryption_rounds(
-        self, blocks: list[AESBlock], gens: list[c.Generator]
-    ) -> None:
+    def run_encryption_rounds(self, blocks: list[AESBlock], gens: list[c.Generator]) -> None:
         stop = False
         while not stop:
             for gen in gens:
                 stop = next(gen, True)
             self.exchange_columns(blocks)
 
-    def run_decryption_rounds(
-        self, blocks: list[AESBlock], gens: list[c.Generator]
-    ) -> None:
+    def run_decryption_rounds(self, blocks: list[AESBlock], gens: list[c.Generator]) -> None:
         stop = False
         while not stop:
             self.exchange_columns(blocks, inverse=True)

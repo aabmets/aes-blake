@@ -52,9 +52,7 @@ class BaseUint(ABC):
     def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
         return self.value.to_bytes(self.bit_count // 8, byteorder)
 
-    def _operate(
-        self, operator: t.Callable, other: int | BaseUint, cls: t.Type = None
-    ) -> t.Any:
+    def _operate(self, operator: t.Callable, other: int | BaseUint, cls: t.Type = None) -> t.Any:
         if isinstance(other, BaseUint):
             other = other.value
         if cls is None:

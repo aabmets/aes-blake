@@ -38,9 +38,7 @@ def to_binary_string(uint: BaseUint, sep=" ") -> str:
     return sep.join(to_binary_bytes(uint))
 
 
-def pretty_print_binary(
-    uint: BaseUint, color_0="blue", color_1="red", end="\n"
-) -> None:
+def pretty_print_binary(uint: BaseUint, color_0="blue", color_1="red", end="\n") -> None:
     bb_list = []
     for bb_str in to_binary_bytes(uint):
         first_color = color_0 if bb_str.startswith("0") else color_1

@@ -104,12 +104,8 @@ class BlakeKeyGen:
     def digest_context(self, context: bytes) -> list[Uint32]:
         ctx = utils.bytes_to_uint32_vector(context, size=32)
         clone = self.clone()
-        clone.compress(
-            message=ctx[:16], counter=0x00FF_0000_00FF_0000, domain=KDFDomain.DIGEST_CTX
-        )
-        clone.compress(
-            message=ctx[16:], counter=0xFF00_0000_FF00_0000, domain=KDFDomain.DIGEST_CTX
-        )
+        clone.compress(message=ctx[:16], counter=0x00FF_0000_00FF_0000, domain=KDFDomain.DIGEST_CTX)
+        clone.compress(message=ctx[16:], counter=0xFF00_0000_FF00_0000, domain=KDFDomain.DIGEST_CTX)
         return clone.state
 
     def compress(self, message: list[Uint32], counter: int, domain: KDFDomain) -> None:

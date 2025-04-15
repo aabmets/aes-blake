@@ -61,12 +61,7 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 100
-extend-exclude = [
-   "ltr-backend/tests",
-   "ltr-backend/migration_scripts",
-   "ris_dashboard_backend/tests",
-   "ris_dashboard_backend/migration_scripts"
-]
+extend-exclude = ["src/aes_sbox.py"]
 
 [tool.ruff.lint]
 extend-select = ["B", "SIM"]
