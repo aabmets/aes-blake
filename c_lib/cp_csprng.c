@@ -12,21 +12,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
     #include <wincrypt.h>
 
-    static HCRYPTPROV global_csprng_prov = 0;
+    static HCRYPTPROV global_csprng_prov;
+
+    void csprng_open(void) {
+        if (!CryptAcquireContext(&global_csprng_prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
+            fprintf(stderr, "CryptAcquireContext failed: %lu\n", GetLastError());
+            exit(EXIT_FAILURE);
+        }
+    }
 
     uint8_t csprng_read(void) {
-        if (global_csprng_prov == 0) {
-            if (!CryptAcquireContext(&global_csprng_prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
-                fprintf(stderr, "CryptAcquireContext failed: %lu\n", GetLastError());
-                exit(EXIT_FAILURE);
-            }
-        }
         uint8_t value;
         if (!CryptGenRandom(global_csprng_prov, sizeof(value), &value)) {
             fprintf(stderr, "CryptGenRandom failed: %lu\n", GetLastError());
@@ -36,25 +36,23 @@
     }
 
     void csprng_close(void) {
-        if (global_csprng_prov != 0) {
-            CryptReleaseContext(global_csprng_prov, 0);
-            global_csprng_prov = 0;
-        }
+        CryptReleaseContext(global_csprng_prov, 0);
     }
 #else
     #include <fcntl.h>
     #include <unistd.h>
 
-    static int global_csprng_fd = -1;
+    static int global_csprng_fd;
+
+    void csprng_open(void) {
+        global_csprng_fd = open("/dev/random", O_RDONLY);
+        if (global_csprng_fd < 0) {
+            perror("Failed to open /dev/random");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     uint8_t csprng_read(void) {
-        if (global_csprng_fd == -1) {
-            global_csprng_fd = open("/dev/random", O_RDONLY);
-            if (global_csprng_fd < 0) {
-                perror("Failed to open /dev/random");
-                exit(EXIT_FAILURE);
-            }
-        }
         uint8_t value;
         ssize_t ret = read(global_csprng_fd, &value, sizeof(value));
         if (ret != sizeof(value)) {
@@ -65,9 +63,6 @@
     }
 
     void csprng_close(void) {
-        if (global_csprng_fd != -1) {
-            close(global_csprng_fd);
-            global_csprng_fd = -1;
-        }
+        close(global_csprng_fd);
     }
 #endif

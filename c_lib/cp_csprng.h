@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+void csprng_open(void);
 uint8_t csprng_read(void);
 void csprng_close(void);
 
