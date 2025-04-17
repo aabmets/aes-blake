@@ -12,7 +12,7 @@
 #ifndef CROSS_PLATFORM_CSPRNG_H
 #define CROSS_PLATFORM_CSPRNG_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #ifdef __cplusplus
 extern "C" {
