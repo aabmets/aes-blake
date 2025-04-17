@@ -13,15 +13,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Catch2)
 
-file(GLOB_RECURSE HARDENED_SOURCES CONFIGURE_DEPENDS *.cpp)
+file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS *.cpp)
 
 add_executable(tests
     test_main.cpp
-    ${HARDENED_SOURCES}
+    ${TEST_SOURCES}
 )
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
-    hardened_lib
+#    avx2_lib
+#    clean_lib
+#    hardened_lib
+    shared_lib
 )
 
 include(CTest)
