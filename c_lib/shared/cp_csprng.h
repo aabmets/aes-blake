@@ -26,4 +26,4 @@ void csprng_close(void);
 }
 #endif
 
-#endif /* CROSS_PLATFORM_CSPRNG_H */
+#endif // CROSS_PLATFORM_CSPRNG_H
