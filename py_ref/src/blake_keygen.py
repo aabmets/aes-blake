@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import typing as t
 from copy import deepcopy
 from enum import Enum
 
@@ -116,7 +117,7 @@ class BlakeKeyGen:
         self.set_params(KDFDomain.LAST_ROUND)
         self.mix_into_state(message)
 
-    def derive_keys(self, counter: int) -> list[list[Uint32]]:
+    def derive_keys(self, counter: int) -> t.Generator[list[Uint32], None, None]:
         self.set_params(KDFDomain.DERIVE_KEYS, counter)
         for _ in range(10):
             self.mix_into_state(self.key)
