@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import typing as t
 from collections.abc import Generator
 from copy import deepcopy
 from enum import Enum
@@ -28,9 +27,7 @@ class Operation(Enum):
 
 
 class AESBlock:
-    def __init__(
-        self, data: IterNum, round_keys: t.List[t.List[Uint8]], operation: Operation
-    ) -> None:
+    def __init__(self, data: IterNum, round_keys: list[list[Uint8]], operation: Operation) -> None:
         self.state = [Uint8(b) for b in data]
         self.round_keys = round_keys
         attr = f"{operation.value}_generator"
