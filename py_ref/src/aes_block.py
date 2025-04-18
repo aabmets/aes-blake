@@ -23,23 +23,18 @@ __all__ = ["Operation", "AESBlock"]
 
 
 class Operation(Enum):
-    ENCRYPT = "encrypt"
-    DECRYPT = "decrypt"
+    ENCRYPT = "encryption"
+    DECRYPT = "decryption"
 
 
 class AESBlock:
     def __init__(
-            self,
-            data: IterNum,
-            round_keys: t.List[t.List[Uint8]],
-            operation: Operation
+        self, data: IterNum, round_keys: t.List[t.List[Uint8]], operation: Operation
     ) -> None:
         self.state = [Uint8(b) for b in data]
         self.round_keys = round_keys
-        self.generator = dict(
-            encrypt=self.encryption_generator,
-            decrypt=self.decryption_generator
-        )[operation.value]()
+        attr = f"{operation.value}_generator"
+        self.generator = getattr(self, attr)()
 
     def encryption_generator(self) -> Generator[bool, None, bool]:
         self.add_round_key(0)
