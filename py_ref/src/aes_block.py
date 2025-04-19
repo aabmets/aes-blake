@@ -31,7 +31,7 @@ class AESBlock:
         self.state = [Uint8(b) for b in data]
         self.round_keys = round_keys
         attr = f"{operation.value}_generator"
-        self.generator = getattr(self, attr)()
+        self.generator = getattr(self, attr)
 
     def encryption_generator(self) -> Generator[bool, None, bool]:
         self.add_round_key(0)
