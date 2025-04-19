@@ -11,121 +11,67 @@
 
 import pytest
 
+from blake_keygen import KDFDomain
 from src import utils
-from src.aes_blake import AESBlake, BlockSize, Operation
-from src.blake_keygen import BlakeKeyGen
+from src.aes_blake import AESBlake, BlockSize
+from src.aes_block import AESBlock, Operation
 
 __all__ = [
-    "fixture_get_padded_text",
-    "fixture_init_components",
+    "get_padded_text",
+    "init_components",
+    "fixture_init_components_tester",
     "test_init_components_128",
     "test_init_components_256",
-    "test_init_components_386",
+    "test_init_components_384",
     "test_init_components_512",
 ]
 
 
-@pytest.fixture(name="get_padded_text", scope="module")
-def fixture_get_padded_text():
-    def closure(size: int):
-        text = bytes(x for x in range(128))
-        return utils.pkcs7_pad(text, size)
+def get_padded_text(size: int) -> bytes:
+    text = bytes(x for x in range(128))
+    return utils.pkcs7_pad(text, size)
 
+
+def init_components(
+        text: bytes, pointer: int, operation: Operation, block_size: BlockSize
+) -> tuple[list[bytes], list[AESBlock]]:
+    key, nonce, context = bytes(64), bytes(32), bytes(128)
+    cipher = AESBlake(key, context, block_size)
+    cipher.reset(nonce)
+    args = (text, pointer, 0, operation, KDFDomain.CIPHER_OPS)
+    return cipher.init_components(*args)
+
+
+@pytest.fixture(name="init_components_tester", scope="function")
+def fixture_init_components_tester():
+    def closure(block_size: BlockSize):
+        aes_total_bytes = block_size.value * AESBlake.aes_block_size
+        text = get_padded_text(aes_total_bytes)
+
+        for operation in [Operation.ENCRYPT, Operation.DECRYPT]:
+            for pointer in range(0, len(text), aes_total_bytes):
+                data_chunks, aes_blocks = init_components(text, pointer, operation, block_size)
+
+                assert len(data_chunks) == len(aes_blocks) == block_size.value
+                for chunk, block in zip(data_chunks, aes_blocks, strict=True):
+                    assert len(chunk) == AESBlake.aes_block_size
+                    assert bytes(block.state) == chunk
+                    gen_name = f"{operation.value}_generator"
+                    assert block.generator.__name__ == gen_name
     return closure
 
 
-@pytest.fixture(name="init_components", scope="function")
-def fixture_init_components(get_padded_text):
-    def closure(block_size: BlockSize, operation: Operation, pointer: int):
-        key, nonce, context = b"", b"", b""
-        keygen = BlakeKeyGen(key, nonce, context)
-        cipher = AESBlake(key, context, block_size=block_size)
-        size = cipher.block_size.value * 16
-        text = get_padded_text(size)
-        args = (keygen, text, pointer, 0, operation)
-        chunks, blocks, gens = cipher.init_components(*args)
-        return chunks, blocks, gens
-
-    return closure
+def test_init_components_128(init_components_tester):
+    init_components_tester(BlockSize.BITS_128)
 
 
-def test_init_components_128(init_components, get_padded_text):
-    block_size = BlockSize.BITS_128
-    size = block_size.value * 16
-    text = get_padded_text(size)
-
-    for operation in [Operation.ENC, Operation.DEC]:
-        for pointer in range(0, len(text), size):
-            args = (block_size, operation, pointer)
-            chunks, blocks, gens = init_components(*args)
-
-            assert len(chunks) == len(blocks) == len(gens) == 1
-            assert chunks[0] == text[pointer : pointer + 16]
-
-            for block, chunk, gen in zip(blocks, chunks, gens, strict=True):
-                assert len(chunk) == 16
-                assert bytes(block.state) == chunk
-                assert gen.gi_frame.f_code.co_name == f"{operation.value}_generator"
+def test_init_components_256(init_components_tester):
+    init_components_tester(BlockSize.BITS_256)
 
 
-def test_init_components_256(init_components, get_padded_text):
-    block_size = BlockSize.BITS_256
-    size = block_size.value * 16
-    text = get_padded_text(size)
-
-    for operation in [Operation.ENC, Operation.DEC]:
-        for pointer in range(0, len(text), size):
-            args = (block_size, operation, pointer)
-            chunks, blocks, gens = init_components(*args)
-
-            assert len(chunks) == len(blocks) == len(gens) == 2
-            assert chunks[0] == text[pointer : pointer + 16]
-            assert chunks[1] == text[pointer + 16 : pointer + 32]
-
-            for block, chunk, gen in zip(blocks, chunks, gens, strict=True):
-                assert len(chunk) == 16
-                assert bytes(block.state) == chunk
-                assert gen.gi_frame.f_code.co_name == f"{operation.value}_generator"
+def test_init_components_384(init_components_tester):
+    init_components_tester(BlockSize.BITS_384)
 
 
-def test_init_components_386(init_components, get_padded_text):
-    block_size = BlockSize.BITS_384
-    size = block_size.value * 16
-    text = get_padded_text(size)
-
-    for operation in [Operation.ENC, Operation.DEC]:
-        for pointer in range(0, len(text), size):
-            args = (block_size, operation, pointer)
-            chunks, blocks, gens = init_components(*args)
-
-            assert len(chunks) == len(blocks) == len(gens) == 3
-            assert chunks[0] == text[pointer : pointer + 16]
-            assert chunks[1] == text[pointer + 16 : pointer + 32]
-            assert chunks[2] == text[pointer + 32 : pointer + 48]
-
-            for block, chunk, gen in zip(blocks, chunks, gens, strict=True):
-                assert len(chunk) == 16
-                assert bytes(block.state) == chunk
-                assert gen.gi_frame.f_code.co_name == f"{operation.value}_generator"
-
-
-def test_init_components_512(init_components, get_padded_text):
-    block_size = BlockSize.BITS_512
-    size = block_size.value * 16
-    text = get_padded_text(size)
-
-    for operation in [Operation.ENC, Operation.DEC]:
-        for pointer in range(0, len(text), size):
-            args = (block_size, operation, pointer)
-            chunks, blocks, gens = init_components(*args)
-
-            assert len(chunks) == len(blocks) == len(gens) == 4
-            assert chunks[0] == text[pointer : pointer + 16]
-            assert chunks[1] == text[pointer + 16 : pointer + 32]
-            assert chunks[2] == text[pointer + 32 : pointer + 48]
-            assert chunks[3] == text[pointer + 48 : pointer + 64]
-
-            for block, chunk, gen in zip(blocks, chunks, gens, strict=True):
-                assert len(chunk) == 16
-                assert bytes(block.state) == chunk
-                assert gen.gi_frame.f_code.co_name == f"{operation.value}_generator"
+def test_init_components_512(init_components_tester):
+    init_components_tester(BlockSize.BITS_512)
