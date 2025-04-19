@@ -11,7 +11,7 @@
 
 from src.uint import Uint32
 
-__all__ = ["bytes_to_uint32_vector", "zero_pad_to_size", "pkcs7_pad", "pkcs7_unpad"]
+__all__ = ["bytes_to_uint32_vector", "pad_trunc_to_size", "pkcs7_pad", "pkcs7_unpad"]
 
 
 def bytes_to_uint32_vector(data: bytes, size: int) -> list[Uint32]:
@@ -26,8 +26,8 @@ def bytes_to_uint32_vector(data: bytes, size: int) -> list[Uint32]:
     return output
 
 
-def zero_pad_to_size(data: bytes, size: int) -> bytes:
-    return data + b"\x00" * (size - len(data))
+def pad_trunc_to_size(data: bytes, size: int) -> bytes:
+    return (data + b"\x00" * size)[:size]
 
 
 def pkcs7_pad(data: bytes, size: int = 16) -> bytes:

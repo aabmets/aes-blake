@@ -13,7 +13,7 @@ from src import utils
 
 __all__ = [
     "test_bytes_to_uint32_vector",
-    "test_zero_pad_to_size",
+    "test_pad_trunc_to_size",
     "test_pkcs7_pad_unpad",
 ]
 
@@ -31,14 +31,14 @@ def test_bytes_to_uint32_vector():
     assert vector[1] == int.from_bytes(data[4:], byteorder="little")
 
 
-def test_zero_pad_to_size():
-    out = utils.zero_pad_to_size(b"", size=10)
+def test_pad_trunc_to_size():
+    out = utils.pad_trunc_to_size(b"", size=10)
     assert len(out) == 10
     for b in out:
         assert b == 0
 
     data = b"\xaa\xbb\xcc\xdd\xee"
-    out = utils.zero_pad_to_size(data, size=10)
+    out = utils.pad_trunc_to_size(data, size=10)
     assert len(out) == 10
     for i in range(0, 5):
         assert out[i] == data[i]
@@ -46,9 +46,9 @@ def test_zero_pad_to_size():
         assert out[i] == 0
 
     data = b"\xaa\xbb\xcc\xdd\xee"
-    out = utils.zero_pad_to_size(data, size=3)
-    assert len(out) == 5
-    for i in range(0, 5):
+    out = utils.pad_trunc_to_size(data, size=3)
+    assert len(out) == 3
+    for i in range(0, 3):
         assert out[i] == data[i]
 
 
