@@ -12,7 +12,7 @@
 import pytest
 from copy import deepcopy
 
-from src.aes_block import Operation, AESBlock
+from src.aes_block import AESBlock
 from src.aes_sbox import SBox
 from src.blake_keygen import KDFDomain, BlakeKeyGen
 
@@ -41,7 +41,7 @@ def fixture_aes_block() -> AESBlockTester:
         0x46, 0xE7, 0x4A, 0xC3,
         0xA6, 0x8C, 0xD8, 0x95,
     ]
-    block = AESBlockTester(data, round_keys, Operation.ENCRYPT)
+    block = AESBlockTester(data, round_keys)
     for idx, uint8 in enumerate(block.state):
         assert data[idx] == uint8.value
     assert len(block.round_keys) == 11

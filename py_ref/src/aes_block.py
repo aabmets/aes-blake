@@ -13,25 +13,17 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from copy import deepcopy
-from enum import Enum
 
 from src.aes_sbox import SBox
 from src.uint import IterNum, Uint8
 
-__all__ = ["Operation", "AESBlock"]
-
-
-class Operation(Enum):
-    ENCRYPT = "encryption"
-    DECRYPT = "decryption"
+__all__ = ["AESBlock"]
 
 
 class AESBlock:
-    def __init__(self, data: IterNum, round_keys: list[list[Uint8]], operation: Operation) -> None:
+    def __init__(self, data: IterNum, round_keys: list[list[Uint8]]) -> None:
         self.state = [Uint8(b) for b in data]
         self.round_keys = round_keys
-        attr = f"{operation.value}_generator"
-        self.generator = getattr(self, attr)
 
     def encryption_generator(self) -> Generator[bool, None, bool]:
         self.add_round_key(0)

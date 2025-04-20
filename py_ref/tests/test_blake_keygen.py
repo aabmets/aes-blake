@@ -14,7 +14,6 @@ import pytest
 from src import utils
 from src.blake_keygen import BlakeKeyGen, KDFDomain
 from src.uint import Uint32
-from src import debug
 
 __all__ = [
     "create_keygen",
