@@ -26,3 +26,7 @@ class CheckSum:
 
     def to_bytes(self) -> bytes:
         return bytes(self.state)
+
+    @classmethod
+    def create(cls, count: int) -> list[CheckSum]:
+        return [CheckSum() for _ in range(count)]

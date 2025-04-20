@@ -42,3 +42,9 @@ def test_checksum():
         assert chk.state[i] == 0x0A
 
     assert chk.to_bytes() == b"\x0a" * 16
+
+    chk = CheckSum.create(4)
+    assert isinstance(chk, list)
+    assert len(chk) == 4
+    for obj in chk:
+        assert isinstance(obj, CheckSum)
