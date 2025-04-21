@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+import typing as t
 from copy import deepcopy
 from enum import Enum
 
@@ -42,7 +42,7 @@ class BlakeKeyGen:
         self.validate_params(key, nonce)
         self.key = utils.bytes_to_uint32_vector(key, size=16)
         self.state = utils.bytes_to_uint32_vector(nonce, size=16)
-        self.bcb = self.compute_block_counter_base(key, nonce)
+        self.sco = self.secret_counter_offset(key, nonce)
         for i in range(8):
             self.state[i + 8] = Uint32(self.ivs[i])
 
@@ -54,44 +54,44 @@ class BlakeKeyGen:
             raise ValueError("Nonce size must be between 16 and 32 bytes")
 
     @staticmethod
-    def compute_block_counter_base(key: bytes, nonce: bytes) -> Uint64:
+    def secret_counter_offset(key: bytes, nonce: bytes) -> Uint64:
         nonce = utils.pad_trunc_to_size(nonce, size=8)
         key = utils.pad_trunc_to_size(key, size=8)
         key = [SBox.ENC.value[kb] for kb in key]
-        bcb = [x ^ y for x, y in zip(key, nonce, strict=True)]
-        return Uint64.from_bytes(bcb, byteorder="little")
+        sco = [k ^ n for k, n in zip(key, nonce, strict=True)]
+        return Uint64.from_bytes(sco)
 
     def digest_context(self, context: bytes) -> None:
         ctx = utils.bytes_to_uint32_vector(context, size=32)
-        pair_1 = (ctx[:16], 0x00FF_0000_00FF_0000)
-        pair_2 = (ctx[16:], 0xFF00_0000_FF00_0000)
-        for message, counter in [pair_1, pair_2]:
-            for _ in self.compress(message, counter, domain=KDFDomain.DIGEST_CTX):
-                pass
+        self.compress(ctx[:16], counter=0x00FF_0000_00FF_0000, domain=KDFDomain.DIGEST_CTX)
+        self.compress(ctx[16:], counter=0xFF00_0000_FF00_0000, domain=KDFDomain.DIGEST_CTX)
 
     def compress(
         self,
         message: list[Uint32],
         counter: int,
-        domain: KDFDomain
-    ) -> Generator[list[Uint32], None, None]:
+        domain: KDFDomain,
+        callback: t.Callable[[list[Uint32]], None] = None
+    ) -> None:
         self.set_params(domain, counter)
         for _ in range(self.compression_rounds):
             self.mix_into_state(message)
             message = self.permute(message)
-            yield self.state[4:8]
+            if callback:
+                callback(self.state[4:8])
         self.set_params(KDFDomain.LAST_ROUND)
         self.mix_into_state(message)
-        yield self.state[4:8]
+        if callback:
+            callback(self.state[4:8])
 
     def set_params(self, domain: KDFDomain = None, counter: int = None) -> None:
         if domain:
             for i in range(8, 12):
                 self.state[i] ^= domain.value
         if counter:
-            bcb_incr = (self.bcb + counter).to_bytes()
-            ctr_low = Uint32.from_bytes(bcb_incr[4:], byteorder="little")
-            ctr_high = Uint32.from_bytes(bcb_incr[:4], byteorder="little")
+            ctr = (self.sco + counter).to_bytes()
+            ctr_low = Uint32.from_bytes(ctr[4:])
+            ctr_high = Uint32.from_bytes(ctr[:4])
             for i in range(4):
                 self.state[i] ^= ctr_low + i
                 self.state[i + 12] ^= ctr_high
@@ -127,12 +127,15 @@ class BlakeKeyGen:
         return [m[i] for i in pattern]
 
     def compute_round_keys(self, counter: int, domain: KDFDomain) -> list[list[Uint8]]:
-        _self = deepcopy(self)  # clone
-        keys: list[list[Uint8]] = []
-        for chunk in _self.compress(_self.key, counter, domain):
+        round_keys: list[list[Uint8]] = []
+        _self = deepcopy(self)
+
+        def callback(partial_state: list[Uint32]) -> None:
             key: list[Uint8] = []
-            for uint32 in chunk:
-                for byte in uint32.to_bytes():
+            for uint32 in partial_state:
+                for byte in uint32.to_bytes():  # break reference
                     key.append(Uint8(byte))
-            keys.append(key)
-        return keys
+            round_keys.append(key)
+
+        _self.compress(_self.key, counter, domain, callback)
+        return round_keys
