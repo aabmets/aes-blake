@@ -65,27 +65,28 @@ def test_fips197_example_vectors():
     for v in vectors:
         round_keys = generate_original_aes128_round_keys(v["secret_key"])
         aes1 = AESBlock(v["plaintext"], round_keys)
-        ciphertext = aes1.encrypt()
-
-        assert ciphertext == v["expected_ct"]
+        for _ in aes1.encrypt():
+            pass
+        assert aes1.output == v["expected_ct"]
 
         round_keys = generate_original_aes128_round_keys(v["secret_key"])
-        aes2 = AESBlock(ciphertext, round_keys)
-        plaintext = aes2.decrypt()
-
-        assert plaintext == v["plaintext"]
+        aes2 = AESBlock(aes1.output, round_keys)
+        for _ in aes2.decrypt():
+            pass
+        assert aes2.output == v["plaintext"]
 
 
 def test_random_secret_key():
     secret_key = secrets.token_bytes(16)
-    original_pt = bytes(range(16))
+    plaintext = bytes(range(16))
 
     round_keys = generate_original_aes128_round_keys(secret_key)
-    aes1 = AESBlock(original_pt, round_keys)
-    ct = aes1.encrypt()
+    aes1 = AESBlock(plaintext, round_keys)
+    for _ in aes1.encrypt():
+        pass
 
     round_keys = generate_original_aes128_round_keys(secret_key)
-    aes2 = AESBlock(ct, round_keys)
-    recovered_pt = aes2.decrypt()
-
-    assert original_pt == recovered_pt
+    aes2 = AESBlock(aes1.output, round_keys)
+    for _ in aes2.decrypt():
+        pass
+    assert aes2.output == plaintext
