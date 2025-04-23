@@ -9,110 +9,83 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import pytest
-from copy import deepcopy
+import secrets
 
-from src.aes_block import AESBlock
+from src.uint import Uint8
 from src.aes_sbox import SBox
-from src.blake_keygen import KDFDomain, BlakeKeyGen
+from src.aes_block import AESBlock
 
 __all__ = [
-    "fixture_aes_block",
-    "test_encrypt_decrypt",
-    "test_mix_columns",
-    "test_shift_rows",
-    "test_add_round_key",
-    "test_sub_bytes",
+    "generate_original_aes128_round_keys",
+    "test_fips197_example_vectors",
+    "test_random_secret_key",
 ]
 
 
-class AESBlockTester(AESBlock):
-    initial_data: list[int]
+def generate_original_aes128_round_keys(key: bytes) -> list[list[Uint8]]:
+    if len(key) != 16:
+        raise ValueError("AES-128 key must be 16 bytes")
+    Nk = 4
+    Nb = 4
+    Nr = 10
+    key_bytes = [Uint8(b) for b in key]
+    w: list[list[Uint8]] = []
+    for i in range(Nk):
+        w.append(key_bytes[4*i:4*i+4])
+    rcon = [Uint8(r) for r in (0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36)]
+    for i in range(Nk, Nb*(Nr+1)):
+        temp = w[i-1].copy()
+        if i % Nk == 0:
+            temp = temp[1:] + temp[:1]
+            temp = [Uint8(SBox.ENC.value[b.value]) for b in temp]
+            temp[0] ^= rcon[i//Nk - 1]
+        w.append([w[i-Nk][j] ^ temp[j] for j in range(4)])
+    round_keys: list[list[Uint8]] = []
+    for r in range(Nr+1):
+        round_key = []
+        for word in w[4*r : 4*r+4]:
+            round_key.extend(word)
+        round_keys.append(round_key)
+    return round_keys
 
 
-@pytest.fixture(name="aes_block", scope="function")
-def fixture_aes_block() -> AESBlockTester:
-    keygen = BlakeKeyGen(bytes(64), bytes(32))
-    keygen.digest_context(b"")
-    round_keys = keygen.compute_round_keys(counter=0, domain=KDFDomain.CIPHER_OPS)
-    data = [
-        0x87, 0xF2, 0x4D, 0x97,
-        0x6E, 0x4C, 0x90, 0xEC,
-        0x46, 0xE7, 0x4A, 0xC3,
-        0xA6, 0x8C, 0xD8, 0x95,
+def test_fips197_example_vectors():
+    vectors = [
+        dict(
+            plaintext=bytes.fromhex("3243f6a8885a308d313198a2e0370734"),
+            secret_key=bytes.fromhex("2b7e151628aed2a6abf7158809cf4f3c"),
+            expected_ct=bytes.fromhex("3925841d02dc09fbdc118597196a0b32"),
+        ),
+        dict(
+            plaintext=bytes.fromhex("00112233445566778899aabbccddeeff"),
+            secret_key=bytes.fromhex("000102030405060708090a0b0c0d0e0f"),
+            expected_ct=bytes.fromhex("69c4e0d86a7b0430d8cdb78070b4c55a")
+        )
     ]
-    block = AESBlockTester(data, round_keys)
-    for idx, uint8 in enumerate(block.state):
-        assert data[idx] == uint8.value
-    assert len(block.round_keys) == 11
-    for key_set in block.round_keys:
-        assert len(key_set) == 16
-    block.initial_data = deepcopy(data)
-    return block
+    for v in vectors:
+        round_keys = generate_original_aes128_round_keys(v["secret_key"])
+        aes1 = AESBlock(v["plaintext"], round_keys)
+        ciphertext = aes1.encrypt()
+
+        assert ciphertext == v["expected_ct"]
+
+        round_keys = generate_original_aes128_round_keys(v["secret_key"])
+        aes2 = AESBlock(ciphertext, round_keys)
+        plaintext = aes2.decrypt()
+
+        assert plaintext == v["plaintext"]
 
 
-def test_encrypt_decrypt(aes_block):
-    assert aes_block.state == aes_block.initial_data
-    for _ in aes_block.encryption_generator():
-        pass
-    assert aes_block.state == [
-        0x3A, 0xF6, 0x12, 0x41,
-        0xFA, 0xE6, 0x2E, 0x7D,
-        0x52, 0x32, 0xFB, 0x79,
-        0xC0, 0x0E, 0x97, 0x27,
-    ]
-    for _ in aes_block.decryption_generator():
-        pass
-    assert aes_block.state == aes_block.initial_data
+def test_random_secret_key():
+    secret_key = secrets.token_bytes(16)
+    original_pt = bytes(range(16))
 
+    round_keys = generate_original_aes128_round_keys(secret_key)
+    aes1 = AESBlock(original_pt, round_keys)
+    ct = aes1.encrypt()
 
-def test_mix_columns(aes_block):
-    assert aes_block.state == aes_block.initial_data
-    aes_block.mix_columns()
-    assert aes_block.state == [
-        0xC2, 0x38, 0x4D, 0x18,
-        0x74, 0xB1, 0x36, 0xAD,
-        0x37, 0x8E, 0x6B, 0xFA,
-        0x95, 0x43, 0x25, 0x94,
-    ]
-    aes_block.inv_mix_columns()
-    assert aes_block.state == aes_block.initial_data
+    round_keys = generate_original_aes128_round_keys(secret_key)
+    aes2 = AESBlock(ct, round_keys)
+    recovered_pt = aes2.decrypt()
 
-
-def test_shift_rows(aes_block):
-    assert aes_block.state == aes_block.initial_data
-    aes_block.shift_rows()
-    assert aes_block.state == [
-        0x87, 0x4C, 0x4A, 0x95,
-        0x6E, 0xE7, 0xD8, 0x97,
-        0x46, 0x8C, 0x4D, 0xEC,
-        0xA6, 0xF2, 0x90, 0xC3,
-    ]
-    aes_block.inv_shift_rows()
-    assert aes_block.state == aes_block.initial_data
-
-
-def test_add_round_key(aes_block):
-    assert aes_block.state == aes_block.initial_data
-    aes_block.add_round_key(index=0)
-    assert aes_block.state == [
-        0x9B, 0xDC, 0x76, 0x3B,
-        0x8E, 0x4A, 0x30, 0x2F,
-        0xF9, 0x80, 0x0C, 0x23,
-        0x3B, 0x7B, 0x3D, 0x6C,
-    ]
-    aes_block.add_round_key(index=0)
-    assert aes_block.state == aes_block.initial_data
-
-
-def test_sub_bytes(aes_block):
-    assert aes_block.state == aes_block.initial_data
-    aes_block.sub_bytes(SBox.ENC)
-    assert aes_block.state == [
-        0x17, 0x89, 0xE3, 0x88,
-        0x9F, 0x29, 0x60, 0xCE,
-        0x5A, 0x94, 0xD6, 0x2E,
-        0x24, 0x64, 0x61, 0x2A,
-    ]
-    aes_block.sub_bytes(SBox.DEC)
-    assert aes_block.state == aes_block.initial_data
+    assert original_pt == recovered_pt
