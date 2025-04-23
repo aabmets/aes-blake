@@ -8,10 +8,11 @@
 #
 #   SPDX-License-Identifier: Apache-2.0
 #
-import debug
-from src import utils
 
-__all__ = ["test_pad_trunc_to_size", "test_bytes_to_uint32_vector"]
+from src import utils
+from src.uint import Uint8, Uint32, Uint64
+
+__all__ = ["test_pad_trunc_to_size", "test_bytes_to_uint_vector"]
 
 
 def test_pad_trunc_to_size():
@@ -35,15 +36,37 @@ def test_pad_trunc_to_size():
         assert out[i] == data[i]
 
 
-def test_bytes_to_uint32_vector():
+def test_bytes_to_uint8_vector():
     data = bytes()
-    vector = utils.bytes_to_uint32_vector(data, elements=16)
+    vector = utils.bytes_to_uint_vector(data, Uint8, v_size=16)
     assert len(vector) == 16
     for v in vector:
         assert v == 0
 
     data = bytes(range(8))
-    vector = utils.bytes_to_uint32_vector(data, elements=32)
+    vector = utils.bytes_to_uint_vector(data, Uint8, v_size=32)
+    assert len(vector) == 32
+    for i in range(0, 8):
+        assert vector[i] == data[i]
+    for i in range(8, len(vector)):
+        assert vector[i] == 0
+
+    data = bytes(range(32))
+    vector = utils.bytes_to_uint_vector(data, Uint8, v_size=8)
+    assert len(vector) == 8
+    for i, v in enumerate(vector):
+        assert v == data[i]
+
+
+def test_bytes_to_uint32_vector():
+    data = bytes()
+    vector = utils.bytes_to_uint_vector(data, Uint32, v_size=16)
+    assert len(vector) == 16
+    for v in vector:
+        assert v == 0
+
+    data = bytes(range(8))
+    vector = utils.bytes_to_uint_vector(data, Uint32, v_size=32)
     assert len(vector) == 32
     assert vector[0] == int.from_bytes(data[:4], byteorder="big")
     assert vector[1] == int.from_bytes(data[4:], byteorder="big")
@@ -51,10 +74,35 @@ def test_bytes_to_uint32_vector():
         assert vector[i] == 0
 
     data = bytes(range(32))
-    vector = utils.bytes_to_uint32_vector(data, elements=8)
+    vector = utils.bytes_to_uint_vector(data, Uint32, v_size=8)
     assert len(vector) == 8
     for i, v in enumerate(vector):
         start = i * 4
         end = start + 4
+        subset = data[start:end]
+        assert v == int.from_bytes(subset, byteorder="big")
+
+
+def test_bytes_to_uint64_vector():
+    data = bytes()
+    vector = utils.bytes_to_uint_vector(data, Uint64, v_size=16)
+    assert len(vector) == 16
+    for v in vector:
+        assert v == 0
+
+    data = bytes(range(16))
+    vector = utils.bytes_to_uint_vector(data, Uint64, v_size=32)
+    assert len(vector) == 32
+    assert vector[0] == int.from_bytes(data[:8], byteorder="big")
+    assert vector[1] == int.from_bytes(data[8:], byteorder="big")
+    for i in range(2, len(vector)):
+        assert vector[i] == 0
+
+    data = bytes(range(32))
+    vector = utils.bytes_to_uint_vector(data, Uint64, v_size=8)
+    assert len(vector) == 8
+    for i, v in enumerate(vector):
+        start = i * 8
+        end = start + 8
         subset = data[start:end]
         assert v == int.from_bytes(subset, byteorder="big")
