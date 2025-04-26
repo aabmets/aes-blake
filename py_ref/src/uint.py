@@ -24,13 +24,13 @@ IterNum = t.Union[t.Iterable[t.SupportsIndex], t.SupportsBytes]
 
 
 class BaseUint(ABC):
-    @property
+    @staticmethod
     @abstractmethod
-    def bit_count(self) -> int: ...
+    def bit_count() -> int: ...
 
-    @property
+    @staticmethod
     @abstractmethod
-    def max_value(self) -> int: ...
+    def max_value() -> int: ...
 
     @property
     def value(self) -> int:
@@ -40,7 +40,7 @@ class BaseUint(ABC):
     def value(self, value: int) -> None:
         if not isinstance(value, int):
             raise TypeError
-        self._value = value & self.max_value
+        self._value = value & self.max_value()
 
     def __init__(self, value: int = 0) -> None:
         self.value = value
@@ -50,7 +50,7 @@ class BaseUint(ABC):
         return cls(int.from_bytes(data, byteorder, signed=False))
 
     def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
-        return self.value.to_bytes(self.bit_count // 8, byteorder)
+        return self.value.to_bytes(self.bit_count() // 8, byteorder)
 
     def _operate(self, operator: t.Callable, other: int | BaseUint, cls: t.Type = None) -> t.Any:
         if isinstance(other, BaseUint):
@@ -94,22 +94,22 @@ class BaseUint(ABC):
         return self._operate(opr.le, other, bool)
 
     def __neg__(self) -> BaseUint:
-        return Uint8(-self.value & self.max_value)
+        return Uint8(-self.value & self.max_value())
 
     def __rshift__(self, other: int) -> BaseUint:
         """Rotates bits out from right and back into left"""
-        other = other % self.bit_count
+        other = other % self.bit_count()
         rs = self._value >> other
-        ls = self._value << (self.bit_count - other)
-        res = (rs | ls) & self.max_value
+        ls = self._value << (self.bit_count() - other)
+        res = (rs | ls) & self.max_value()
         return self.__class__(res)
 
     def __lshift__(self, other: int) -> BaseUint:
         """Rotates bits out from left and back into right"""
-        other = other % self.bit_count
-        rs = self._value >> (self.bit_count - other)
+        other = other % self.bit_count()
+        rs = self._value >> (self.bit_count() - other)
         ls = self._value << other
-        res = (rs | ls) & self.max_value
+        res = (rs | ls) & self.max_value()
         return self.__class__(res)
 
     def __index__(self) -> int:
@@ -123,30 +123,30 @@ class BaseUint(ABC):
 
 
 class Uint8(BaseUint):
-    @property
-    def bit_count(self):
+    @staticmethod
+    def bit_count():
         return 8
 
-    @property
-    def max_value(self):
+    @staticmethod
+    def max_value():
         return 0xFF
 
 
 class Uint32(BaseUint):
-    @property
-    def bit_count(self):
+    @staticmethod
+    def bit_count():
         return 32
 
-    @property
-    def max_value(self):
+    @staticmethod
+    def max_value():
         return 0xFFFFFFFF
 
 
 class Uint64(BaseUint):
-    @property
-    def bit_count(self):
+    @staticmethod
+    def bit_count():
         return 64
 
-    @property
-    def max_value(self):
+    @staticmethod
+    def max_value():
         return 0xFFFFFFFFFFFFFFFF
