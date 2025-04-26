@@ -23,7 +23,7 @@ def pad_trunc_to_size(data: bytes, size: int) -> bytes:
 
 
 def bytes_to_uint_vector(data: bytes, uint: Type[T], v_size: int) -> list[T]:
-    chunk_size = uint(0).bit_count // 8
+    chunk_size = uint.bit_count() // 8
     sized_data = pad_trunc_to_size(data, v_size * chunk_size)
     output: list[T] = []
     for i in range(0, len(sized_data), chunk_size):

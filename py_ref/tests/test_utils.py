@@ -12,7 +12,12 @@
 from src import utils
 from src.uint import Uint8, Uint32, Uint64
 
-__all__ = ["test_pad_trunc_to_size", "test_bytes_to_uint_vector"]
+__all__ = [
+    "test_pad_trunc_to_size",
+    "test_bytes_to_uint8_vector",
+    "test_bytes_to_uint32_vector",
+    "test_bytes_to_uint64_vector"
+]
 
 
 def test_pad_trunc_to_size():
