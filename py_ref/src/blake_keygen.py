@@ -58,7 +58,7 @@ class BaseBlake(ABC):
         self.key = utils.bytes_to_uint_vector(key, self.uint, v_size=16)
         self.nonce = utils.bytes_to_uint_vector(nonce, self.uint, v_size=8)
         self.context = utils.bytes_to_uint_vector(context, self.uint, v_size=16)
-        self.init_state_vector(self.nonce, self.uint.max_value, KDFDomain.DIGEST_CTX)
+        self.init_state_vector(self.nonce, counter=0, domain=KDFDomain.DIGEST_CTX)
 
     def init_state_vector(self: T, entropy: list[BaseUint], counter: int, domain: KDFDomain) -> None:
         """
