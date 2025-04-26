@@ -22,9 +22,6 @@ from src.uint import BaseUint, Uint32, Uint64
 __all__ = ["KDFDomain", "BaseBlake", "Blake32", "Blake64"]
 
 
-T = t.TypeVar("T", bound=BaseUint)
-
-
 class KDFDomain(Enum):
     DIGEST_CTX = 0
     CIPHER_BGN = 1
@@ -54,13 +51,13 @@ class BaseBlake(ABC):
     @abstractmethod
     def domain_mask(domain: KDFDomain) -> int: ...
 
-    def __init__(self: T, key: bytes, nonce: bytes, context: bytes) -> None:
+    def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
         self.key = utils.bytes_to_uint_vector(key, self.uint, v_size=16)
         self.nonce = utils.bytes_to_uint_vector(nonce, self.uint, v_size=8)
         self.context = utils.bytes_to_uint_vector(context, self.uint, v_size=16)
         self.init_state_vector(self.nonce, counter=0, domain=KDFDomain.DIGEST_CTX)
 
-    def init_state_vector(self: T, entropy: list[BaseUint], counter: int, domain: KDFDomain) -> None:
+    def init_state_vector(self, entropy: list[BaseUint], counter: int, domain: KDFDomain) -> None:
         """
         Initialize the 16-word internal state vector for the compression function.
 
@@ -94,7 +91,7 @@ class BaseBlake(ABC):
         for i in range(8, 12):
             self.state[i] ^= d_mask
 
-    def mix_into_state_1(self: T, m: list[BaseUint], n: list[BaseUint]) -> None:
+    def mix_into_state_1(self, m: list[BaseUint], n: list[BaseUint]) -> None:
         """
         Performs a modified BLAKE3 mixing function on the
         internal state using two separate message vectors.
@@ -122,7 +119,7 @@ class BaseBlake(ABC):
         self.g_mix(2, 7, 8, 13, m[6], n[6])
         self.g_mix(3, 4, 9, 14, m[7], n[7])
 
-    def mix_into_state_2(self: T, m: list[BaseUint]) -> None:
+    def mix_into_state_2(self, m: list[BaseUint]) -> None:
         """
         Performs the BLAKE3 mixing function on the
         internal state using the provided message words.
@@ -148,7 +145,7 @@ class BaseBlake(ABC):
         self.g_mix(2, 7, 8, 13, m[12], m[13])
         self.g_mix(3, 4, 9, 14, m[14], m[15])
 
-    def g_mix(self: T, a: int, b: int, c: int, d: int, mx: BaseUint, my: BaseUint) -> None:
+    def g_mix(self, a: int, b: int, c: int, d: int, mx: BaseUint, my: BaseUint) -> None:
         """
         Performs the BLAKE2 G mixing function on four state vector elements.
 
@@ -197,7 +194,7 @@ class BaseBlake(ABC):
         schedule = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
         return [m[i] for i in schedule]
 
-    def sub_bytes(self: T) -> None:
+    def sub_bytes(self) -> None:
         """
         Applies the AES SubBytes transformation with cross-column byte reassembly.
 
@@ -211,7 +208,7 @@ class BaseBlake(ABC):
         Returns:
             None: The internal state vector is modified in-place.
         """
-        byte_count = self.uint.bit_count // 8
+        byte_count = self.uint.bit_count() // 8
         for column in range(4):
             u_ints = [v.to_bytes() for i, v in enumerate(self.state) if i % 4 == column]
             subbed_bytes = [SBox.ENC.value[b] for b in b''.join(u_ints)]
