@@ -12,130 +12,200 @@
 from __future__ import annotations
 
 import typing as t
-from copy import deepcopy
-from enum import Enum
+from abc import ABC, abstractmethod
 
 from src import utils
 from src.aes_sbox import SBox
-from src.uint import Uint32, Uint64, Uint8
+from src.uint import BaseUint, Uint32, Uint64
 
-__all__ = ["KDFDomain", "BlakeKeyGen"]
-
-
-class KDFDomain(Enum):
-    DIGEST_CTX = 0x10  # 0001 0000
-    CIPHER_OPS = 0x20  # 0010 0000
-    HEADER_CHK = 0x40  # 0100 0000
-    LAST_ROUND = 0x80  # 1000 0000
+__all__ = ["BaseBlake", "Blake32", "Blake64"]
 
 
-class BlakeKeyGen:
-    compression_rounds = 10
-    state: list[Uint32]
+class BaseBlake(ABC):
+    state: list[BaseUint]
 
-    ivs = (  # From BLAKE3, which in turn took them from SHA-256
-        0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,  # 08, 09, 10, 11
-        0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,  # 12, 13, 14, 15
-    )  # fmt: skip
+    @property
+    @abstractmethod
+    def uint(self) -> t.Type[BaseUint]: ...
 
-    def __init__(self, key: bytes, nonce: bytes) -> None:
-        self.validate_params(key, nonce)
-        self.key = utils.bytes_to_uint32_vector(key, size=16)
-        self.state = utils.bytes_to_uint32_vector(nonce, size=16)
-        self.sco = self.secret_counter_offset(key, nonce)
-        for i in range(8):
-            self.state[i + 8] = Uint32(self.ivs[i])
+    @property
+    @abstractmethod
+    def rots(self) -> tuple[int, ...]: ...
 
-    @staticmethod
-    def validate_params(key: bytes, nonce: bytes) -> None:
-        if not (32 <= len(key) <= 64):
-            raise ValueError("Key size must be between 32 and 64 bytes")
-        elif not (16 <= len(nonce) <= 32):
-            raise ValueError("Nonce size must be between 16 and 32 bytes")
+    @property
+    @abstractmethod
+    def ivs(self) -> tuple[int, ...]: ...
 
-    @staticmethod
-    def secret_counter_offset(key: bytes, nonce: bytes) -> Uint64:
-        nonce = utils.pad_trunc_to_size(nonce, size=8)
-        key = utils.pad_trunc_to_size(key, size=8)
-        key = [SBox.ENC.value[kb] for kb in key]
-        sco = [k ^ n for k, n in zip(key, nonce, strict=True)]
-        return Uint64.from_bytes(sco)
+    def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
+        self.key = utils.bytes_to_uint_vector(key, self.uint, v_size=16)
+        self.context = utils.bytes_to_uint_vector(context, self.uint, v_size=16)
+        self.nonce = utils.bytes_to_uint_vector(nonce, self.uint, v_size=8)
+        self.state: list[BaseUint] = []
+        for iv in self.ivs[:4]:
+            self.state.append(self.uint(iv))
+        self.state.extend(self.nonce)
+        for iv in self.ivs[4:]:
+            self.state.append(self.uint(iv))
 
-    def digest_context(self, context: bytes) -> None:
-        ctx = utils.bytes_to_uint32_vector(context, size=32)
-        self.compress(ctx[:16], counter=0x00FF_0000_00FF_0000, domain=KDFDomain.DIGEST_CTX)
-        self.compress(ctx[16:], counter=0xFF00_0000_FF00_0000, domain=KDFDomain.DIGEST_CTX)
+    def mix_into_state_1(self, m: list[BaseUint], n: list[BaseUint]) -> None:
+        """
+        Performs a modified BLAKE3 mixing function on the
+        internal state using two separate message vectors.
 
-    def compress(
-        self,
-        message: list[Uint32],
-        counter: int,
-        domain: KDFDomain,
-        callback: t.Callable[[list[Uint32]], None] = None
-    ) -> None:
-        self.set_params(domain, counter)
-        for _ in range(self.compression_rounds):
-            self.mix_into_state(message)
-            message = self.permute(message)
-            if callback:
-                callback(self.state[4:8])
-        self.set_params(KDFDomain.LAST_ROUND)
-        self.mix_into_state(message)
-        if callback:
-            callback(self.state[4:8])
+        This function applies two rounds of the G mixing function:
+        first across the columns of the state matrix, then across the diagonals.
+        Each call to `g_mix` combines one element from `m` and one element from
+        `n` as the two message inputs to the G function.
 
-    def set_params(self, domain: KDFDomain = None, counter: int = None) -> None:
-        if domain:
-            for i in range(8, 12):
-                self.state[i] ^= domain.value
-        if counter:
-            ctr = (self.sco + counter).to_bytes()
-            ctr_low = Uint32.from_bytes(ctr[4:])
-            ctr_high = Uint32.from_bytes(ctr[:4])
-            for i in range(4):
-                self.state[i] ^= ctr_low + i
-                self.state[i + 12] ^= ctr_high
+        Args:
+            m (list[BaseUint]): The first list of 8 message words.
+            n (list[BaseUint]): The second list of 8 message words.
 
-    def mix_into_state(self, m: list[Uint32]) -> None:
+        Returns:
+            None: The internal state is modified in-place.
+        """
         # columnar mixing
-        self.mix(0, 4, 8, 12, m[0], m[1])
-        self.mix(1, 5, 9, 13, m[2], m[3])
-        self.mix(2, 6, 10, 14, m[4], m[5])
-        self.mix(3, 7, 11, 15, m[6], m[7])
+        self.g_mix(0, 4, 8, 12, m[0], n[0])
+        self.g_mix(1, 5, 9, 13, m[1], n[1])
+        self.g_mix(2, 6, 10, 14, m[2], n[2])
+        self.g_mix(3, 7, 11, 15, m[3], n[3])
         # diagonal mixing
-        self.mix(0, 5, 10, 15, m[8], m[9])
-        self.mix(1, 6, 11, 12, m[10], m[11])
-        self.mix(2, 7, 8, 13, m[12], m[13])
-        self.mix(3, 4, 9, 14, m[14], m[15])
+        self.g_mix(0, 5, 10, 15, m[4], n[4])
+        self.g_mix(1, 6, 11, 12, m[5], n[5])
+        self.g_mix(2, 7, 8, 13, m[6], n[6])
+        self.g_mix(3, 4, 9, 14, m[7], n[7])
 
-    def mix(self, a: int, b: int, c: int, d: int, mx: Uint32, my: Uint32) -> None:
+    def mix_into_state_2(self, m: list[BaseUint]) -> None:
+        """
+        Performs the BLAKE3 mixing function on the
+        internal state using the provided message words.
+
+        This function applies two rounds of the G mixing function:
+        first across the columns of the state matrix, then across the diagonals.
+        Each call to `g_mix` uses a pair of message words from the input list.
+
+        Args:
+            m (list[BaseUint]): A list of 16 message words used for the mixing.
+
+        Returns:
+            None: The internal state vector is modified in-place.
+        """
+        # columnar mixing
+        self.g_mix(0, 4, 8, 12, m[0], m[1])
+        self.g_mix(1, 5, 9, 13, m[2], m[3])
+        self.g_mix(2, 6, 10, 14, m[4], m[5])
+        self.g_mix(3, 7, 11, 15, m[6], m[7])
+        # diagonal mixing
+        self.g_mix(0, 5, 10, 15, m[8], m[9])
+        self.g_mix(1, 6, 11, 12, m[10], m[11])
+        self.g_mix(2, 7, 8, 13, m[12], m[13])
+        self.g_mix(3, 4, 9, 14, m[14], m[15])
+
+    def g_mix(self, a: int, b: int, c: int, d: int, mx: BaseUint, my: BaseUint) -> None:
+        """
+        Performs the BLAKE2 G mixing function on four state vector elements.
+
+        This function applies two rounds of mixing operations to elements at
+        indices a, b, c, and d of the internal state vector using the provided
+        message words mx and my. Each round consists of additions, XORs, and
+        bit rotations by amounts defined in the subclass (Blake32 or Blake64).
+
+        Args:
+            a (int): Index of the first element in the state vector.
+            b (int): Index of the second element in the state vector.
+            c (int): Index of the third element in the state vector.
+            d (int): Index of the fourth element in the state vector.
+            mx (BaseUint): First message word used in mixing.
+            my (BaseUint): Second message word used in mixing.
+
+        Returns:
+            None: The internal state vector is modified in-place.
+        """
         vec = self.state
         # first mixing
         vec[a] = vec[a] + vec[b] + mx
-        vec[d] = (vec[d] ^ vec[a]) >> 16
+        vec[d] = (vec[d] ^ vec[a]) >> self.rots[0]
         vec[c] = vec[c] + vec[d]
-        vec[b] = (vec[b] ^ vec[c]) >> 12
+        vec[b] = (vec[b] ^ vec[c]) >> self.rots[1]
         # second mixing
         vec[a] = vec[a] + vec[b] + my
-        vec[d] = (vec[d] ^ vec[a]) >> 8
+        vec[d] = (vec[d] ^ vec[a]) >> self.rots[2]
         vec[c] = vec[c] + vec[d]
-        vec[b] = (vec[b] ^ vec[c]) >> 7
+        vec[b] = (vec[b] ^ vec[c]) >> self.rots[3]
 
     @staticmethod
-    def permute(m: list[Uint32]) -> list[Uint32]:
-        pattern = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
-        return [m[i] for i in pattern]
+    def permute(m: list[BaseUint]) -> list[BaseUint]:
+        """
+        Performs the BLAKE3 message permutation on the input message vector.
 
-    def compute_round_keys(self, counter: int, domain: KDFDomain) -> list[list[Uint8]]:
-        round_keys: list[list[Uint8]] = []
-        _self = deepcopy(self)
+        The function reorders a list of BaseUint elements according to the
+        fixed BLAKE3 permutation schedule and returns the permuted list.
 
-        def callback(partial_state: list[Uint32]) -> None:
-            key: list[Uint8] = []
-            for uint32 in partial_state:
-                for byte in uint32.to_bytes():  # break reference
-                    key.append(Uint8(byte))
-            round_keys.append(key)
+        Args:
+            m (list[BaseUint]): The input message vector to permute.
 
-        _self.compress(_self.key, counter, domain, callback)
-        return round_keys
+        Returns:
+            list[BaseUint]: The permuted message vector.
+        """
+        schedule = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
+        return [m[i] for i in schedule]
+
+    def sub_bytes(self) -> None:
+        """
+        Applies the AES SubBytes transformation with cross-column byte reassembly.
+
+        Supports both 32-bit and 64-bit Uint objects.
+        Iterates over the internal state vector column by column.
+        For each column:
+          - Extracts and substitutes the bytes of the elements through the AES S-box.
+          - Reassembles each element by combining substituted bytes from different words
+            following the defined cross-column exchange pattern.
+
+        Returns:
+            None: The internal state vector is modified in-place.
+        """
+        byte_count = t.cast(int, self.uint.bit_count) // 8
+        for column in range(4):
+            u_ints = [v.to_bytes() for i, v in enumerate(self.state) if i % 4 == column]
+            subbed_bytes = [SBox.ENC.value[b] for b in b''.join(u_ints)]
+            for row in range(4):
+                new_bytes = [
+                    subbed_bytes[4 * ((row + offset) % 4) + offset]
+                    for offset in range(byte_count)
+                ]
+                new_uint = self.uint.from_bytes(new_bytes)
+                self.state[column + row * 4] = new_uint
+
+
+class Blake32(BaseBlake):
+    @property
+    def uint(self) -> t.Type[Uint32]:
+        return Uint32
+
+    @property
+    def rots(self) -> tuple[int, ...]:
+        return 16, 12, 8, 7
+
+    @property
+    def ivs(self) -> tuple[int, ...]:
+        return (  # From BLAKE2s, which in turn took them from SHA-256
+            0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+            0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+        )  # fmt: skip
+
+
+class Blake64(BaseBlake):
+    @property
+    def uint(self) -> t.Type[Uint64]:
+        return Uint64
+
+    @property
+    def rots(self) -> tuple[int, ...]:
+        return 32, 24, 16, 63
+
+    @property
+    def ivs(self) -> tuple[int, ...]:
+        return (  # From BLAKE2b, which in turn took them from SHA-512
+            0x6A09E667F3BCC908, 0xBB67AE8584CAA73B, 0x3C6EF372FE94F82B, 0xA54FF53A5F1D36F1,
+            0x510E527FADE682D1, 0x9B05688C2B3E6C1F, 0x1F83D9ABFB41BD6B, 0x5BE0CD19137E2179,
+        )  # fmt: skip
