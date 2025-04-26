@@ -30,7 +30,7 @@ _console = Console()
 
 
 def to_binary_bytes(uint: BaseUint) -> list[str]:
-    bit_str = format(uint.value, f"0{uint.bit_count}b")
+    bit_str = format(uint.value, f"0{uint.bit_count()}b")
     return [bit_str[i : i + 8] for i in range(0, len(bit_str), 8)]
 
 
