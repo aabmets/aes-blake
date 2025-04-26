@@ -12,13 +12,27 @@
 from __future__ import annotations
 
 import typing as t
+from enum import Enum
 from abc import ABC, abstractmethod
 
 from src import utils
 from src.aes_sbox import SBox
 from src.uint import BaseUint, Uint32, Uint64
 
-__all__ = ["BaseBlake", "Blake32", "Blake64"]
+__all__ = ["KDFDomain", "BaseBlake", "Blake32", "Blake64"]
+
+
+T = t.TypeVar("T", bound=BaseUint)
+
+
+class KDFDomain(Enum):
+    DIGEST_CTX = 0
+    BGN_CRYPTO_OPS = 1
+    MID_CRYPTO_OPS = 2
+    END_CRYPTO_OPS = 3
+    BGN_HEADER_CHK = 4
+    MID_HEADER_CHK = 5
+    END_HEADER_CHK = 6
 
 
 class BaseBlake(ABC):
@@ -36,18 +50,51 @@ class BaseBlake(ABC):
     @abstractmethod
     def ivs(self) -> tuple[int, ...]: ...
 
-    def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
-        self.key = utils.bytes_to_uint_vector(key, self.uint, v_size=16)
-        self.context = utils.bytes_to_uint_vector(context, self.uint, v_size=16)
-        self.nonce = utils.bytes_to_uint_vector(nonce, self.uint, v_size=8)
-        self.state: list[BaseUint] = []
-        for iv in self.ivs[:4]:
-            self.state.append(self.uint(iv))
-        self.state.extend(self.nonce)
-        for iv in self.ivs[4:]:
-            self.state.append(self.uint(iv))
+    @staticmethod
+    @abstractmethod
+    def d_mask(domain: KDFDomain) -> int: ...
 
-    def mix_into_state_1(self, m: list[BaseUint], n: list[BaseUint]) -> None:
+    def __init__(self: T, key: bytes, nonce: bytes, context: bytes) -> None:
+        self.key = utils.bytes_to_uint_vector(key, self.uint, v_size=16)
+        self.nonce = utils.bytes_to_uint_vector(nonce, self.uint, v_size=8)
+        self.context = utils.bytes_to_uint_vector(context, self.uint, v_size=16)
+        self.init_state_vector(self.nonce, self.uint.max_value, KDFDomain.DIGEST_CTX)
+
+    def init_state_vector(self: T, entropy: list[BaseUint], counter: int, domain: KDFDomain) -> None:
+        """
+        Initialize the 16-word internal state vector for the compression function.
+
+        State layout:
+          Words 0–3: Initial IV constants.
+          Words 4–11: Entropy words (8-element list):
+            - Words 4–7: add the low 32 bits of the counter.
+            - Words 8–11: XOR with the domain separation mask.
+          Words 12–15: Remaining IV constants:
+            - add the high 32 bits of the counter.
+
+        Args:
+            entropy (list[BaseUint]): An 8-element list of entropy words.
+            counter (int): A 64-bit block counter.
+            domain (KDFDomain): Domain separation value for the current state.
+
+        Returns:
+            None: The internal state is modified in-place.
+        """
+        self.state = []
+        self.state.extend(self.uint(iv) for iv in self.ivs[:4])
+        self.state.extend(entropy)
+        self.state.extend(self.uint(iv) for iv in self.ivs[4:])
+        ctr = Uint64(counter).to_bytes()
+        ctr_low = Uint32.from_bytes(ctr[4:])
+        ctr_high = Uint32.from_bytes(ctr[:4])
+        for i in range(4, 8):
+            self.state[i] += ctr_low
+            self.state[i + 8] += ctr_high
+        d_mask = self.d_mask(domain)
+        for i in range(8, 12):
+            self.state[i] ^= d_mask
+
+    def mix_into_state_1(self: T, m: list[BaseUint], n: list[BaseUint]) -> None:
         """
         Performs a modified BLAKE3 mixing function on the
         internal state using two separate message vectors.
@@ -75,7 +122,7 @@ class BaseBlake(ABC):
         self.g_mix(2, 7, 8, 13, m[6], n[6])
         self.g_mix(3, 4, 9, 14, m[7], n[7])
 
-    def mix_into_state_2(self, m: list[BaseUint]) -> None:
+    def mix_into_state_2(self: T, m: list[BaseUint]) -> None:
         """
         Performs the BLAKE3 mixing function on the
         internal state using the provided message words.
@@ -101,7 +148,7 @@ class BaseBlake(ABC):
         self.g_mix(2, 7, 8, 13, m[12], m[13])
         self.g_mix(3, 4, 9, 14, m[14], m[15])
 
-    def g_mix(self, a: int, b: int, c: int, d: int, mx: BaseUint, my: BaseUint) -> None:
+    def g_mix(self: T, a: int, b: int, c: int, d: int, mx: BaseUint, my: BaseUint) -> None:
         """
         Performs the BLAKE2 G mixing function on four state vector elements.
 
@@ -150,7 +197,7 @@ class BaseBlake(ABC):
         schedule = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
         return [m[i] for i in schedule]
 
-    def sub_bytes(self) -> None:
+    def sub_bytes(self: T) -> None:
         """
         Applies the AES SubBytes transformation with cross-column byte reassembly.
 
@@ -164,7 +211,7 @@ class BaseBlake(ABC):
         Returns:
             None: The internal state vector is modified in-place.
         """
-        byte_count = t.cast(int, self.uint.bit_count) // 8
+        byte_count = self.uint.bit_count // 8
         for column in range(4):
             u_ints = [v.to_bytes() for i, v in enumerate(self.state) if i % 4 == column]
             subbed_bytes = [SBox.ENC.value[b] for b in b''.join(u_ints)]
@@ -193,6 +240,18 @@ class Blake32(BaseBlake):
             0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
         )  # fmt: skip
 
+    @staticmethod
+    def d_mask(domain: KDFDomain) -> int:
+        return {
+            KDFDomain.DIGEST_CTX: 0,
+            KDFDomain.BGN_CRYPTO_OPS: 0x0F00000F,
+            KDFDomain.MID_CRYPTO_OPS: 0x0F0000F0,
+            KDFDomain.END_CRYPTO_OPS: 0x0F000F00,
+            KDFDomain.BGN_HEADER_CHK: 0xF000F000,
+            KDFDomain.MID_HEADER_CHK: 0xF00F0000,
+            KDFDomain.END_HEADER_CHK: 0xF0F00000,
+        }[domain]
+
 
 class Blake64(BaseBlake):
     @property
@@ -209,3 +268,15 @@ class Blake64(BaseBlake):
             0x6A09E667F3BCC908, 0xBB67AE8584CAA73B, 0x3C6EF372FE94F82B, 0xA54FF53A5F1D36F1,
             0x510E527FADE682D1, 0x9B05688C2B3E6C1F, 0x1F83D9ABFB41BD6B, 0x5BE0CD19137E2179,
         )  # fmt: skip
+
+    @staticmethod
+    def d_mask(domain: KDFDomain) -> int:
+        return {
+            KDFDomain.DIGEST_CTX: 0,
+            KDFDomain.BGN_CRYPTO_OPS: 0x00FF0000000000FF,
+            KDFDomain.MID_CRYPTO_OPS: 0x00FF00000000FF00,
+            KDFDomain.END_CRYPTO_OPS: 0x00FF000000FF0000,
+            KDFDomain.BGN_HEADER_CHK: 0xFF000000FF000000,
+            KDFDomain.MID_HEADER_CHK: 0xFF0000FF00000000,
+            KDFDomain.END_HEADER_CHK: 0xFF00FF0000000000,
+        }[domain]
