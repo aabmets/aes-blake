@@ -124,29 +124,29 @@ class BaseUint(ABC):
 
 class Uint8(BaseUint):
     @staticmethod
-    def bit_count():
+    def bit_count() -> int:
         return 8
 
     @staticmethod
-    def max_value():
+    def max_value() -> int:
         return 0xFF
 
 
 class Uint32(BaseUint):
     @staticmethod
-    def bit_count():
+    def bit_count() -> int:
         return 32
 
     @staticmethod
-    def max_value():
+    def max_value() -> int:
         return 0xFFFFFFFF
 
 
 class Uint64(BaseUint):
     @staticmethod
-    def bit_count():
+    def bit_count() -> int:
         return 64
 
     @staticmethod
-    def max_value():
+    def max_value() -> int:
         return 0xFFFFFFFFFFFFFFFF
