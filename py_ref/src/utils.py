@@ -9,6 +9,7 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
+import typing as t
 from typing import TypeVar, Type
 
 from src.uint import BaseUint
@@ -22,7 +23,7 @@ def pad_trunc_to_size(data: bytes, size: int) -> bytes:
     return (data + b"\x00" * size)[:size]
 
 
-def bytes_to_uint_vector(data: bytes, uint: Type[T], v_size: int) -> list[T]:
+def bytes_to_uint_vector(data: bytes, uint: t.Union[T, Type[T]], v_size: int) -> list[T]:
     chunk_size = uint.bit_count() // 8
     sized_data = pad_trunc_to_size(data, v_size * chunk_size)
     output: list[T] = []
