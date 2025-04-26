@@ -52,7 +52,7 @@ class BaseBlake(ABC):
 
     @staticmethod
     @abstractmethod
-    def d_mask(domain: KDFDomain) -> int: ...
+    def domain_mask(domain: KDFDomain) -> int: ...
 
     def __init__(self: T, key: bytes, nonce: bytes, context: bytes) -> None:
         self.key = utils.bytes_to_uint_vector(key, self.uint, v_size=16)
@@ -90,7 +90,7 @@ class BaseBlake(ABC):
         for i in range(4, 8):
             self.state[i] += ctr_low
             self.state[i + 8] += ctr_high
-        d_mask = self.d_mask(domain)
+        d_mask = self.domain_mask(domain)
         for i in range(8, 12):
             self.state[i] ^= d_mask
 
@@ -241,7 +241,7 @@ class Blake32(BaseBlake):
         )  # fmt: skip
 
     @staticmethod
-    def d_mask(domain: KDFDomain) -> int:
+    def domain_mask(domain: KDFDomain) -> int:
         return {
             KDFDomain.DIGEST_CTX: 0,
             KDFDomain.CIPHER_BGN: 0x0F00000F,
@@ -270,7 +270,7 @@ class Blake64(BaseBlake):
         )  # fmt: skip
 
     @staticmethod
-    def d_mask(domain: KDFDomain) -> int:
+    def domain_mask(domain: KDFDomain) -> int:
         return {
             KDFDomain.DIGEST_CTX: 0,
             KDFDomain.CIPHER_BGN: 0x00FF0000000000FF,
