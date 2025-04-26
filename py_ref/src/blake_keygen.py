@@ -27,12 +27,12 @@ T = t.TypeVar("T", bound=BaseUint)
 
 class KDFDomain(Enum):
     DIGEST_CTX = 0
-    BGN_CRYPTO_OPS = 1
-    MID_CRYPTO_OPS = 2
-    END_CRYPTO_OPS = 3
-    BGN_HEADER_CHK = 4
-    MID_HEADER_CHK = 5
-    END_HEADER_CHK = 6
+    CIPHER_BGN = 1
+    CIPHER_MID = 2
+    CIPHER_END = 3
+    HEADER_BGN = 4
+    HEADER_MID = 5
+    HEADER_END = 6
 
 
 class BaseBlake(ABC):
@@ -244,12 +244,12 @@ class Blake32(BaseBlake):
     def d_mask(domain: KDFDomain) -> int:
         return {
             KDFDomain.DIGEST_CTX: 0,
-            KDFDomain.BGN_CRYPTO_OPS: 0x0F00000F,
-            KDFDomain.MID_CRYPTO_OPS: 0x0F0000F0,
-            KDFDomain.END_CRYPTO_OPS: 0x0F000F00,
-            KDFDomain.BGN_HEADER_CHK: 0xF000F000,
-            KDFDomain.MID_HEADER_CHK: 0xF00F0000,
-            KDFDomain.END_HEADER_CHK: 0xF0F00000,
+            KDFDomain.CIPHER_BGN: 0x0F00000F,
+            KDFDomain.CIPHER_MID: 0x0F0000F0,
+            KDFDomain.CIPHER_END: 0x0F000F00,
+            KDFDomain.HEADER_BGN: 0xF000F000,
+            KDFDomain.HEADER_MID: 0xF00F0000,
+            KDFDomain.HEADER_END: 0xF0F00000,
         }[domain]
 
 
@@ -273,10 +273,10 @@ class Blake64(BaseBlake):
     def d_mask(domain: KDFDomain) -> int:
         return {
             KDFDomain.DIGEST_CTX: 0,
-            KDFDomain.BGN_CRYPTO_OPS: 0x00FF0000000000FF,
-            KDFDomain.MID_CRYPTO_OPS: 0x00FF00000000FF00,
-            KDFDomain.END_CRYPTO_OPS: 0x00FF000000FF0000,
-            KDFDomain.BGN_HEADER_CHK: 0xFF000000FF000000,
-            KDFDomain.MID_HEADER_CHK: 0xFF0000FF00000000,
-            KDFDomain.END_HEADER_CHK: 0xFF00FF0000000000,
+            KDFDomain.CIPHER_BGN: 0x00FF0000000000FF,
+            KDFDomain.CIPHER_MID: 0x00FF00000000FF00,
+            KDFDomain.CIPHER_END: 0x00FF000000FF0000,
+            KDFDomain.HEADER_BGN: 0xFF000000FF000000,
+            KDFDomain.HEADER_MID: 0xFF0000FF00000000,
+            KDFDomain.HEADER_END: 0xFF00FF0000000000,
         }[domain]
