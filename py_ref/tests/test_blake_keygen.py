@@ -19,10 +19,8 @@ from src.uint import Uint32, Uint64
 
 __all__ = [
     "test_init_state_vector",
-    "test_blake32_mix_into_state_1",
-    "test_blake64_mix_into_state_1",
-    "test_blake32_mix_into_state_2",
-    "test_blake64_mix_into_state_2",
+    "test_blake32_mix_into_state",
+    "test_blake64_mix_into_state",
     "test_blake32_g_mix",
     "test_blake64_g_mix",
     "test_permute",
@@ -68,20 +66,44 @@ def test_init_state_vector():
                     assert blake.state[j] == uint_2
 
 
-def test_blake32_mix_into_state_1():
+def test_blake32_mix_into_state():
+    msg_1 = [Uint32(n) for n in range(0, 16, 2)]
+    msg_2 = [Uint32(n) for n in range(1, 16, 2)]
+    msg_3 = [Uint32(n) for n in range(0, 16)]
+    expected = [
+        0xA7B66833, 0x6926D56D, 0xE501C9F7, 0x1FC1DFCB,
+        0xC184E2FB, 0xD135215E, 0x48E13590, 0x4560DAB6,
+        0xA0831E7A, 0x8D2D9475, 0xDC7C6D11, 0x5B3C0565,
+        0x43FC1B04, 0xE3FEBC43, 0xFE7564AF, 0x52188341,
+    ]
+
     blake = Blake32(key=b'', nonce=b'', context=b'')
+    blake.mix_into_state_1(msg_1, msg_2)
+    assert blake.state == expected
 
-
-def test_blake64_mix_into_state_1():
-    blake = Blake64(key=b'', nonce=b'', context=b'')
-
-
-def test_blake32_mix_into_state_2():
     blake = Blake32(key=b'', nonce=b'', context=b'')
+    blake.mix_into_state_2(msg_3)
+    assert blake.state == expected
 
 
-def test_blake64_mix_into_state_2():
+def test_blake64_mix_into_state():
+    msg_1 = [Uint64(n) for n in range(0, 16, 2)]
+    msg_2 = [Uint64(n) for n in range(1, 16, 2)]
+    msg_3 = [Uint64(n) for n in range(0, 16)]
+    expected = [
+        0x6AF7BF05144BB647, 0x8AE62C2BA7E6FAB0, 0x3F26D5E1E6DEE922, 0xDF80907FAB22F43C,
+        0x836D4B302327AE87, 0x9102A352AB1DBB7E, 0x1F80B45A7C707C29, 0x54F001FD3A7E6359,
+        0xE0E0E202A8FD899D, 0x6545152385879AA8, 0x7689843CA36FD20E, 0x05E578E6034A4CC0,
+        0xDC37558DDEF5B17B, 0xAA1EFD2DBCF21D3A, 0x07B441B2C60A8720, 0x47C378952513C57A,
+    ]
+
     blake = Blake64(key=b'', nonce=b'', context=b'')
+    blake.mix_into_state_1(msg_1, msg_2)
+    assert blake.state == expected
+
+    blake = Blake64(key=b'', nonce=b'', context=b'')
+    blake.mix_into_state_2(msg_3)
+    assert blake.state == expected
 
 
 def test_blake32_g_mix():
