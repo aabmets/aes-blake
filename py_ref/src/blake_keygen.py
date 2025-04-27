@@ -195,7 +195,7 @@ class BaseBlake(ABC):
         schedule = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
         return [m[i] for i in schedule]
 
-    def sub_bytes(self) -> None:
+    def sub_bytes(self, sbox: SBox = SBox.ENC) -> None:
         """
         Applies the AES SubBytes transformation to each word in-place.
 
@@ -208,7 +208,7 @@ class BaseBlake(ABC):
         """
         uint = self.uint()
         for i, v in enumerate(self.state):
-            s_bytes = [SBox.ENC.value[b] for b in v.to_bytes()]
+            s_bytes = [sbox.value[b] for b in v.to_bytes()]
             self.state[i] = uint.from_bytes(s_bytes)
 
 
