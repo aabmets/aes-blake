@@ -87,9 +87,9 @@ class BaseBlake(ABC):
         ctr_high = Uint32.from_bytes(ctr[:4])
         for i in range(4, 8):
             self.state[i] += ctr_low
-            self.state[i + 8] += ctr_high
+            self.state[i + 4] += ctr_high
         d_mask = self.domain_mask(domain)
-        for i in range(8, 12):
+        for i in range(12, 16):
             self.state[i] ^= d_mask
 
     def mix_into_state_1(self, m: list[BaseUint], n: list[BaseUint]) -> None:
