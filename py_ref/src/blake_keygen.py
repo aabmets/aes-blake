@@ -197,29 +197,19 @@ class BaseBlake(ABC):
 
     def sub_bytes(self) -> None:
         """
-        Applies the AES SubBytes transformation with cross-column byte reassembly.
+        Applies the AES SubBytes transformation to each word in-place.
 
-        Supports both 32-bit and 64-bit Uint objects.
-        Iterates over the internal state vector column by column.
-        For each column:
-          - Extracts and substitutes the bytes of the elements through the AES S-box.
-          - Reassembles each element by combining substituted bytes from different words
-            following the defined cross-column exchange pattern.
+        For each Uint object in the state:
+          - Split into bytes.
+          - Substitute each byte through the AES S-box.
+          - Reassemble into a new Uint from the substituted bytes.
 
-        Returns:
-            None: The internal state vector is modified in-place.
+        Modifies self.state in-place.
         """
-        byte_count = self.uint().bit_count() // 8
-        for column in range(4):
-            u_ints = [v.to_bytes() for i, v in enumerate(self.state) if i % 4 == column]
-            subbed_bytes = [SBox.ENC.value[b] for b in b''.join(u_ints)]
-            for row in range(4):
-                new_bytes = [
-                    subbed_bytes[4 * ((row + offset) % 4) + offset]
-                    for offset in range(byte_count)
-                ]
-                new_uint = self.uint().from_bytes(new_bytes)
-                self.state[column + row * 4] = new_uint
+        uint = self.uint()
+        for i, v in enumerate(self.state):
+            s_bytes = [SBox.ENC.value[b] for b in v.to_bytes()]
+            self.state[i] = uint.from_bytes(s_bytes)
 
 
 class Blake32(BaseBlake):
