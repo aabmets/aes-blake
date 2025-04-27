@@ -64,10 +64,10 @@ class BaseBlake(ABC):
         State layout:
           Words 0–3: Initial IV constants.
           Words 4–11: Entropy words (8-element list):
-            - Words 4–7: add the low 32 bits of the counter.
-            - Words 8–11: XOR with the domain separation mask.
+            - Add the low 32 bits of the counter to words 4, 5, 6 and 7.
+            - Add the high 32 bits of the counter to words 8, 9, 10 and 11.
           Words 12–15: Remaining IV constants:
-            - add the high 32 bits of the counter.
+            - XOR each word with the domain separation mask.
 
         Args:
             entropy (list[BaseUint]): An 8-element list of entropy words.
