@@ -148,7 +148,7 @@ class BaseBlake(ABC):
 
     def g_mix(self, a: int, b: int, c: int, d: int, mx: BaseUint, my: BaseUint) -> None:
         """
-        Performs the BLAKE2 G mixing function on four state vector elements.
+        Performs the BLAKE3 G mixing function on four state vector elements.
 
         This function applies two rounds of mixing operations to elements at
         indices a, b, c, and d of the internal state vector using the provided
@@ -212,6 +212,16 @@ class BaseBlake(ABC):
             self.state[i] = uint.from_bytes(s_bytes)
 
     def output(self) -> list[BaseUint]:
+        """
+        Compute the BLAKE3 block output from the current state.
+
+        This function produces an 8-element list of output words by XOR-ing
+        the first half of the state with the second half:
+          output[i] = state[i] ^ state[i + 8]  for i in 0..7
+
+        Returns:
+            list[BaseUint]: The 8-word block output.
+        """
         out: list[BaseUint] = []
         for i in range(8):
             out.append(self.state[i] ^ self.state[i + 8])
