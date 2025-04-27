@@ -51,11 +51,25 @@ class BaseBlake(ABC):
     @abstractmethod
     def domain_mask(domain: KDFDomain) -> int: ...
 
+    @staticmethod
+    @abstractmethod
+    def knc_masks() -> tuple[int, int]: ...
+
     def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
         self.key = utils.bytes_to_uint_vector(key, self.uint(), v_size=8)
         self.nonce = utils.bytes_to_uint_vector(nonce, self.uint(), v_size=8)
         self.context = utils.bytes_to_uint_vector(context, self.uint(), v_size=16)
-        self.init_state_vector(self.nonce, counter=0, domain=KDFDomain.DIGEST_CTX)
+        self.knc = self.compute_key_nonce_composite()
+        self.init_state_vector(self.key, counter=0, domain=KDFDomain.DIGEST_CTX)
+
+    def compute_key_nonce_composite(self) -> list[BaseUint]:
+        mask1, mask2 = self.knc_masks()
+        out: list[BaseUint] = []
+        for i in range(8):
+            a = (self.key[i] & mask1) | (self.nonce[i] & mask2)
+            b = (self.nonce[i] & mask1) | (self.key[i] & mask2)
+            out.extend([a, b])
+        return out
 
     def init_state_vector(self, entropy: list[BaseUint], counter: int, domain: KDFDomain) -> None:
         """
@@ -82,9 +96,9 @@ class BaseBlake(ABC):
         self.state.extend(cls(iv) for iv in ivs[:4])
         self.state.extend(entropy)
         self.state.extend(cls(iv) for iv in ivs[4:])
-        ctr = Uint64(counter).to_bytes()
-        ctr_low = Uint32.from_bytes(ctr[4:])
-        ctr_high = Uint32.from_bytes(ctr[:4])
+        mask = Uint32.max_value()
+        ctr_low = Uint32(counter & mask)
+        ctr_high = Uint32((counter >> 32) & mask)
         for i in range(4, 8):
             self.state[i] += ctr_low
             self.state[i + 4] += ctr_high
@@ -212,6 +226,10 @@ class Blake32(BaseBlake):
             KDFDomain.HEADER_END: 0xF0F00000,
         }[domain]
 
+    @staticmethod
+    def knc_masks() -> tuple[int, int]:
+        return 0x0F0F0F0F, 0xF0F0F0F0
+
 
 class Blake64(BaseBlake):
     @staticmethod
@@ -240,3 +258,7 @@ class Blake64(BaseBlake):
             KDFDomain.HEADER_MID: 0xFF0000FF00000000,
             KDFDomain.HEADER_END: 0xFF00FF0000000000,
         }[domain]
+
+    @staticmethod
+    def knc_masks() -> tuple[int, int]:
+        return 0x0F0F0F0F0F0F0F0F, 0xF0F0F0F0F0F0F0F0

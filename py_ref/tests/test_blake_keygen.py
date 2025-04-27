@@ -18,6 +18,7 @@ from src.blake_keygen import Blake32, Blake64, KDFDomain
 from src.uint import Uint32, Uint64
 
 __all__ = [
+    "test_compute_key_nonce_composite",
     "test_init_state_vector",
     "test_blake32_mix_into_state",
     "test_blake64_mix_into_state",
@@ -26,6 +27,18 @@ __all__ = [
     "test_permute",
     "test_sub_bytes"
 ]
+
+
+def test_compute_key_nonce_composite():
+    key = b"\xAA" * Uint32.bit_count()
+    nonce = b"\xBB" * Uint32.bit_count()
+    blake = Blake32(key, nonce, context=b"")
+    assert blake.knc == [
+        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
+        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
+        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
+        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
+    ]
 
 
 def test_init_state_vector():
@@ -44,7 +57,7 @@ def test_init_state_vector():
         blake = cls(key=b'', nonce=b'', context=b'')
 
         for domain in domains:
-            for counter in [0, v_max // 2, v_max]:
+            for counter in [0, v_max // 2, v_max // 3, v_max]:
                 nv_copy = deepcopy(n_vector)
                 blake.init_state_vector(nv_copy, counter, domain)
                 d_mask = blake.domain_mask(domain)
