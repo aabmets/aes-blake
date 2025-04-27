@@ -63,6 +63,13 @@ class BaseBlake(ABC):
         self.init_state_vector(self.key, counter=0, domain=KDFDomain.DIGEST_CTX)
 
     def compute_key_nonce_composite(self) -> list[BaseUint]:
+        """
+        Splices together 8-element key and nonce vectors by exchanging the bits
+        of a pair of elements from each vector according to predefined bit-masks.
+
+        Returns:
+            list[BaseUint]: 16 element vector of combined elements.
+        """
         mask1, mask2 = self.knc_masks()
         out: list[BaseUint] = []
         for i in range(8):
