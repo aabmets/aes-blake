@@ -245,3 +245,17 @@ def test_sub_bytes():
 
     blake.sub_bytes(SBox.DEC)
     assert blake.state == init_state
+
+
+def test_output():
+    blake = Blake32(key=b'', nonce=b'', context=b'')
+    assert blake.output() == [
+        0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+        0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    ]
+
+    blake = Blake64(key=b'', nonce=b'', context=b'')
+    assert blake.output() == [
+        0x6A09E667F3BCC908, 0xBB67AE8584CAA73B, 0x3C6EF372FE94F82B, 0xA54FF53A5F1D36F1,
+        0x510E527FADE682D1, 0x9B05688C2B3E6C1F, 0x1F83D9ABFB41BD6B, 0x5BE0CD19137E2179,
+    ]

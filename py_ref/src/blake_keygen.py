@@ -211,6 +211,12 @@ class BaseBlake(ABC):
             s_bytes = [sbox.value[b] for b in v.to_bytes()]
             self.state[i] = uint.from_bytes(s_bytes)
 
+    def output(self) -> list[BaseUint]:
+        out: list[BaseUint] = []
+        for i in range(8):
+            out.append(self.state[i] ^ self.state[i + 8])
+        return out
+
 
 class Blake32(BaseBlake):
     @staticmethod
