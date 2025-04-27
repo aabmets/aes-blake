@@ -72,24 +72,19 @@ def pretty_print_hex(
     _console.print(hex_str, end=end)
 
 
-def pretty_print_vector(
-    vector: list[BaseUint],
-    color="yellow",
-    py_var: str = None,
-) -> None:
-    if py_var is not None:
-        print(f"\n{py_var} = [")
-    hex_prefix = bool(py_var)
+def pretty_print_vector(vector: list[BaseUint], color="yellow", py_var=True) -> None:
+    if py_var:
+        print(f"\nexpected = [")
     for i, uint in enumerate(vector):
         if i % 4 == 0 and i != 0:
             print()
-        if hex_prefix and i % 4 == 0:
+        if py_var and i % 4 == 0:
             print("    ", end="")
-        pretty_print_hex(uint, color, end="", hex_prefix=hex_prefix, comma=hex_prefix)
+        pretty_print_hex(uint, color, end="", hex_prefix=py_var, comma=py_var)
         if i not in [3, 7, 11, 15]:
-            sep = " " if hex_prefix else "  "
+            sep = " " if py_var else "  "
             print(sep, end="")
-    if py_var is not None:
+    if py_var:
         print("\n]")
     else:
         print()
