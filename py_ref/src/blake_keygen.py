@@ -52,7 +52,7 @@ class BaseBlake(ABC):
     def domain_mask(domain: KDFDomain) -> int: ...
 
     def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
-        self.key = utils.bytes_to_uint_vector(key, self.uint(), v_size=16)
+        self.key = utils.bytes_to_uint_vector(key, self.uint(), v_size=8)
         self.nonce = utils.bytes_to_uint_vector(nonce, self.uint(), v_size=8)
         self.context = utils.bytes_to_uint_vector(context, self.uint(), v_size=16)
         self.init_state_vector(self.nonce, counter=0, domain=KDFDomain.DIGEST_CTX)
@@ -92,35 +92,7 @@ class BaseBlake(ABC):
         for i in range(12, 16):
             self.state[i] ^= d_mask
 
-    def mix_into_state_1(self, m: list[BaseUint], n: list[BaseUint]) -> None:
-        """
-        Performs a modified BLAKE3 mixing function on the
-        internal state using two separate message vectors.
-
-        This function applies two rounds of the G mixing function:
-        first across the columns of the state matrix, then across the diagonals.
-        Each call to `g_mix` combines one element from `m` and one element from
-        `n` as the two message inputs to the G function.
-
-        Args:
-            m (list[BaseUint]): The first list of 8 message words.
-            n (list[BaseUint]): The second list of 8 message words.
-
-        Returns:
-            None: The internal state is modified in-place.
-        """
-        # columnar mixing
-        self.g_mix(0, 4, 8, 12, m[0], n[0])
-        self.g_mix(1, 5, 9, 13, m[1], n[1])
-        self.g_mix(2, 6, 10, 14, m[2], n[2])
-        self.g_mix(3, 7, 11, 15, m[3], n[3])
-        # diagonal mixing
-        self.g_mix(0, 5, 10, 15, m[4], n[4])
-        self.g_mix(1, 6, 11, 12, m[5], n[5])
-        self.g_mix(2, 7, 8, 13, m[6], n[6])
-        self.g_mix(3, 4, 9, 14, m[7], n[7])
-
-    def mix_into_state_2(self, m: list[BaseUint]) -> None:
+    def mix_into_state(self, m: list[BaseUint]) -> None:
         """
         Performs the BLAKE3 mixing function on the
         internal state using the provided message words.
@@ -210,22 +182,6 @@ class BaseBlake(ABC):
         for i, v in enumerate(self.state):
             s_bytes = [sbox.value[b] for b in v.to_bytes()]
             self.state[i] = uint.from_bytes(s_bytes)
-
-    def output(self) -> list[BaseUint]:
-        """
-        Compute the BLAKE3 block output from the current state.
-
-        This function produces an 8-element list of output words by XOR-ing
-        the first half of the state with the second half:
-          output[i] = state[i] ^ state[i + 8]  for i in 0..7
-
-        Returns:
-            list[BaseUint]: The 8-word block output.
-        """
-        out: list[BaseUint] = []
-        for i in range(8):
-            out.append(self.state[i] ^ self.state[i + 8])
-        return out
 
 
 class Blake32(BaseBlake):
