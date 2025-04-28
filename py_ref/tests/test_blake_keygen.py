@@ -25,7 +25,8 @@ __all__ = [
     "test_blake32_g_mix",
     "test_blake64_g_mix",
     "test_permute",
-    "test_sub_bytes"
+    "test_sub_bytes",
+    "test_digest_context"
 ]
 
 
@@ -218,3 +219,23 @@ def test_sub_bytes():
     blake.sub_bytes(SBox.DEC)
     for uint in blake.state:
         assert uint == 0
+
+
+def test_digest_context():
+    blake = Blake32(key=b'', nonce=b'', context=b'')
+    blake.digest_context()
+    assert blake.state == [
+        0x25E9A784, 0xE2FAF387, 0xE4BE9C6C, 0x60E3426F,
+        0xA612B241, 0xC548772F, 0x5F312628, 0x078F9137,
+        0xC298046B, 0x1D50312B, 0x80379CAF, 0x367F3A30,
+        0x7A9686B5, 0x3BF916B4, 0xE1125F2D, 0x697D1244,
+    ]
+
+    blake = Blake64(key=b'', nonce=b'', context=b'')
+    blake.digest_context()
+    assert blake.state == [
+        0x863DEBC71AE04878, 0x6A0146661D0C3AA8, 0x6B83E01096F342A4, 0x015B247CCF9EF523,
+        0x0A96A8430BE2E5FD, 0x5A1BC690D1D8B66A, 0x54BA87747DED31D3, 0x57169D5081C178BA,
+        0x6C695A43EC576849, 0xB867B3C5E09A2E5E, 0x1E7F41E99B9BF789, 0x368D12E404EF905E,
+        0x95CF3B2B01E83417, 0x2C88BB9BC0C31F66, 0x88305423A8559E27, 0x162C0A57F8692710,
+    ]

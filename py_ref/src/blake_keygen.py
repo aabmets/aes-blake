@@ -194,12 +194,41 @@ class BaseBlake(ABC):
           - Substitute each byte through the AES S-box.
           - Reassemble into a new Uint from the substituted bytes.
 
-        Modifies self.state in-place.
+        Args:
+            sbox (SBox): The AES S-box to use for transformation. This is parametrized
+                for debugging purposes, the cipher always uses the encryption S-box.
+
+        Returns:
+            None: The internal state vector is modified in-place.
         """
         uint = self.uint()
         for i, v in enumerate(self.state):
             s_bytes = [sbox.value[b] for b in v.to_bytes()]
             self.state[i] = uint.from_bytes(s_bytes)
+
+    def digest_context(self) -> None:
+        """
+        Digest the internal context through ten rounds of compression.
+
+        This method initializes the internal state for the DIGEST_CTX domain using
+        the stored key and a zero counter, then performs ten rounds of the
+        BLAKE-like compression on the context vector:
+          - For the first nine rounds:
+            - Mix the context into the state.
+            - Permute the context vector.
+          - For the tenth round:
+            - Mix the context into the state without further permutation.
+          - Finally, apply the AES SubBytes transformation to the state.
+
+        Returns:
+            None: The internal state and context are updated in-place.
+        """
+        self.init_state_vector(self.key, counter=0, domain=KDFDomain.DIGEST_CTX)
+        for _ in range(9):
+            self.mix_into_state(self.context)
+            self.context = self.permute(self.context)
+        self.mix_into_state(self.context)  # 10th round
+        self.sub_bytes()
 
 
 class Blake32(BaseBlake):
