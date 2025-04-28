@@ -14,6 +14,7 @@ from src.uint import Uint8, Uint32, Uint64
 
 __all__ = [
     "test_pad_trunc_to_size",
+    "split_bytes",
     "test_bytes_to_uint8_vector",
     "test_bytes_to_uint32_vector",
     "test_bytes_to_uint64_vector"
@@ -39,6 +40,14 @@ def test_pad_trunc_to_size():
     assert len(out) == 3
     for i in range(0, 3):
         assert out[i] == data[i]
+
+
+def split_bytes():
+    data = b"Word1Word2Word3Word4Word5"
+    chunks = utils.split_bytes(data, chunk_size=5)
+    assert chunks == [b'Word1', b'Word2', b'Word3', b'Word4', b'Word5']
+    chunks = utils.split_bytes(data, chunk_size=6)
+    assert chunks == [b'Word1W', b'ord2Wo', b'rd3Wor', b'd4Word', b'5']
 
 
 def test_bytes_to_uint8_vector():

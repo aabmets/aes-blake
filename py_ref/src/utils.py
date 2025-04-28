@@ -14,13 +14,17 @@ from typing import TypeVar, Type
 
 from src.uint import BaseUint
 
-__all__ = ["pad_trunc_to_size", "bytes_to_uint_vector"]
+__all__ = ["pad_trunc_to_size", "split_bytes", "bytes_to_uint_vector"]
 
 T = TypeVar("T", bound=BaseUint)
 
 
 def pad_trunc_to_size(data: bytes, size: int) -> bytes:
     return (data + b"\x00" * size)[:size]
+
+
+def split_bytes(data: bytes, chunk_size: int) -> list[bytes]:
+    return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
 
 def bytes_to_uint_vector(data: bytes, uint: t.Union[T, Type[T]], v_size: int) -> list[T]:
