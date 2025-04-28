@@ -33,8 +33,6 @@ class KDFDomain(Enum):
 
 
 class BaseBlake(ABC):
-    state: list[BaseUint]
-
     @staticmethod
     @abstractmethod
     def uint() -> t.Type[BaseUint]: ...
@@ -55,8 +53,8 @@ class BaseBlake(ABC):
         self.key = utils.bytes_to_uint_vector(key, self.uint(), v_size=8)
         self.nonce = utils.bytes_to_uint_vector(nonce, self.uint(), v_size=8)
         self.context = utils.bytes_to_uint_vector(context, self.uint(), v_size=16)
+        self.state = [self.uint()(0) for _ in range(16)]
         self.knc = self.compute_key_nonce_composite()
-        self.init_state_vector(self.key, counter=0, domain=KDFDomain.DIGEST_CTX)
 
     def compute_key_nonce_composite(self) -> list[BaseUint]:
         """
@@ -98,7 +96,7 @@ class BaseBlake(ABC):
             None: The internal state is modified in-place.
         """
         cls, ivs = self.uint(), self.ivs()
-        self.state = []
+        self.state.clear()
         self.state.extend(cls(iv) for iv in ivs[:4])
         self.state.extend(entropy)
         self.state.extend(cls(iv) for iv in ivs[4:])
