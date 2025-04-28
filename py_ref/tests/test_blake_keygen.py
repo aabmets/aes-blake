@@ -34,10 +34,10 @@ def test_compute_key_nonce_composite():
     nonce = b"\xBB" * Uint32.bit_count()
     blake = Blake32(key, nonce, context=b"")
     assert blake.knc == [
-        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
-        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
-        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
-        0xBABABABA, 0xABABABAB, 0xBABABABA, 0xABABABAB,
+        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
+        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
+        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
+        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
     ]
 
 
