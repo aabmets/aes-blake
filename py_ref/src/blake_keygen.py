@@ -12,14 +12,24 @@
 from __future__ import annotations
 
 import typing as t
+from copy import deepcopy
 from enum import Enum
 from abc import ABC, abstractmethod
 
 from src import utils
 from src.aes_sbox import SBox
-from src.uint import BaseUint, Uint32, Uint64
+from src.uint import BaseUint, Uint8, Uint32, Uint64
 
 __all__ = ["KDFDomain", "BaseBlake", "Blake32", "Blake64"]
+
+
+RoundKey = tuple[
+    Uint8, Uint8, Uint8, Uint8,
+    Uint8, Uint8, Uint8, Uint8,
+    Uint8, Uint8, Uint8, Uint8,
+    Uint8, Uint8, Uint8, Uint8
+]
+RoundKeys = list[RoundKey]
 
 
 class KDFDomain(Enum):
@@ -48,6 +58,9 @@ class BaseBlake(ABC):
     @staticmethod
     @abstractmethod
     def domain_mask(domain: KDFDomain) -> int: ...
+
+    @abstractmethod
+    def derive_keys(self, counter: int, domain: KDFDomain) -> list[RoundKeys]: ...
 
     def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
         self.key = utils.bytes_to_uint_vector(key, self.uint(), v_size=8)
@@ -259,6 +272,29 @@ class Blake32(BaseBlake):
             KDFDomain.HEADER_END: 0xF0F00000,
         }[domain]
 
+    def derive_keys(self, counter: int, domain: KDFDomain) -> list[RoundKeys]:
+        ent_src = deepcopy(self)
+        entropy_1 = ent_src.state[0:4] + ent_src.state[8:12]
+        entropy_2 = ent_src.state[4:8] + ent_src.state[12:16]
+        blocks_round_keys: list[RoundKeys] = [[], []]
+
+        for i, entropy in enumerate([entropy_1, entropy_2]):
+            keygen = deepcopy(self)
+            keygen.init_state_vector(entropy, counter, domain)
+            round_keys = blocks_round_keys[i]
+
+            def add_round_key():
+                keygen.mix_into_state(keygen.knc)
+                block_rk = [Uint8(b) for v in keygen.state[4:8] for b in v.to_bytes()]
+                round_keys.append(t.cast(RoundKey, tuple(block_rk)))
+
+            for _ in range(9):
+                add_round_key()
+                keygen.knc = keygen.permute(keygen.knc)
+            add_round_key()  # 10th round
+
+        return blocks_round_keys
+
 
 class Blake64(BaseBlake):
     @staticmethod
@@ -287,3 +323,31 @@ class Blake64(BaseBlake):
             KDFDomain.HEADER_MID: 0xFF0000FF00000000,
             KDFDomain.HEADER_END: 0xFF00FF0000000000,
         }[domain]
+
+    def derive_keys(self, counter: int, domain: KDFDomain) -> list[RoundKeys]:
+        ent_src = deepcopy(self)
+        entropy_1 = ent_src.state[0:4] + ent_src.state[8:12]
+        entropy_2 = ent_src.state[4:8] + ent_src.state[12:16]
+        group1 = (entropy_1, [], [])
+        group2 = (entropy_2, [], [])
+
+        for entropy, b1_round_keys, b2_round_keys in [group1, group2]:
+            keygen = deepcopy(self)
+            keygen.init_state_vector(entropy, counter, domain)
+
+            def add_round_key():
+                keygen.mix_into_state(keygen.knc)
+                block1_rk = [Uint8(b) for v in keygen.state[4:6] for b in v.to_bytes()]
+                block2_rk = [Uint8(b) for v in keygen.state[6:8] for b in v.to_bytes()]
+                b1_round_keys.append(t.cast(RoundKey, tuple(block1_rk)))
+                b2_round_keys.append(t.cast(RoundKey, tuple(block2_rk)))
+
+            for _ in range(9):
+                add_round_key()
+                keygen.knc = keygen.permute(keygen.knc)
+            add_round_key()  # 10th round
+
+        _, keys1, keys2 = group1
+        _, keys3, keys4 = group2
+
+        return [keys1, keys2, keys3, keys4]
