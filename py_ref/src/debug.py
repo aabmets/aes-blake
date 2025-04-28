@@ -10,6 +10,7 @@
 #
 
 import re
+import typing as t
 
 from rich.console import Console
 
@@ -72,7 +73,7 @@ def pretty_print_hex(
     _console.print(hex_str, end=end)
 
 
-def pretty_print_vector(vector: list[BaseUint], color="yellow", py_var=True) -> None:
+def pretty_print_vector(vector: t.Iterable[BaseUint], color="yellow", py_var=True) -> None:
     if py_var:
         print(f"\nexpected = [")
     for i, uint in enumerate(vector):
