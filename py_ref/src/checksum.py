@@ -33,7 +33,7 @@ class BaseCheckSum(ABC):
         return bytes(self.state)
 
     @classmethod
-    def create_many(cls, count: int) -> list[CheckSum]:
+    def create_many(cls, count: int) -> list[BaseCheckSum]:
         return [cls() for _ in range(count)]
 
 
