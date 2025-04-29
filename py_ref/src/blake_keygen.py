@@ -20,16 +20,10 @@ from src import utils
 from src.aes_sbox import SBox
 from src.uint import BaseUint, Uint8, Uint32, Uint64
 
-__all__ = ["KDFDomain", "BaseBlake", "Blake32", "Blake64"]
+__all__ = ["RoundKeys", "KDFDomain", "BaseBlake", "Blake32", "Blake64"]
 
 
-RoundKey = tuple[
-    Uint8, Uint8, Uint8, Uint8,
-    Uint8, Uint8, Uint8, Uint8,
-    Uint8, Uint8, Uint8, Uint8,
-    Uint8, Uint8, Uint8, Uint8
-]
-RoundKeys = list[RoundKey]
+RoundKeys = list[list[Uint8]]
 
 
 class KDFDomain(Enum):
@@ -308,7 +302,7 @@ class Blake32(BaseBlake):
             def add_round_key():
                 keygen.mix_into_state(keygen.knc)
                 block_rk = [Uint8(b) for v in keygen.state[4:8] for b in v.to_bytes()]
-                round_keys.append(t.cast(RoundKey, tuple(block_rk)))
+                round_keys.append(block_rk)
 
             for _ in range(key_count - 1):
                 add_round_key()
@@ -381,8 +375,8 @@ class Blake64(BaseBlake):
                 keygen.mix_into_state(keygen.knc)
                 block1_rk = [Uint8(b) for v in keygen.state[4:6] for b in v.to_bytes()]
                 block2_rk = [Uint8(b) for v in keygen.state[6:8] for b in v.to_bytes()]
-                b1_round_keys.append(t.cast(RoundKey, tuple(block1_rk)))
-                b2_round_keys.append(t.cast(RoundKey, tuple(block2_rk)))
+                b1_round_keys.append(block1_rk)
+                b2_round_keys.append(block2_rk)
 
             for _ in range(key_count - 1):
                 add_round_key()
