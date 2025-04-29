@@ -9,6 +9,8 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
+import pytest
+
 from src import utils
 from src.uint import Uint8, Uint32, Uint64
 
@@ -48,6 +50,28 @@ def split_bytes():
     assert chunks == [b'Word1', b'Word2', b'Word3', b'Word4', b'Word5']
     chunks = utils.split_bytes(data, chunk_size=6)
     assert chunks == [b'Word1W', b'ord2Wo', b'rd3Wor', b'd4Word', b'5']
+
+
+def test_group_by_valid():
+    cases = [
+        (['abc', 'def', 'ghi', 'jkl'], 2, [('abc', 'def'), ('ghi', 'jkl')]),
+        (['abc', 'def', 'ghi'], 3, [('abc', 'def', 'ghi')]),
+        (['abc', 'def'], 1, [('abc',), ('def',)])
+    ]
+    for data, size, expected in cases:
+        assert utils.group_by(data, size) == expected
+
+
+def test_group_by_invalid():
+    cases = [
+        ([], 1),
+        (['abc', 'def'], 0),
+        (['abc', 'def'], -1),
+        (['abc', 'def', 'ghi'], 2),
+    ]
+    for data, size in cases:
+        with pytest.raises(ValueError):
+            utils.group_by(data, size)
 
 
 def test_bytes_to_uint8_vector():

@@ -27,6 +27,17 @@ def split_bytes(data: bytes, chunk_size: int) -> list[bytes]:
     return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
 
+def group_by(data: list, size: int) -> list[tuple]:
+    n = len(data)
+    if not data:
+        raise ValueError("Data cannot be an empty list")
+    elif size <= 0:
+        raise ValueError("Size must be a positive integer")
+    elif n % size != 0:
+        raise ValueError(f"Cannot divide list of length {n} into groups of {size}")
+    return [tuple(data[i:i+size]) for i in range(0, n, size)]
+
+
 def bytes_to_uint_vector(data: bytes, uint: t.Union[T, Type[T]], v_size: int) -> list[T]:
     chunk_size = uint.bit_count() // 8
     sized_data = pad_trunc_to_size(data, v_size * chunk_size)
