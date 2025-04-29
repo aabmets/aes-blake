@@ -27,13 +27,10 @@ RoundKeys = list[list[Uint8]]
 
 
 class KDFDomain(Enum):
-    DIGEST_CTX = 0
-    CIPHER_BGN = 1
-    CIPHER_MID = 2
-    CIPHER_END = 3
-    HEADER_BGN = 4
-    HEADER_MID = 5
-    HEADER_END = 6
+    CTX = 0  # Digest context
+    MSG = 1  # Derive message block keys
+    HDR = 2  # Derive header block keys
+    CHK = 3  # Derive checksum block keys
 
 
 class BaseBlake(ABC):
@@ -219,7 +216,7 @@ class BaseBlake(ABC):
         """
         Digest the internal context through ten rounds of compression.
 
-        This method initializes the internal state for the DIGEST_CTX domain using
+        This method initializes the internal state for the CTX domain using
         the stored key and a zero counter, then performs ten rounds of the
         BLAKE-like compression on the context vector:
           - For the first nine rounds:
@@ -232,7 +229,7 @@ class BaseBlake(ABC):
         Returns:
             None: The internal state and context are updated in-place.
         """
-        self.init_state_vector(self.key, counter=0, domain=KDFDomain.DIGEST_CTX)
+        self.init_state_vector(self.key, counter=0, domain=KDFDomain.CTX)
         for _ in range(9):
             self.mix_into_state(self.context)
             self.context = self.permute(self.context)
@@ -259,18 +256,18 @@ class Blake32(BaseBlake):
     @staticmethod
     def domain_mask(domain: KDFDomain) -> int:
         return {
-            KDFDomain.DIGEST_CTX: 0,
-            KDFDomain.CIPHER_BGN: 0x0F00000F,
-            KDFDomain.CIPHER_MID: 0x0F0000F0,
-            KDFDomain.CIPHER_END: 0x0F000F00,
-            KDFDomain.HEADER_BGN: 0xF000F000,
-            KDFDomain.HEADER_MID: 0xF00F0000,
-            KDFDomain.HEADER_END: 0xF0F00000,
+            KDFDomain.CTX: 0,
+            KDFDomain.MSG: 0x00F0000F,
+            KDFDomain.HDR: 0x0F000F00,
+            KDFDomain.CHK: 0xF00F0000,
         }[domain]
 
-    def derive_keys(self, key_count: int, block_counter: int, domain: KDFDomain) -> list[RoundKeys]:
+    def derive_keys(
+            self, key_count: int, block_counter: int, domain: KDFDomain
+    ) -> list[RoundKeys]:
         """
-        Derive a sequence of round keys for two 128-bit AES blocks using the 32-bit BLAKE variant.
+        Derive a sequence of round keys for two 128-bit AES blocks
+        using the 32-bit BLAKE variant.
 
         This method splits the internal state into two entropy sources and, for each:
           1. Creates a fresh Blake32 instance and initializes its state with the entropy,
@@ -331,18 +328,18 @@ class Blake64(BaseBlake):
     @staticmethod
     def domain_mask(domain: KDFDomain) -> int:
         return {
-            KDFDomain.DIGEST_CTX: 0,
-            KDFDomain.CIPHER_BGN: 0x00FF0000000000FF,
-            KDFDomain.CIPHER_MID: 0x00FF00000000FF00,
-            KDFDomain.CIPHER_END: 0x00FF000000FF0000,
-            KDFDomain.HEADER_BGN: 0xFF000000FF000000,
-            KDFDomain.HEADER_MID: 0xFF0000FF00000000,
-            KDFDomain.HEADER_END: 0xFF00FF0000000000,
+            KDFDomain.CTX: 0,
+            KDFDomain.MSG: 0x0000FF00000000FF,
+            KDFDomain.HDR: 0x00FF000000FF0000,
+            KDFDomain.CHK: 0xFF0000FF00000000,
         }[domain]
 
-    def derive_keys(self, key_count: int, block_counter: int, domain: KDFDomain) -> list[RoundKeys]:
+    def derive_keys(
+            self, key_count: int, block_counter: int, domain: KDFDomain
+    ) -> list[RoundKeys]:
         """
-        Derive a sequence of round keys for four 128-bit AES blocks using the 64-bit BLAKE variant.
+        Derive a sequence of round keys for four 128-bit AES blocks
+        using the 64-bit BLAKE variant.
 
         This method splits the internal state into two entropy sources and, for each source:
           1. Creates a fresh Blake64 instance and initializes its state with the entropy,
