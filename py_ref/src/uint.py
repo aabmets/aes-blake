@@ -38,8 +38,9 @@ class BaseUint(ABC):
 
     @value.setter
     def value(self, value: int) -> None:
-        if not isinstance(value, int):
-            raise TypeError
+        if not isinstance(value, (int, BaseUint)):
+            cls_name = self.__class__.__name__
+            raise TypeError(f"Cannot set {cls_name} value from {value}")
         self._value = value & self.max_value()
 
     def __init__(self, value: int = 0) -> None:
