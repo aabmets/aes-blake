@@ -22,8 +22,8 @@ from src.checksum import CheckSum
 
 __all__ = ["BaseAESBlake", "AESBlake256", "AESBlake512"]
 
-
 Inputs = tuple[list[bytes], list[bytes]]
+Chunks = t.Iterable[bytes | Uint8]
 
 
 class BaseAESBlake(ABC):
@@ -47,108 +47,29 @@ class BaseAESBlake(ABC):
     def encrypt(self, plaintext: bytes, header: bytes) -> tuple[bytes, bytes]:
         plaintext_chunks, header_chunks = self.validate_convert_inputs(plaintext, header)
         plaintext_checksums = CheckSum.create_many(self.aes_blocks_count)
-        header_checksums = CheckSum.create_many(self.aes_blocks_count)
-        final_checksum: list[Uint8] = []
         ciphertext: list[Uint8] = []
-
-        # Encrypt the plaintext, store the ciphertext, and XOR the plaintext into plaintext checksum
-        for group in utils.group_by(plaintext_chunks, self.aes_blocks_count):
-            group_keys = self.keygen.derive_keys(self.key_count, self.block_counter, KDFDomain.MSG)
-            aes_blocks: list[AESBlock] = []
-
-            for chunk, keys, chk in zip(group, group_keys, plaintext_checksums):
-                aes_blocks.append(AESBlock(chunk, keys))
-                chk.xor_with(chunk)
-
-            self.run_encryption_rounds(aes_blocks)
+        for chunk_group in utils.group_by(plaintext_chunks, self.aes_blocks_count):
+            aes_blocks = self.run_encryption_rounds(chunk_group, KDFDomain.MSG)
             for block in aes_blocks:
                 ciphertext.extend(block.state)
-
+            for chk, chunk in zip(plaintext_checksums, chunk_group):
+                chk.xor_with(chunk)
             self.block_counter += 1
-
-        # Encrypt the header and XOR the ciphertext into header checksum
-        for group in utils.group_by(header_chunks, self.aes_blocks_count):
-            group_keys = self.keygen.derive_keys(self.key_count, self.block_counter, KDFDomain.HDR)
-            aes_blocks: list[AESBlock] = []
-
-            for chunk, keys in zip(group, group_keys):
-                aes_blocks.append(AESBlock(chunk, keys))
-
-            self.run_encryption_rounds(aes_blocks)
-            for chk, block in zip(header_checksums, aes_blocks):
-                chk.xor_with(block.state)
-
-            self.block_counter += 1
-
-        # Encrypt the plaintext checksum and XOR it with the header checksum into final checksum
-        group_keys = self.keygen.derive_keys(self.key_count, self.block_counter, KDFDomain.CHK)
-        aes_blocks: list[AESBlock] = []
-
-        for chk, keys in zip(plaintext_checksums, group_keys):
-            aes_blocks.append(AESBlock(chk.state, keys))
-
-        self.run_encryption_rounds(aes_blocks)
-
-        for aes_block, chk in zip(aes_blocks, header_checksums):
-            for uint1, uint2 in zip(aes_block.state, chk.state):
-                final_checksum.append(uint1 ^ uint2)
-
-        self.block_counter = 0
-        return bytes(ciphertext), bytes(final_checksum)  # Return the ciphertext and the final checksum
+        auth_tag = self.compute_auth_tag(header_chunks, plaintext_checksums)
+        return bytes(ciphertext), auth_tag
 
     def decrypt(self, ciphertext: bytes, header: bytes, auth_tag: bytes) -> bytes:
         ciphertext_chunks, header_chunks = self.validate_convert_inputs(ciphertext, header)
         plaintext_checksums = CheckSum.create_many(self.aes_blocks_count)
-        header_checksums = CheckSum.create_many(self.aes_blocks_count)
-        final_checksum: list[Uint8] = []
         plaintext: list[Uint8] = []
-
-        # Decrypt the ciphertext, store the plaintext, and XOR the retrieved plaintext into plaintext checksum
-        for group in utils.group_by(ciphertext_chunks, self.aes_blocks_count):
-            group_keys = self.keygen.derive_keys(self.key_count, self.block_counter, KDFDomain.MSG)
-            aes_blocks: list[AESBlock] = []
-
-            for chunk, keys in zip(group, group_keys):
-                aes_blocks.append(AESBlock(chunk, keys))
-
-            self.run_decryption_rounds(aes_blocks)
+        for chunk_group in utils.group_by(ciphertext_chunks, self.aes_blocks_count):
+            aes_blocks = self.run_decryption_rounds(chunk_group, KDFDomain.MSG)
             for chk, block in zip(plaintext_checksums, aes_blocks):
                 plaintext.extend(block.state)
                 chk.xor_with(block.state)
-
             self.block_counter += 1
-
-        # Encrypt the header and XOR the ciphertext into header checksum
-        for group in utils.group_by(header_chunks, self.aes_blocks_count):
-            group_keys = self.keygen.derive_keys(self.key_count, self.block_counter, KDFDomain.HDR)
-            aes_blocks: list[AESBlock] = []
-
-            for chunk, keys in zip(group, group_keys):
-                aes_blocks.append(AESBlock(chunk, keys))
-
-            self.run_encryption_rounds(aes_blocks)
-            for chk, block in zip(header_checksums, aes_blocks):
-                chk.xor_with(block.state)
-
-            self.block_counter += 1
-
-        # Encrypt the plaintext checksum and XOR it with the header checksum into final checksum
-        group_keys = self.keygen.derive_keys(self.key_count, self.block_counter, KDFDomain.CHK)
-        aes_blocks: list[AESBlock] = []
-
-        for chk, keys in zip(plaintext_checksums, group_keys):
-            aes_blocks.append(AESBlock(chk.state, keys))
-
-        self.run_encryption_rounds(aes_blocks)
-
-        for aes_block, chk in zip(aes_blocks, header_checksums):
-            for uint1, uint2 in zip(aes_block.state, chk.state):
-                final_checksum.append(uint1 ^ uint2)
-
-        # If tags match, the correct plaintext has been decrypted
-        assert bytes(final_checksum) == auth_tag
-
-        self.block_counter = 0
+        new_auth_tag = self.compute_auth_tag(header_chunks, plaintext_checksums)
+        assert new_auth_tag == auth_tag
         return bytes(plaintext)
 
     def validate_convert_inputs(self, text: bytes, header: bytes) -> Inputs:
@@ -158,23 +79,31 @@ class BaseAESBlake(ABC):
         b = utils.split_bytes(header, chunk_size=self.aes_block_bytes)
         return a, b
 
-    def run_encryption_rounds(self, aes_blocks: list[AESBlock]) -> None:
+    def run_encryption_rounds(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
+        aes_blocks = self.create_aes_blocks(chunks, domain)
         generators = [ab.encrypt() for ab in aes_blocks]
         keep_running = True
         while keep_running:
             for gen in generators:
                 keep_running = next(gen, False)
             self.exchange_columns(aes_blocks)
+        return aes_blocks
 
-    def run_decryption_rounds(self, aes_blocks: list[AESBlock]) -> None:
+    def run_decryption_rounds(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
+        aes_blocks = self.create_aes_blocks(chunks, domain)
         generators = [ab.decrypt() for ab in aes_blocks]
         keep_running = True
         while keep_running:
             self.exchange_columns(aes_blocks, inverse=True)
             for gen in generators:
                 keep_running = next(gen, False)
+        return aes_blocks
 
-    def exchange_columns(self, aes_blocks: list[AESBlock], inverse=False) -> None:
+    def create_aes_blocks(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
+        keys = self.keygen.derive_keys(self.key_count, self.block_counter, domain)
+        return [AESBlock(chunk, k) for chunk, k in zip(chunks, keys)]
+
+    def exchange_columns(self, aes_blocks: list[AESBlock], inverse: bool = False) -> None:
         clones = [block.clone() for block in aes_blocks]
         pattern = self.ex_cols_pattern(inverse)
         for i, indices in enumerate(pattern):
@@ -184,6 +113,22 @@ class BaseAESBlake(ABC):
                 *clones[indices[2]].state[8:12],
                 *clones[indices[3]].state[12:16],
             ]
+
+    def compute_auth_tag(self, header_chunks: list[bytes], plaintext_checksums: list[CheckSum]) -> bytes:
+        header_checksums = CheckSum.create_many(self.aes_blocks_count)
+        for chunk_group in utils.group_by(header_chunks, self.aes_blocks_count):
+            aes_blocks = self.run_encryption_rounds(chunk_group, KDFDomain.HDR)
+            for chk, block in zip(header_checksums, aes_blocks):
+                chk.xor_with(block.state)
+            self.block_counter += 1
+        chk_states = [chk.state for chk in plaintext_checksums]
+        aes_blocks = self.run_encryption_rounds(chk_states, KDFDomain.CHK)
+        final_checksum: list[Uint8] = []
+        for aes_block, chk in zip(aes_blocks, header_checksums):
+            for uint1, uint2 in zip(aes_block.state, chk.state):
+                final_checksum.append(uint1 ^ uint2)
+        self.block_counter = 0
+        return bytes(final_checksum)
 
 
 class AESBlake256(BaseAESBlake):
