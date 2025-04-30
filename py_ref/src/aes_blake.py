@@ -69,12 +69,14 @@ class BaseAESBlake(ABC):
                 chk.xor_with(block.state)
             self.block_counter += 1
         new_auth_tag = self.compute_auth_tag(header_chunks, plaintext_checksums)
-        assert new_auth_tag == auth_tag
+        if new_auth_tag != auth_tag:
+            raise ValueError("Failed to verify auth tag")
         return bytes(plaintext)
 
     def validate_convert_inputs(self, text: bytes, header: bytes) -> Inputs:
         for data in [text, header]:
-            assert (len(data) % self.aes_total_bytes) == 0
+            if (len(data) % self.aes_total_bytes) != 0:
+                raise ValueError("Invalid input data length")
         a = utils.split_bytes(text, chunk_size=self.aes_block_bytes)
         b = utils.split_bytes(header, chunk_size=self.aes_block_bytes)
         return a, b
