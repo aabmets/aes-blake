@@ -48,12 +48,14 @@ def fixture_aes_block_data() -> tuple[bytes, ...]:
 
 
 def normal_usage_tester(cls: t.Type[BaseAESBlake]):
-    data_len = cls.keygen_class().uint().bit_count()
+    data_len = cls.keygen_class().uint().bit_count()  # interpret as byte count
     plaintext = header = bytes(range(data_len))
     cipher = cls(b"", b"", b"")
     ciphertext, auth_tag = cipher.encrypt(plaintext, header)
     _plaintext = cipher.decrypt(ciphertext, header, auth_tag)
+    assert len(plaintext) == data_len
     assert len(ciphertext) == data_len
+    assert len(auth_tag) == data_len
     assert len(_plaintext) == data_len
     assert _plaintext == plaintext
 
