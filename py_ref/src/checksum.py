@@ -10,20 +10,15 @@
 #
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
 
 from src.uint import IterNum, Uint8
 
-__all__ = ["BaseCheckSum", "CheckSum32", "CheckSum64"]
+__all__ = ["CheckSum"]
 
 
-class BaseCheckSum(ABC):
-    @staticmethod
-    @abstractmethod
-    def size() -> int: ...
-
-    def __init__(self) -> None:
-        self.state = [Uint8(0) for _ in range(self.size())]
+class CheckSum:
+    def __init__(self, state_size: int = 16) -> None:
+        self.state = [Uint8(0) for _ in range(state_size)]
 
     def xor_with(self, data: IterNum) -> None:
         for i, b in enumerate(data):
@@ -33,17 +28,5 @@ class BaseCheckSum(ABC):
         return bytes(self.state)
 
     @classmethod
-    def create_many(cls, count: int) -> list[BaseCheckSum]:
+    def create_many(cls, count: int) -> list[CheckSum]:
         return [cls() for _ in range(count)]
-
-
-class CheckSum32(BaseCheckSum):
-    @staticmethod
-    def size() -> int:
-        return 32
-
-
-class CheckSum64(BaseCheckSum):
-    @staticmethod
-    def size() -> int:
-        return 64

@@ -9,46 +9,42 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.checksum import CheckSum32, CheckSum64
+from src.checksum import CheckSum
 from src.uint import Uint8
 
 __all__ = ["test_checksum"]
 
 
 def test_checksum():
-    for cls in [CheckSum32, CheckSum64]:
-        chk, size = cls(), cls.size()
+    chk = CheckSum(state_size=16)
+    for obj in chk.state:
+        assert isinstance(obj, Uint8)
 
-        assert len(chk.state) == size
-        for obj in chk.state:
-            assert isinstance(obj, Uint8)
+    data1 = b"\x27" * 16
+    data2 = b"\xeb" * 16
+    data3 = b"\x9a" * 16
+    data4 = b"\x5c" * 16
 
-        data1 = b"\x27" * size
-        data2 = b"\xeb" * size
-        data3 = b"\x9a" * size
-        data4 = b"\x5c" * size
+    chk.xor_with(data1)
+    for i in range(0, 16):
+        assert chk.state[i] == 0x27
 
-        chk.xor_with(data1)
-        for i in range(0, size):
-            assert chk.state[i] == 0x27
+    chk.xor_with(data2)
+    for i in range(0, 16):
+        assert chk.state[i] == 0xCC
 
-        chk.xor_with(data2)
-        for i in range(0, size):
-            assert chk.state[i] == 0xCC
+    chk.xor_with(data3)
+    for i in range(0, 16):
+        assert chk.state[i] == 0x56
 
-        chk.xor_with(data3)
-        for i in range(0, size):
-            assert chk.state[i] == 0x56
+    chk.xor_with(data4)
+    for i in range(0, 16):
+        assert chk.state[i] == 0x0A
 
-        chk.xor_with(data4)
-        for i in range(0, size):
-            assert chk.state[i] == 0x0A
+    assert chk.to_bytes() == b"\x0a" * 16
 
-        assert chk.to_bytes() == b"\x0a" * size
-
-        chk_list = cls.create_many(count=4)
-        assert isinstance(chk_list, list)
-        assert len(chk_list) == 4
-
-        for obj in chk_list:
-            assert isinstance(obj, cls)
+    chk = CheckSum.create_many(4)
+    assert isinstance(chk, list)
+    assert len(chk) == 4
+    for obj in chk:
+        assert isinstance(obj, CheckSum)
