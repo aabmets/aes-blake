@@ -7,17 +7,18 @@ authors = [
 ]
 license = "Apache-2.0"
 readme = "../README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
-    "coverage>=7.6.0",
+    "coverage>=7.8.0",
     "isort>=6.0.1",
     "matplotlib>=3.10.1",
-    "pytest>=8.3.0",
-    "pytest-cov>=6.0.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
     "pytest-xdist>=3.6.1",
     "psutil>=7.0.0",
     "rich>=14.0.0",
-    "ruff>=0.11.5",
+    "ruff>=0.11.7",
+    "proof-frog>=0.2.0",
 ]
 
 [tool.pytest.ini_options]
