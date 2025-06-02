@@ -72,3 +72,64 @@ TEST_CASE("permute32: identity mapping yields expected schedule", "[permute32]")
         REQUIRE(m[i] == expected[i]);
     }
 }
+
+
+TEST_CASE("g_mix32 produces expected state after successive calls", "[g_mix32]") {
+    uint32_t state[16] = {};
+
+    // After the first call: g_mix(0,4,8,12, 1,2)
+    g_mix32(state, 0, 4, 8, 12, 1u, 2u);
+    {
+        const uint32_t expected1[16] = {
+            0x00000013u, 0x00000000u, 0x00000000u, 0x00000000u,
+            0x20260202u, 0x00000000u, 0x00000000u, 0x00000000u,
+            0x13010100u, 0x00000000u, 0x00000000u, 0x00000000u,
+            0x13000100u, 0x00000000u, 0x00000000u, 0x00000000u
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected1[i]);
+        }
+    }
+
+    // After the second call: g_mix(1,5,9,13, 1,2)
+    g_mix32(state, 1, 5, 9, 13, 1u, 2u);
+    {
+        const uint32_t expected2[16] = {
+            0x00000013u, 0x00000013u, 0x00000000u, 0x00000000u,
+            0x20260202u, 0x20260202u, 0x00000000u, 0x00000000u,
+            0x13010100u, 0x13010100u, 0x00000000u, 0x00000000u,
+            0x13000100u, 0x13000100u, 0x00000000u, 0x00000000u
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected2[i]);
+        }
+    }
+
+    // After the third call: g_mix(2,6,10,14, 1,2)
+    g_mix32(state, 2, 6, 10, 14, 1u, 2u);
+    {
+        const uint32_t expected3[16] = {
+            0x00000013u, 0x00000013u, 0x00000013u, 0x00000000u,
+            0x20260202u, 0x20260202u, 0x20260202u, 0x00000000u,
+            0x13010100u, 0x13010100u, 0x13010100u, 0x00000000u,
+            0x13000100u, 0x13000100u, 0x13000100u, 0x00000000u
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected3[i]);
+        }
+    }
+
+    // After the fourth call: g_mix(3,7,11,15, 1,2)
+    g_mix32(state, 3, 7, 11, 15, 1u, 2u);
+    {
+        const uint32_t expected4[16] = {
+            0x00000013u, 0x00000013u, 0x00000013u, 0x00000013u,
+            0x20260202u, 0x20260202u, 0x20260202u, 0x20260202u,
+            0x13010100u, 0x13010100u, 0x13010100u, 0x13010100u,
+            0x13000100u, 0x13000100u, 0x13000100u, 0x13000100u
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected4[i]);
+        }
+    }
+}

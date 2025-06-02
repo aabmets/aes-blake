@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 uint64_t rotr64(uint64_t x, unsigned int r);
+void g_mix64(uint64_t state[16], int a, int b, int c, int d, uint64_t mx, uint64_t my);
 void permute64(uint64_t m[16]);
 
 #ifdef __cplusplus

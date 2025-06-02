@@ -73,3 +73,64 @@ TEST_CASE("permute64: identity mapping yields expected schedule (cast to uint64_
         REQUIRE(m[i] == expected[i]);
     }
 }
+
+
+TEST_CASE("g_mix64 produces expected state after successive calls", "[g_mix64]") {
+    uint64_t state[16] = {};
+
+    // After the first call: g_mix(0,4,8,12, 1,2)
+    g_mix64(state, 0, 4, 8, 12, 1ULL, 2ULL);
+    {
+        const uint64_t expected1[16] = {
+            0x0000000000000103ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+            0x0206000200020200ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+            0x0103000100010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+            0x0103000000010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected1[i]);
+        }
+    }
+
+    // After the second call: g_mix(1,5,9,13, 1,2)
+    g_mix64(state, 1, 5, 9, 13, 1ULL, 2ULL);
+    {
+        const uint64_t expected2[16] = {
+            0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+            0x0206000200020200ULL, 0x0206000200020200ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+            0x0103000100010000ULL, 0x0103000100010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
+            0x0103000000010000ULL, 0x0103000000010000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected2[i]);
+        }
+    }
+
+    // After the third call: g_mix(2,6,10,14, 1,2)
+    g_mix64(state, 2, 6, 10, 14, 1ULL, 2ULL);
+    {
+        const uint64_t expected3[16] = {
+            0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000000ULL,
+            0x0206000200020200ULL, 0x0206000200020200ULL, 0x0206000200020200ULL, 0x0000000000000000ULL,
+            0x0103000100010000ULL, 0x0103000100010000ULL, 0x0103000100010000ULL, 0x0000000000000000ULL,
+            0x0103000000010000ULL, 0x0103000000010000ULL, 0x0103000000010000ULL, 0x0000000000000000ULL
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected3[i]);
+        }
+    }
+
+    // After the fourth call: g_mix(3,7,11,15, 1,2)
+    g_mix64(state, 3, 7, 11, 15, 1ULL, 2ULL);
+    {
+        const uint64_t expected4[16] = {
+            0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000103ULL,
+            0x0206000200020200ULL, 0x0206000200020200ULL, 0x0206000200020200ULL, 0x0206000200020200ULL,
+            0x0103000100010000ULL, 0x0103000100010000ULL, 0x0103000100010000ULL, 0x0103000100010000ULL,
+            0x0103000000010000ULL, 0x0103000000010000ULL, 0x0103000000010000ULL, 0x0103000000010000ULL
+        };
+        for (int i = 0; i < 16; ++i) {
+            REQUIRE(state[i] == expected4[i]);
+        }
+    }
+}

@@ -11,10 +11,9 @@
 
 #include <stdint.h>
 
+
 /*
- * Rotate a 64-bit word `x` right by `r` bits.
- * Assumes 0 ≤ r < 64. If `r` might be ≥64, you can mask it:
- *     r &= 63;
+ * Rotates a 64-bit word `x` right by `r` bits. Assumes 0 ≤ r < 64.
  */
 uint64_t rotr64(const uint64_t x, const unsigned int r) {
     return (x >> r) | (x << (64 - r));
@@ -22,16 +21,32 @@ uint64_t rotr64(const uint64_t x, const unsigned int r) {
 
 
 /*
+ * Performs the BLAKE3 G‐mix operation on four state vector elements.
+ * Uses fixed rotation distances for BLAKE3/64: { 32, 24, 16, 63 }.
+ */
+void g_mix64(
+        uint64_t state[16],
+        const int a, const int b, const int c, const int d,
+        const uint64_t mx, const uint64_t my
+) {
+    /* First mixing round */
+    state[a] = state[a] + state[b] + mx;
+    state[d] = rotr64(state[d] ^ state[a], 32);
+    state[c] = state[c] + state[d];
+    state[b] = rotr64(state[b] ^ state[c], 24);
+
+    /* Second mixing round */
+    state[a] = state[a] + state[b] + my;
+    state[d] = rotr64(state[d] ^ state[a], 16);
+    state[c] = state[c] + state[d];
+    state[b] = rotr64(state[b] ^ state[c], 63);
+}
+
+
+/*
  * Performs the BLAKE3 message permutation on the input message vector.
- *
  * The function reorders a list of BaseUint elements according to the
  * fixed BLAKE3 permutation schedule and returns the permuted list.
- *
- * Args:
- *     m (list[BaseUint]): The input message vector to permute.
- *
- * Returns:
- *     list[BaseUint]: The permuted message vector.
  */
 void permute64(uint64_t m[16]) {
     const int schedule[16] = {
