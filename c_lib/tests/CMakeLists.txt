@@ -22,7 +22,7 @@ add_executable(tests
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
 #    avx2_lib
-#    clean_lib
+    clean_lib
 #    hardened_lib
     shared_lib
 )
