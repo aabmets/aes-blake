@@ -44,6 +44,26 @@ void g_mix64(
 
 
 /*
+ * Performs the BLAKE3 mixing function on the state matrix using the provided
+ * message words. The `g_mix` function is first applied across the columns, then
+ * across the diagonals of the state matrix. Each call to `g_mix` uses a pair of
+ * message words from the input list.
+ */
+void mix_into_state64(uint64_t state[16], uint64_t m[16]) {
+    // columnar mixing
+    g_mix64(state, 0, 4, 8, 12, m[0], m[1]);
+    g_mix64(state, 1, 5, 9, 13, m[2], m[3]);
+    g_mix64(state, 2, 6, 10, 14, m[4], m[5]);
+    g_mix64(state, 3, 7, 11, 15, m[6], m[7]);
+    // diagonal mixing
+    g_mix64(state, 0, 5, 10, 15, m[8], m[9]);
+    g_mix64(state, 1, 6, 11, 12, m[10], m[11]);
+    g_mix64(state, 2, 7, 8, 13, m[12], m[13]);
+    g_mix64(state, 3, 4, 9, 14, m[14], m[15]);
+}
+
+
+/*
  * Performs the BLAKE3 message permutation on the input message vector.
  * The function reorders a list of BaseUint elements according to the
  * fixed BLAKE3 permutation schedule and returns the permuted list.

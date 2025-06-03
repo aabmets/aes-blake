@@ -133,3 +133,24 @@ TEST_CASE("g_mix32 produces expected state after successive calls", "[g_mix32]")
         }
     }
 }
+
+
+TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[blake32]") {
+    uint32_t state[16] = {};
+
+    uint32_t m[16];
+    for (uint32_t i = 0; i < 16; ++i) {
+        m[i] = i;
+    }
+    mix_into_state32(state, m);
+
+    uint32_t expected[16] = {
+        0x952AB9C9u, 0x7A41633Au, 0x5E47082Cu, 0xB024987Eu,
+        0x4E2C267Au, 0xDB3491DAu, 0x19C80149u, 0xF331BDEEu,
+        0x05B20CC7u, 0xA631AAD3u, 0xCEA858DEu, 0x1DAFFE74u,
+        0xA87276E2u, 0xF65026EDu, 0x7CB45FD1u, 0x83972794u
+    };
+    for (int i = 0; i < 16; ++i) {
+        REQUIRE(state[i] == expected[i]);
+    }
+}

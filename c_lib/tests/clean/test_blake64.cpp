@@ -134,3 +134,24 @@ TEST_CASE("g_mix64 produces expected state after successive calls", "[g_mix64]")
         }
     }
 }
+
+
+TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[blake64]") {
+    uint64_t state[16] = {};
+
+    uint64_t m[16];
+    for (uint64_t i = 0; i < 16; ++i) {
+        m[i] = i;
+    }
+    mix_into_state64(state, m);
+
+    uint64_t expected[16] = {
+        0x130E040401080D14ull, 0x191A081607122722ull, 0x1F260C18151C2930ull, 0x0D0200020B06232Eull,
+        0x506E264202402412ull, 0x3C3E263206381422ull, 0x786E56521A702402ull, 0x748E46627E780402ull,
+        0x294B2F3D2A2C1B0Full, 0x253713230A260F0Dull, 0x111B171902180313ull, 0x2D3F23270A320F09ull,
+        0x272A191202190F01ull, 0x293C1F281C0D1B03ull, 0x232E0D0606190F0Dull, 0x0D10130C000D030Full
+    };
+    for (int i = 0; i < 16; ++i) {
+        REQUIRE(state[i] == expected[i]);
+    }
+}
