@@ -209,3 +209,21 @@ TEST_CASE("sub_bytes64: DEC (inverse) of 0x6363636363636363 returns zero", "[sub
         REQUIRE(original == 0x0000000000000000ULL);
     }
 }
+
+
+TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[composite64][mirror_pytest]") {
+    uint64_t key[8];
+    uint64_t nonce[8];
+    uint64_t out[16];
+
+    for (size_t i = 0; i < 8; ++i) {
+        key[i] = 0xAAAAAAAAAAAAAAAAULL;
+        nonce[i] = 0xBBBBBBBBBBBBBBBBULL;
+    }
+    compute_key_nonce_composite64(key, nonce, out);
+
+    for (size_t i = 0; i < 8; ++i) {
+        REQUIRE(out[2*i]     == 0xAAAAAAAABBBBBBBBULL);
+        REQUIRE(out[2*i + 1] == 0xBBBBBBBBAAAAAAAALL);
+    }
+}

@@ -31,6 +31,8 @@ extern "C" {
 
     void sub_bytes32(uint32_t state[16]);
 
+    void compute_key_nonce_composite32(const uint32_t key[8], const uint32_t nonce[8], uint32_t out[16]);
+
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 #include "aes_sbox.h"
 
 
@@ -106,5 +107,27 @@ void sub_bytes32(uint32_t state[16]) {
                  | (uint32_t)sb1 << 16
                  | (uint32_t)sb2 <<  8
                  | (uint32_t)sb3;
+    }
+}
+
+
+/**
+ * Splices together 8‐element key and nonce arrays of uint32_t by exchanging
+ * their upper and lower 16‐bit halves. Produces a 16‐element output array.
+ */
+void compute_key_nonce_composite32(
+        const uint32_t key[8],
+        const uint32_t nonce[8],
+        uint32_t out[16]
+) {
+    const int half = 16;
+    const uint32_t mask1 = (1u << half) - 1u; // 0x0000FFFF
+    const uint32_t mask2 = mask1 << half;     // 0xFFFF0000
+
+    for (size_t i = 0; i < 8; ++i) {
+        const uint32_t a = key[i]   & mask2 | nonce[i] & mask1;
+        const uint32_t b = nonce[i] & mask2 | key[i]   & mask1;
+        out[2*i]     = a;
+        out[2*i + 1] = b;
     }
 }
