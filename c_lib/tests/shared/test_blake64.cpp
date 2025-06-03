@@ -282,3 +282,26 @@ TEST_CASE("init_state_vector64 produces the expected 16-word state", "[init_stat
         }
     }
 }
+
+
+TEST_CASE("digest_context64 produces expected final state", "[digest_context64]") {
+    constexpr uint64_t key[8] = {};
+    uint64_t context[8] = {};
+    uint64_t state[16] = {};
+
+    digest_context64(state, key, context);
+
+    uint64_t expected[16] = {
+        0x863DEBC71AE04878ULL, 0x6A0146661D0C3AA8ULL,
+        0x6B83E01096F342A4ULL, 0x015B247CCF9EF523ULL,
+        0x0A96A8430BE2E5FDULL, 0x5A1BC690D1D8B66AULL,
+        0x54BA87747DED31D3ULL, 0x57169D5081C178BAULL,
+        0x6C695A43EC576849ULL, 0xB867B3C5E09A2E5EULL,
+        0x1E7F41E99B9BF789ULL, 0x368D12E404EF905EULL,
+        0x95CF3B2B01E83417ULL, 0x2C88BB9BC0C31F66ULL,
+        0x88305423A8559E27ULL, 0x162C0A57F8692710ULL
+    };
+    for (int i = 0; i < 16; i++) {
+        REQUIRE(state[i] == expected[i]);
+    }
+}

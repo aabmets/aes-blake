@@ -184,3 +184,17 @@ void init_state_vector64(
         state[i] ^= d_mask;
     }
 }
+
+
+/*
+ * Digests the cipher context through ten rounds of compression.
+ */
+void digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t context[8]) {
+    init_state_vector64(state, key, 0, KDFDomain_CTX);
+    for (int i = 0; i < 9; i++) {
+        mix_into_state64(state, context);
+        permute64(context);
+    }
+    mix_into_state64(state, context);
+    sub_bytes64(state);
+}

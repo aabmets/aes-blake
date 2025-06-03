@@ -36,6 +36,8 @@ extern "C" {
 
     void init_state_vector32(uint32_t state[16], const uint32_t entropy[8], uint64_t counter, KDFDomain domain);
 
+    void digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t context[8]);
+
 
 #ifdef __cplusplus
 }
