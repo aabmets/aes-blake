@@ -12,6 +12,7 @@
 #ifndef BLAKE32_H
 #define BLAKE32_H
 
+#include "blake_keygen.h"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -31,7 +32,9 @@ extern "C" {
 
     void sub_bytes32(uint32_t state[16]);
 
-    void compute_key_nonce_composite32(const uint32_t key[8], const uint32_t nonce[8], uint32_t out[16]);
+    void compute_key_nonce_composite32(uint32_t key[8], uint32_t nonce[8], uint32_t out[16]);
+
+    void init_state_vector32(uint32_t state[16], const uint32_t entropy[8], uint64_t counter, KDFDomain domain);
 
 
 #ifdef __cplusplus

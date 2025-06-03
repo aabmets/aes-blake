@@ -12,6 +12,7 @@
 #include <catch2/catch_all.hpp>
 #include "blake32.h"
 #include "aes_sbox.h"
+#include "blake_keygen.h"
 
 
 TEST_CASE("rotr32: rotating by 0 returns the original value", "[rotr32]") {
@@ -201,5 +202,57 @@ TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alter
     for (size_t i = 0; i < 8; ++i) {
         REQUIRE(out[2*i]     == 0xAAAABBBBu);
         REQUIRE(out[2*i + 1] == 0xBBBBAAAAu);
+    }
+}
+
+
+TEST_CASE("init_state_vector32 produces the expected 16-word state", "[init_state_vector32]") {
+    constexpr uint32_t entropy[8] = {
+        0x00010203u, 0x04050607u, 0x08090A0Bu, 0x0C0D0E0Fu,
+        0x10111213u, 0x14151617u, 0x18191A1Bu, 0x1C1D1E1Fu
+    };
+
+    constexpr uint64_t max32 = 0xFFFFFFFFULL;
+    uint64_t counters[] = {
+        0ULL,
+        max32 / 2ULL,
+        max32 / 3ULL,
+        max32
+    };
+
+    KDFDomain domains[] = {
+        KDFDomain_CTX,
+        KDFDomain_MSG,
+        KDFDomain_HDR,
+        KDFDomain_CHK
+    };
+
+    for (const auto domain : domains) {
+        const uint32_t d_mask = get_domain_mask32(domain);
+
+        for (const auto ctr64 : counters) {
+            uint32_t state[16] = {};
+
+            init_state_vector32(state, entropy, ctr64, domain);
+
+            const auto ctr_low  = static_cast<uint32_t>(ctr64 & 0xFFFFFFFFu);
+            const auto ctr_high = static_cast<uint32_t>(ctr64 >> 32 & 0xFFFFFFFFu);
+
+            for (int j = 0; j < 4; j++) {
+                REQUIRE(state[j] == IV32[j]);
+            }
+            for (int j = 12; j < 16; j++) {
+                const uint32_t actual = state[j] ^ d_mask;
+                REQUIRE(actual == IV32[j - 8]);
+            }
+            for (int j = 4; j <= 7; j++) {
+                const uint32_t recovered = state[j] - ctr_low;
+                REQUIRE(recovered == entropy[j - 4]);
+            }
+            for (int j = 8; j <= 11; j++) {
+                const uint32_t recovered = state[j] - ctr_high;
+                REQUIRE(recovered == entropy[j - 4]);
+            }
+        }
     }
 }

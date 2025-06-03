@@ -227,3 +227,58 @@ TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alter
         REQUIRE(out[2*i + 1] == 0xBBBBBBBBAAAAAAAALL);
     }
 }
+
+
+TEST_CASE("init_state_vector64 produces the expected 16-word state", "[init_state_vector64]") {
+    constexpr uint64_t entropy[8] = {
+        0x0001020304050607ULL, 0x08090A0B0C0D0E0FULL,
+        0x1011121314151617ULL, 0x18191A1B1C1D1E1FULL,
+        0x2021222324252627ULL, 0x28292A2B2C2D2E2FULL,
+        0x3031323334353637ULL, 0x38393A3B3C3D3E3FULL
+    };
+
+    constexpr uint64_t max32 = 0xFFFFFFFFULL;
+    uint64_t counters[] = {
+        0ULL,
+        max32 / 2ULL,
+        max32 / 3ULL,
+        max32
+    };
+
+    // 3) All four domain values.
+    KDFDomain domains[] = {
+        KDFDomain_CTX,
+        KDFDomain_MSG,
+        KDFDomain_HDR,
+        KDFDomain_CHK
+    };
+
+    for (const auto domain : domains) {
+        const uint64_t d_mask = get_domain_mask64(domain);
+
+        for (const auto ctr64 : counters) {
+            uint64_t state[16] = {};
+
+            init_state_vector64(state, entropy, ctr64, domain);
+
+            const auto ctr_low32  = static_cast<uint32_t>(ctr64 & 0xFFFFFFFFu);
+            const auto ctr_high32 = static_cast<uint32_t>(ctr64 >> 32 & 0xFFFFFFFFu);
+
+            for (int j = 0; j < 4; j++) {
+                REQUIRE(state[j] == IV64[j]);
+            }
+            for (int j = 12; j < 16; j++) {
+                const uint64_t actual = state[j] ^ d_mask;
+                REQUIRE(actual == IV64[j - 8]);
+            }
+            for (int j = 4; j <= 7; j++) {
+                const uint64_t recovered = state[j] - static_cast<uint64_t>(ctr_low32);
+                REQUIRE(recovered == entropy[j - 4]);
+            }
+            for (int j = 8; j <= 11; j++) {
+                const uint64_t recovered = state[j] - static_cast<uint64_t>(ctr_high32);
+                REQUIRE(recovered == entropy[j - 4]);
+            }
+        }
+    }
+}

@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "aes_sbox.h"
+#include "blake_keygen.h"
 
 
 /*
@@ -129,5 +130,45 @@ void compute_key_nonce_composite32(
         const uint32_t b = nonce[i] & mask2 | key[i]   & mask1;
         out[2*i]     = a;
         out[2*i + 1] = b;
+    }
+}
+
+
+/*
+ * Initializes the 16-word state matrix for the compression function.
+ * Implements:
+ *   state[0..3]   = IV constants (BLAKE2s)
+ *   state[4..11]  = entropy[0..7]
+ *   state[12..15] = IV constants (BLAKE2s)
+ *   then:
+ *     add low‐32 bits of counter to state[4..7]
+ *     add high‐32 bits of counter to state[8..11]
+ *     XOR each of state[12..15] with the domain mask
+ */
+void init_state_vector32(
+    uint32_t state[16], const uint32_t entropy[8],
+    const uint64_t counter, const KDFDomain domain
+) {
+    for (int i = 0; i < 4; i++) {
+        state[i] = IV32[i];
+    }
+    for (int i = 0; i < 8; i++) {
+        state[i+4] = entropy[i];
+    }
+    for (int i = 4; i < 8; i++) {
+        state[i+8] = IV32[i];
+    }
+    const uint32_t ctr_low  = (uint32_t)(counter & 0xFFFFFFFFu);
+    const uint32_t ctr_high = (uint32_t)(counter >> 32 & 0xFFFFFFFFu);
+    const uint32_t d_mask = get_domain_mask32(domain);
+
+    for (int i = 4; i <= 7; i++) {
+        state[i] += ctr_low;
+    }
+    for (int i = 8; i <= 11; i++) {
+        state[i] += ctr_high;
+    }
+    for (int i = 12; i <= 15; i++) {
+        state[i] ^= d_mask;
     }
 }
