@@ -10,6 +10,7 @@
  */
 
 #include <stdint.h>
+#include "aes_sbox.h"
 
 
 /*
@@ -78,5 +79,44 @@ void permute64(uint64_t m[16]) {
     }
     for (int i = 0; i < 16; i++) {
         m[i] = tmp[i];
+    }
+}
+
+
+/**
+ * Applies AES SubBytes to each word of the state matrix. Each word is split into bytes,
+ * each byte is substituted through the AES S-box, and finally they are reassembled back
+ * into a word, which then is inserted into the same place in the state matrix.
+ */
+void sub_bytes64(uint64_t state[16]) {
+    for (size_t i = 0; i < 16; i++) {
+        const uint64_t v = state[i];
+
+        const uint8_t b0 = (uint8_t)(v >> 56 & 0xFF);
+        const uint8_t b1 = (uint8_t)(v >> 48 & 0xFF);
+        const uint8_t b2 = (uint8_t)(v >> 40 & 0xFF);
+        const uint8_t b3 = (uint8_t)(v >> 32 & 0xFF);
+        const uint8_t b4 = (uint8_t)(v >> 24 & 0xFF);
+        const uint8_t b5 = (uint8_t)(v >> 16 & 0xFF);
+        const uint8_t b6 = (uint8_t)(v >>  8 & 0xFF);
+        const uint8_t b7 = (uint8_t)(v       & 0xFF);
+
+        const uint8_t sb0 = aes_sbox[b0];
+        const uint8_t sb1 = aes_sbox[b1];
+        const uint8_t sb2 = aes_sbox[b2];
+        const uint8_t sb3 = aes_sbox[b3];
+        const uint8_t sb4 = aes_sbox[b4];
+        const uint8_t sb5 = aes_sbox[b5];
+        const uint8_t sb6 = aes_sbox[b6];
+        const uint8_t sb7 = aes_sbox[b7];
+
+        state[i] = (uint64_t)sb0 << 56
+                 | (uint64_t)sb1 << 48
+                 | (uint64_t)sb2 << 40
+                 | (uint64_t)sb3 << 32
+                 | (uint64_t)sb4 << 24
+                 | (uint64_t)sb5 << 16
+                 | (uint64_t)sb6 <<  8
+                 | (uint64_t)sb7;
     }
 }

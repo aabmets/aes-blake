@@ -12,15 +12,21 @@
 #ifndef CROSS_PLATFORM_CSPRNG_H
 #define CROSS_PLATFORM_CSPRNG_H
 
-#include <cstdint>
 
 #ifdef __cplusplus
+#include <cstdint>
 extern "C" {
+#else
+#include <stdint.h>
 #endif
 
-void csprng_open(void);
-uint8_t csprng_read(void);
-void csprng_close(void);
+
+    void csprng_open(void);
+
+    uint8_t csprng_read(void);
+
+    void csprng_close(void);
+
 
 #ifdef __cplusplus
 }

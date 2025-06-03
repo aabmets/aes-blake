@@ -11,6 +11,7 @@
 
 #include <catch2/catch_all.hpp>
 #include "blake64.h"
+#include "aes_sbox.h"
 
 
 TEST_CASE("rotr64: rotating by 0 returns the original value", "[rotr64]") {
@@ -153,5 +154,58 @@ TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[blake64]") {
     };
     for (int i = 0; i < 16; ++i) {
         REQUIRE(state[i] == expected[i]);
+    }
+}
+
+
+TEST_CASE("sub_bytes64: ENC maps all-zero words → 0x6363636363636363", "[sub_bytes64][ENC]") {
+    uint64_t state[16] = {0};
+
+    sub_bytes64(state);
+
+    for (const unsigned long long i : state) {
+        REQUIRE(i == 0x6363636363636363ULL);
+    }
+}
+
+
+TEST_CASE("sub_bytes64: DEC (inverse) of 0x6363636363636363 returns zero", "[sub_bytes64][DEC]") {
+    uint64_t state[16] = {0};
+
+    sub_bytes64(state);
+
+    for (const unsigned long long i : state) {
+        REQUIRE(i == 0x6363636363636363ULL);
+    }
+
+    for (const unsigned long long v : state) {
+        const auto b0 = static_cast<uint8_t>(v >> 56 & 0xFF);
+        const auto b1 = static_cast<uint8_t>(v >> 48 & 0xFF);
+        const auto b2 = static_cast<uint8_t>(v >> 40 & 0xFF);
+        const auto b3 = static_cast<uint8_t>(v >> 32 & 0xFF);
+        const auto b4 = static_cast<uint8_t>(v >> 24 & 0xFF);
+        const auto b5 = static_cast<uint8_t>(v >> 16 & 0xFF);
+        const auto b6 = static_cast<uint8_t>(v >>  8 & 0xFF);
+        const auto b7 = static_cast<uint8_t>(v       & 0xFF);
+
+        const uint8_t ib0 = aes_inv_sbox[b0];
+        const uint8_t ib1 = aes_inv_sbox[b1];
+        const uint8_t ib2 = aes_inv_sbox[b2];
+        const uint8_t ib3 = aes_inv_sbox[b3];
+        const uint8_t ib4 = aes_inv_sbox[b4];
+        const uint8_t ib5 = aes_inv_sbox[b5];
+        const uint8_t ib6 = aes_inv_sbox[b6];
+        const uint8_t ib7 = aes_inv_sbox[b7];
+
+        const uint64_t original = (static_cast<uint64_t>(ib0) << 56)
+                                | (static_cast<uint64_t>(ib1) << 48)
+                                | (static_cast<uint64_t>(ib2) << 40)
+                                | (static_cast<uint64_t>(ib3) << 32)
+                                | (static_cast<uint64_t>(ib4) << 24)
+                                | (static_cast<uint64_t>(ib5) << 16)
+                                | (static_cast<uint64_t>(ib6) <<  8)
+                                |  static_cast<uint64_t>(ib7);
+
+        REQUIRE(original == 0x0000000000000000ULL);
     }
 }

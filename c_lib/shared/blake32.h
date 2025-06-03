@@ -12,20 +12,24 @@
 #ifndef BLAKE32_H
 #define BLAKE32_H
 
-#include <cstdint>
 
 #ifdef __cplusplus
+#include <cstdint>
 extern "C" {
+#else
+#include <stdint.h>
 #endif
 
 
-uint32_t rotr32(uint32_t x, unsigned int r);
+    uint32_t rotr32(uint32_t x, unsigned int r);
 
-void g_mix32(uint32_t state[16], int a, int b, int c, int d, uint32_t mx, uint32_t my);
+    void g_mix32(uint32_t state[16], int a, int b, int c, int d, uint32_t mx, uint32_t my);
 
-void mix_into_state32(uint32_t state[16], uint32_t m[16]);
+    void mix_into_state32(uint32_t state[16], uint32_t m[16]);
 
-void permute32(uint32_t m[16]);
+    void permute32(uint32_t m[16]);
+
+    void sub_bytes32(uint32_t state[16]);
 
 
 #ifdef __cplusplus

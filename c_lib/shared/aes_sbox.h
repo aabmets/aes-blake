@@ -12,14 +12,19 @@
 #ifndef AES_SBOX_H
 #define AES_SBOX_H
 
-#include <cstdint>
 
 #ifdef __cplusplus
+#include <cstdint>
 extern "C" {
+#else
+#include <stdint.h>
 #endif
 
-extern uint8_t aes_sbox[];
-extern uint8_t aes_inv_sbox[];
+
+    extern uint8_t aes_sbox[];
+
+    extern uint8_t aes_inv_sbox[];
+
 
 #ifdef __cplusplus
 }

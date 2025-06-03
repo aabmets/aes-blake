@@ -11,6 +11,7 @@
 
 #include <catch2/catch_all.hpp>
 #include "blake32.h"
+#include "aes_sbox.h"
 
 
 TEST_CASE("rotr32: rotating by 0 returns the original value", "[rotr32]") {
@@ -152,5 +153,35 @@ TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[blake32]") {
     };
     for (int i = 0; i < 16; ++i) {
         REQUIRE(state[i] == expected[i]);
+    }
+}
+
+
+TEST_CASE("sub_bytes32: DEC (inverse) of 0x63636363 returns zero", "[sub_bytes32][DEC]") {
+    uint32_t state[16] = {};
+
+    sub_bytes32(state);
+
+    for (const unsigned int i : state) {
+        REQUIRE(i == 0x63636363U);
+    }
+
+    for (const unsigned int v : state) {
+        const auto b0 = static_cast<uint8_t>(v >> 24 & 0xFF);
+        const auto b1 = static_cast<uint8_t>(v >> 16 & 0xFF);
+        const auto b2 = static_cast<uint8_t>(v >>  8 & 0xFF);
+        const auto b3 = static_cast<uint8_t>(v       & 0xFF);
+
+        const uint8_t ib0 = aes_inv_sbox[b0];
+        const uint8_t ib1 = aes_inv_sbox[b1];
+        const uint8_t ib2 = aes_inv_sbox[b2];
+        const uint8_t ib3 = aes_inv_sbox[b3];
+
+        const uint32_t original = static_cast<uint32_t>(ib0) << 24
+                                | static_cast<uint32_t>(ib1) << 16
+                                | static_cast<uint32_t>(ib2) <<  8
+                                | static_cast<uint32_t>(ib3);
+
+        REQUIRE(original == 0x00000000U);
     }
 }
