@@ -38,6 +38,18 @@ extern "C" {
 
     void digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t context[8]);
 
+    void derive_keys64(
+        const uint64_t init_state[16],
+        const uint64_t knc[16],
+        size_t key_count,
+        uint64_t block_counter,
+        KDFDomain domain,
+        uint8_t out_keys1[][16],
+        uint8_t out_keys2[][16],
+        uint8_t out_keys3[][16],
+        uint8_t out_keys4[][16]
+    );
+
 
 #ifdef __cplusplus
 }

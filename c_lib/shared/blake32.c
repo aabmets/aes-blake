@@ -186,3 +186,104 @@ void digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t contex
     mix_into_state32(state, context);
     sub_bytes32(state);
 }
+
+
+/*
+ * derive_keys32 helper: Generates `key_count` 128‐bit round keys.
+ *   - entropy[8]:     eight 32‐bit words
+ *   - knc[16]:        precomputed key+nonce composite
+ *   - key_count:      number of round keys to output
+ *   - block_counter:  64‐bit counter for init_state_vector32
+ *   - domain:         KDFDomain for domain separation
+ *   - out_keys[][16]: output buffer for 128‐bit keys
+ */
+static void compute_round_keys32(
+        const uint32_t entropy[8],
+        const uint32_t knc[16],
+        const size_t key_count,
+        const uint64_t block_counter,
+        const KDFDomain domain,
+        uint8_t out_keys[][16]
+) {
+    uint32_t state_buf[16];
+    uint32_t knc_local[16];
+
+    // 1) Copy master knc[] into the local buffer
+    for (int i = 0; i < 16; i++) {
+        knc_local[i] = knc[i];
+    }
+
+    // 2) Initialize BLAKE state from this entropy, counter, and domain
+    init_state_vector32(state_buf, entropy, block_counter, domain);
+
+    // 3) For each round, mix and extract a 128‐bit key
+    for (size_t round = 0; round < key_count; round++) {
+
+        // a) Mix key+nonce composite into the state
+        mix_into_state32(state_buf, knc_local);
+
+        // b) Extract state_buf[4..7] → out_keys[round][0..15]
+        for (int w = 0; w < 4; w++) {
+            const uint32_t v = state_buf[4 + w];
+            out_keys[round][4*w + 0] = (uint8_t)(v >> 24);
+            out_keys[round][4*w + 1] = (uint8_t)(v >> 16);
+            out_keys[round][4*w + 2] = (uint8_t)(v >>  8);
+            out_keys[round][4*w + 3] = (uint8_t)(v      );
+        }
+
+        // c) Permute knc_local for the next round (unless this was the last round)
+        if (round + 1 < key_count) {
+            permute32(knc_local);
+        }
+    }
+}
+
+
+/**
+ * derive_keys32:
+ *   - init_state[16]:  precomputed 16‐word BLAKE state
+ *   - knc[16]:         precomputed key+nonce composite
+ *   - key_count:       number of 128‐bit keys per stream
+ *   - block_counter:   64‐bit counter for init_state_vector32
+ *   - domain:          KDFDomain for domain separation
+ *   - out_keys1[][16]: output buffer for stream #1
+ *   - out_keys2[][16]: output buffer for stream #2
+ */
+void derive_keys32(
+        const uint32_t init_state[16],
+        const uint32_t knc[16],
+        const size_t key_count,
+        const uint64_t block_counter,
+        const KDFDomain domain,
+        uint8_t out_keys1[][16],
+        uint8_t out_keys2[][16]
+) {
+    // 1) Build two 8‐word entropy arrays from init_state
+    uint32_t entropy1[8], entropy2[8];
+    for (int i = 0; i < 4; i++) {
+        entropy1[i]      = init_state[i];
+        entropy2[i]      = init_state[4 + i];
+        entropy1[4 + i]  = init_state[8 + i];
+        entropy2[4 + i]  = init_state[12 + i];
+    }
+
+    // 2) Derive stream #1 keys from entropy1
+    compute_round_keys32(
+        entropy1,
+        knc,
+        key_count,
+        block_counter,
+        domain,
+        out_keys1
+    );
+
+    // 3) Derive stream #2 keys from entropy2
+    compute_round_keys32(
+        entropy2,
+        knc,
+        key_count,
+        block_counter,
+        domain,
+        out_keys2
+    );
+}
