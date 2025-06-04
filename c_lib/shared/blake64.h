@@ -12,7 +12,7 @@
 #ifndef BLAKE64_H
 #define BLAKE64_H
 
-#include "blake_keygen.h"
+#include "blake_const.h"
 
 #ifdef __cplusplus
 #include <cstdint>

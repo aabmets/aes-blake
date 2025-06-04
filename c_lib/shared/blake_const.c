@@ -10,7 +10,7 @@
  */
 
 #include <stdint.h>
-#include "blake_keygen.h"
+#include "blake_const.h"
 
 
 const uint32_t IV32[8] = {

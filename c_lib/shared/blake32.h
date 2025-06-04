@@ -12,7 +12,7 @@
 #ifndef BLAKE32_H
 #define BLAKE32_H
 
-#include "blake_keygen.h"
+#include "blake_const.h"
 
 #ifdef __cplusplus
 #include <cstdint>

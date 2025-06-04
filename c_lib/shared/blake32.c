@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "aes_sbox.h"
-#include "blake_keygen.h"
+#include "blake_const.h"
 
 
 /*

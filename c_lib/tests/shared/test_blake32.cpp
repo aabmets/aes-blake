@@ -12,7 +12,6 @@
 #include <catch2/catch_all.hpp>
 #include "blake32.h"
 #include "aes_sbox.h"
-#include "blake_keygen.h"
 
 
 TEST_CASE("rotr32: rotating by 0 returns the original value", "[rotr32]") {
