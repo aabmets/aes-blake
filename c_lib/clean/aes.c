@@ -132,11 +132,11 @@ inline uint8_t xtime(const uint8_t a) {
 /**
  * Applies the AES MixColumns transformation to one 4-byte column.
  */
-inline void mix_single_column(uint8_t state[16], const int i) {
-    const int a = i;
-    const int b = i + 1;
-    const int c = i + 2;
-    const int d = i + 3;
+inline void mix_single_column(uint8_t state[16], const uint8_t i) {
+    const uint8_t a = i;
+    const uint8_t b = i + 1;
+    const uint8_t c = i + 2;
+    const uint8_t d = i + 3;
 
     const uint8_t x = (uint8_t)(state[a] ^ state[b] ^ state[c] ^ state[d]);
     const uint8_t y = state[a];
@@ -151,11 +151,11 @@ inline void mix_single_column(uint8_t state[16], const int i) {
 /**
  * Apply the AES InvMixColumns transformation to one 4-byte column.
  */
-inline void inv_mix_single_column(uint8_t state[16], const int i) {
-    const int a = i;
-    const int b = i + 1;
-    const int c = i + 2;
-    const int d = i + 3;
+inline void inv_mix_single_column(uint8_t state[16], const uint8_t i) {
+    const uint8_t a = i;
+    const uint8_t b = i + 1;
+    const uint8_t c = i + 2;
+    const uint8_t d = i + 3;
 
     const uint8_t m = (uint8_t)(state[a] ^ state[c]);
     const uint8_t n = (uint8_t)(state[b] ^ state[d]);
