@@ -23,7 +23,7 @@ extern "C" {
 
     typedef void (*AES_YieldCallback)(
         uint8_t state[],
-        const uint8_t round_keys[][][16],
+        const uint8_t round_keys[][16],
         uint8_t key_count,
         uint8_t block_count,
         uint8_t block_index
@@ -31,7 +31,7 @@ extern "C" {
 
     void aes_encrypt(
         uint8_t data[],
-        const uint8_t round_keys[][][16],
+        const uint8_t round_keys[][16],
         uint8_t key_count,
         uint8_t block_count,
         uint8_t block_index,
@@ -40,7 +40,7 @@ extern "C" {
 
     void aes_decrypt(
         uint8_t data[],
-        const uint8_t round_keys[][][16],
+        const uint8_t round_keys[][16],
         uint8_t key_count,
         uint8_t block_count,
         uint8_t block_index,
