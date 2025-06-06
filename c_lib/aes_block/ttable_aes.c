@@ -19,11 +19,30 @@ static uint32_t Te0[256];
 static uint32_t Te1[256];
 static uint32_t Te2[256];
 static uint32_t Te3[256];
-static uint32_t Te4[256];
 
 static bool tables_generated = false;
 
 
+/**
+ * Precomputes AES T-tables (Te0–Te3) for fast SubBytes+ShiftRows+MixColumns operations.
+ *
+ * On its first call, this function fills four 256-entry arrays (Te0, Te1, Te2, Te3)
+ * using the AES S-box (aes_sbox[]) and the GF(2^8) “xtime” operation. Each table entry
+ * encodes SubBytes, ShiftRows, and MixColumns combined into a single little-endian
+ * 32-bit word so that, at runtime, t-table lookups can be indexed directly by state
+ * bytes with no additional shifts or byte-swapping. Once all 256 entries per table
+ * are computed, the static flag `tables_generated` is set to true to skip reinitialization
+ * on later calls.
+ *
+ * Details:
+ *   • Uses aes_sbox[i] to get S-box byte s.
+ *   • Computes s2 = xtime(s) (i.e., multiplication by 2 in GF(2^8)) and s3 = s2 ^ s.
+ *   • Populates Te0, Te1, Te2, and Te3 tables so that, for example, indexing Te0[b]
+ *     yields a 32-bit little-endian word whose bytes correspond to MixColumns(SubBytes(
+ *     ShiftRows-input)) for column 0, when b is the “row-0” byte of that column.
+ *   • After filling all entries, sets `tables_generated = true` so future calls return
+ *     immediately.
+ */
 static void generate_tables(void) {
     for (int i = 0; i < 256; i++) {
         uint8_t s = aes_sbox[i];
@@ -49,13 +68,72 @@ static void generate_tables(void) {
                | (uint32_t)s3 << 16
                | (uint32_t)s  <<  8
                | (uint32_t)s;
-
-        Te4[i] = (uint32_t)s;
     }
     tables_generated = true;
 }
 
 
+/**
+ * Encrypts a single 16-byte block of data in-place using AES with precomputed T-tables.
+ *
+ * This function performs AES encryption on the block at index `block_index`
+ * inside the `data[]` buffer. It uses four “T-tables” (Te0–Te3) for efficient
+ * SubBytes+ShiftRows+MixColumns in the middle rounds and falls back to the
+ * raw S-box (aes_sbox) for the final round. On first invocation, it calls
+ * generate_tables() to build Te0–Te3 as 256-entry lookup tables in little-endian
+ * form:
+ *   • Te0–Te3 combine SubBytes, ShiftRows, and MixColumns so that during each
+ *     middle round, four bytes of the current state (selected by fixed offsets)
+ *     can be XOR’d together and with the round key, producing a ready-to-store
+ *     32-bit little-endian result for each column.
+ *
+ * After table generation, ttable_aes_encrypt does the following steps:
+ *   1. Let `state` point to the 16 bytes of the chosen block (as four little-endian
+ *      uint32_t words). Apply the initial AddRoundKey by XOR’ing these four words
+ *      with the first round key.
+ *   2. For each middle round (round = 1..n_rounds–1):
+ *      • Call `callback(...)` so the caller can yield or track progress if desired.
+ *      • Read the four “ShiftRows” bytes for each column directly from `data[]`
+ *        (e.g., column 0 reads bytes at indices 0, 5, 10, 15; column 1 reads 4, 9, 14, 3, etc.).
+ *      • Look up each of those four bytes in Te0, Te1, Te2, Te3 respectively,
+ *        XOR the four 32-bit table entries together, then XOR with the 32-bit
+ *        round key for that column. Store each resulting 32-bit little-endian
+ *        word back into the corresponding four bytes of `state[]`.
+ *   3. In the final round:
+ *      • Instead of using a fifth T-table, explicitly apply SubBytes+ShiftRows
+ *        by indexing the raw AES S-box (`aes_sbox[<byte>]`) at offsets 0, 5, 10, 15
+ *        (for column 0), 4, 9, 14, 3 (column 1), and so on.
+ *      • Pack each group of four S-box outputs into a 32-bit word (using shifts),
+ *        XOR that word with the final 32-bit round key, and store it back into
+ *        the same `state[]` words. This completes SubBytes, ShiftRows, and
+ *        AddRoundKey for the last round (MixColumns is omitted).
+ *
+ * Because Te0–Te3 are precomputed in little-endian form, no runtime byte-swapping
+ * is required. Each round updates the 16 bytes of `data[]` in-place, so when the
+ * loop finishes, the block at `data + block_index*16` contains the final ciphertext.
+ *
+ * Parameters:
+ *   data[]        – Byte array containing one or more 16-byte blocks. The block
+ *                   to encrypt lives at offset `(block_index * 16)`.
+ *
+ *   round_keys    – An array of AES round keys. Each entry is exactly 16 bytes.
+ *                   There must be `block_count * key_count` total entries, laid
+ *                   out so that the keys for block 'i' start at `round_keys[i*key_count]`.
+ *
+ *   key_count     – Total number of 16-byte round keys per block (i.e., AES rounds + 1).
+ *
+ *   block_count   – Number of 16-byte blocks stored in `data[]`.
+ *
+ *   block_index   – Zero-based index of the block to encrypt within `data[]`.
+ *
+ *   callback      – Function of the type `AES_YieldCallback` that is invoked once at the
+ *                   start of each middle round. Can be used for yielding or progress
+ *                   updates.
+ *
+ * Returns:
+ *   None. In return, the 16 bytes at `data + block_index*16` have been replaced
+ *   with the encrypted AES ciphertext for that block.
+ */
 void ttable_aes_encrypt(
     uint8_t data[],
     const uint8_t round_keys[][16],
@@ -68,6 +146,8 @@ void ttable_aes_encrypt(
         generate_tables();
     }
     uint32_t *state = (uint32_t *)(data + block_index * 16);
+    const uint8_t *b = data + block_index * 16;
+
     const uint8_t (*keys)[16] = &round_keys[block_index * key_count];
     const uint8_t n_rounds = key_count - 1;
 
@@ -87,63 +167,43 @@ void ttable_aes_encrypt(
         );
         rkey = (uint32_t *)keys[round];
 
-        uint32_t t0 = Te0[(uint8_t)state[0]]
-                    ^ Te1[(uint8_t)(state[1] >> 8)]
-                    ^ Te2[(uint8_t)(state[2] >> 16)]
-                    ^ Te3[(uint8_t)(state[3] >> 24)]
-                    ^ rkey[0];
+        const uint32_t t0 = Te0[b[0]] ^ Te1[b[5]] ^ Te2[b[10]] ^ Te3[b[15]];
+        const uint32_t t1 = Te0[b[4]] ^ Te1[b[9]] ^ Te2[b[14]] ^ Te3[b[3]];
+        const uint32_t t2 = Te0[b[8]] ^ Te1[b[13]] ^ Te2[b[2]] ^ Te3[b[7]];
+        const uint32_t t3 = Te0[b[12]] ^ Te1[b[1]] ^ Te2[b[6]] ^ Te3[b[11]];
 
-        uint32_t t1 = Te0[(uint8_t)state[1]]
-                    ^ Te1[(uint8_t)(state[2] >> 8)]
-                    ^ Te2[(uint8_t)(state[3] >> 16)]
-                    ^ Te3[(uint8_t)(state[0] >> 24)]
-                    ^ rkey[1];
-
-        uint32_t t2 = Te0[(uint8_t)state[2]]
-                    ^ Te1[(uint8_t)(state[3] >> 8)]
-                    ^ Te2[(uint8_t)(state[0] >> 16)]
-                    ^ Te3[(uint8_t)(state[1] >> 24)]
-                    ^ rkey[2];
-
-        uint32_t t3 = Te0[(uint8_t)state[3]]
-                    ^ Te1[(uint8_t)(state[0] >> 8)]
-                    ^ Te2[(uint8_t)(state[1] >> 16)]
-                    ^ Te3[(uint8_t)(state[2] >> 24)]
-                    ^ rkey[3];
-
-        state[0] = t0;
-        state[1] = t1;
-        state[2] = t2;
-        state[3] = t3;
+        state[0] = t0 ^ rkey[0];
+        state[1] = t1 ^ rkey[1];
+        state[2] = t2 ^ rkey[2];
+        state[3] = t3 ^ rkey[3];
     }
 
-    /* Final round (round = n_rounds): SubBytes + ShiftRows + AddRoundKey (no MixColumns) */
     rkey = (uint32_t *)keys[n_rounds];
 
-    uint32_t out0 = Te4[(uint8_t)state[0]]
-                  | Te4[(uint8_t)(state[1] >> 8)] << 8
-                  | Te4[(uint8_t)(state[2] >> 16)] << 16
-                  | Te4[(uint8_t)(state[3] >> 24)] << 24;
+    const uint32_t t0 = aes_sbox[b[0]]
+                      | aes_sbox[b[5]] << 8
+                      | aes_sbox[b[10]] << 16
+                      | aes_sbox[b[15]] << 24;
 
-    uint32_t out1 = Te4[(uint8_t)state[1]]
-                  | Te4[(uint8_t)(state[2] >> 8)] << 8
-                  | Te4[(uint8_t)(state[3] >> 16)] << 16
-                  | Te4[(uint8_t)(state[0] >> 24)] << 24;
+    const uint32_t t1 = aes_sbox[b[4]]
+                      | aes_sbox[b[9]] << 8
+                      | aes_sbox[b[14]] << 16
+                      | aes_sbox[b[3]] << 24;
 
-    uint32_t out2 = Te4[(uint8_t)state[2]]
-                  | Te4[(uint8_t)(state[3] >> 8)] << 8
-                  | Te4[(uint8_t)(state[0] >> 16)] << 16
-                  | Te4[(uint8_t)(state[1] >> 24)] << 24;
+    const uint32_t t2 = aes_sbox[b[8]]
+                      | aes_sbox[b[13]] << 8
+                      | aes_sbox[b[2]] << 16
+                      | aes_sbox[b[7]] << 24;
 
-    uint32_t out3 = Te4[(uint8_t)state[3]]
-                  | Te4[(uint8_t)(state[0] >> 8)] << 8
-                  | Te4[(uint8_t)(state[1] >> 16)] << 16
-                  | Te4[(uint8_t)(state[2] >> 24)] << 24;
+    const uint32_t t3 = aes_sbox[b[12]]
+                      | aes_sbox[b[1]] << 8
+                      | aes_sbox[b[6]] << 16
+                      | aes_sbox[b[11]] << 24;
 
-    state[0] = out0 ^ rkey[0];
-    state[1] = out1 ^ rkey[1];
-    state[2] = out2 ^ rkey[2];
-    state[3] = out3 ^ rkey[3];
+    state[0] = t0 ^ rkey[0];
+    state[1] = t1 ^ rkey[1];
+    state[2] = t2 ^ rkey[2];
+    state[3] = t3 ^ rkey[3];
 }
 
 
