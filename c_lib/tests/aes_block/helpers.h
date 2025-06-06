@@ -176,7 +176,7 @@ inline void run_fips197_vectors(const AesFunc encrypt_fn, const AesFunc decrypt_
             noop_callback
         );
 
-        // Verify computed plaintext
+        // Verify computed ciphertext
         for (int i = 0; i < 16; ++i) {
             REQUIRE(state_enc[i] == expected_ct[i]);
         }
