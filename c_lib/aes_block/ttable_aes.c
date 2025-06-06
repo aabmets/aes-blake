@@ -67,22 +67,15 @@ void ttable_aes_encrypt(
     if (!tables_generated) {
         generate_tables();
     }
-
-    const uint8_t n_rounds = key_count - 1;
-    uint8_t *state = data + block_index * 16;
+    uint32_t *state = (uint32_t *)(data + block_index * 16);
     const uint8_t (*keys)[16] = &round_keys[block_index * key_count];
-
-    uint32_t *state_words = (uint32_t *)state;
-    uint32_t s0 = state_words[0];
-    uint32_t s1 = state_words[1];
-    uint32_t s2 = state_words[2];
-    uint32_t s3 = state_words[3];
+    const uint8_t n_rounds = key_count - 1;
 
     const uint32_t *rkey = (uint32_t *)keys[0];
-    s0 ^= rkey[0];
-    s1 ^= rkey[1];
-    s2 ^= rkey[2];
-    s3 ^= rkey[3];
+    state[0] ^= rkey[0];
+    state[1] ^= rkey[1];
+    state[2] ^= rkey[2];
+    state[3] ^= rkey[3];
 
     for (uint8_t round = 1; round < n_rounds; round++) {
         callback(
@@ -94,63 +87,63 @@ void ttable_aes_encrypt(
         );
         rkey = (uint32_t *)keys[round];
 
-        uint32_t t0 = Te0[(uint8_t)s0]
-                    ^ Te1[(uint8_t)(s1 >> 8)]
-                    ^ Te2[(uint8_t)(s2 >> 16)]
-                    ^ Te3[(uint8_t)(s3 >> 24)]
+        uint32_t t0 = Te0[(uint8_t)state[0]]
+                    ^ Te1[(uint8_t)(state[1] >> 8)]
+                    ^ Te2[(uint8_t)(state[2] >> 16)]
+                    ^ Te3[(uint8_t)(state[3] >> 24)]
                     ^ rkey[0];
 
-        uint32_t t1 = Te0[(uint8_t)s1]
-                    ^ Te1[(uint8_t)(s2 >> 8)]
-                    ^ Te2[(uint8_t)(s3 >> 16)]
-                    ^ Te3[(uint8_t)(s0 >> 24)]
+        uint32_t t1 = Te0[(uint8_t)state[1]]
+                    ^ Te1[(uint8_t)(state[2] >> 8)]
+                    ^ Te2[(uint8_t)(state[3] >> 16)]
+                    ^ Te3[(uint8_t)(state[0] >> 24)]
                     ^ rkey[1];
 
-        uint32_t t2 = Te0[(uint8_t)s2]
-                    ^ Te1[(uint8_t)(s3 >> 8)]
-                    ^ Te2[(uint8_t)(s0 >> 16)]
-                    ^ Te3[(uint8_t)(s1 >> 24)]
+        uint32_t t2 = Te0[(uint8_t)state[2]]
+                    ^ Te1[(uint8_t)(state[3] >> 8)]
+                    ^ Te2[(uint8_t)(state[0] >> 16)]
+                    ^ Te3[(uint8_t)(state[1] >> 24)]
                     ^ rkey[2];
 
-        uint32_t t3 = Te0[(uint8_t)s3]
-                    ^ Te1[(uint8_t)(s0 >> 8)]
-                    ^ Te2[(uint8_t)(s1 >> 16)]
-                    ^ Te3[(uint8_t)(s2 >> 24)]
+        uint32_t t3 = Te0[(uint8_t)state[3]]
+                    ^ Te1[(uint8_t)(state[0] >> 8)]
+                    ^ Te2[(uint8_t)(state[1] >> 16)]
+                    ^ Te3[(uint8_t)(state[2] >> 24)]
                     ^ rkey[3];
 
-        s0 = t0;
-        s1 = t1;
-        s2 = t2;
-        s3 = t3;
+        state[0] = t0;
+        state[1] = t1;
+        state[2] = t2;
+        state[3] = t3;
     }
 
     /* Final round (round = n_rounds): SubBytes + ShiftRows + AddRoundKey (no MixColumns) */
     rkey = (uint32_t *)keys[n_rounds];
 
-    uint32_t out0 = Te4[(uint8_t)s0]
-                  | Te4[(uint8_t)(s1 >> 8)] << 8
-                  | Te4[(uint8_t)(s2 >> 16)] << 16
-                  | Te4[(uint8_t)(s3 >> 24)] << 24;
+    uint32_t out0 = Te4[(uint8_t)state[0]]
+                  | Te4[(uint8_t)(state[1] >> 8)] << 8
+                  | Te4[(uint8_t)(state[2] >> 16)] << 16
+                  | Te4[(uint8_t)(state[3] >> 24)] << 24;
 
-    uint32_t out1 = Te4[(uint8_t)s1]
-                  | Te4[(uint8_t)(s2 >> 8)] << 8
-                  | Te4[(uint8_t)(s3 >> 16)] << 16
-                  | Te4[(uint8_t)(s0 >> 24)] << 24;
+    uint32_t out1 = Te4[(uint8_t)state[1]]
+                  | Te4[(uint8_t)(state[2] >> 8)] << 8
+                  | Te4[(uint8_t)(state[3] >> 16)] << 16
+                  | Te4[(uint8_t)(state[0] >> 24)] << 24;
 
-    uint32_t out2 = Te4[(uint8_t)s2]
-                  | Te4[(uint8_t)(s3 >> 8)] << 8
-                  | Te4[(uint8_t)(s0 >> 16)] << 16
-                  | Te4[(uint8_t)(s1 >> 24)] << 24;
+    uint32_t out2 = Te4[(uint8_t)state[2]]
+                  | Te4[(uint8_t)(state[3] >> 8)] << 8
+                  | Te4[(uint8_t)(state[0] >> 16)] << 16
+                  | Te4[(uint8_t)(state[1] >> 24)] << 24;
 
-    uint32_t out3 = Te4[(uint8_t)s3]
-                  | Te4[(uint8_t)(s0 >> 8)] << 8
-                  | Te4[(uint8_t)(s1 >> 16)] << 16
-                  | Te4[(uint8_t)(s2 >> 24)] << 24;
+    uint32_t out3 = Te4[(uint8_t)state[3]]
+                  | Te4[(uint8_t)(state[0] >> 8)] << 8
+                  | Te4[(uint8_t)(state[1] >> 16)] << 16
+                  | Te4[(uint8_t)(state[2] >> 24)] << 24;
 
-    state_words[0] = out0 ^ rkey[0];
-    state_words[1] = out1 ^ rkey[1];
-    state_words[2] = out2 ^ rkey[2];
-    state_words[3] = out3 ^ rkey[3];
+    state[0] = out0 ^ rkey[0];
+    state[1] = out1 ^ rkey[1];
+    state[2] = out2 ^ rkey[2];
+    state[3] = out3 ^ rkey[3];
 }
 
 
