@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include "aes_sbox.h"
-#include "aes.h"
+#include "clean_aes.h"
 
 
 /*
@@ -195,12 +195,14 @@ void inv_mix_columns(uint8_t state[16]) {
 /**
  * Encrypts a single 16‐byte block in place, chosen by block_index.
  */
-void aes_encrypt(uint8_t data[],
-                 const uint8_t round_keys[][16],
-                 const uint8_t key_count,
-                 const uint8_t block_count,
-                 const uint8_t block_index,
-                 const AES_YieldCallback callback) {
+void clean_aes_encrypt(
+        uint8_t data[],
+        const uint8_t round_keys[][16],
+        const uint8_t key_count,
+        const uint8_t block_count,
+        const uint8_t block_index,
+        const AES_YieldCallback callback
+) {
     const uint8_t n_rounds = key_count - 1;
     uint8_t *state = data + (size_t)block_index * 16;
     const uint8_t (*keys)[16] = &round_keys[block_index * key_count];
@@ -228,12 +230,14 @@ void aes_encrypt(uint8_t data[],
 /**
  * Decrypts a single 16‐byte block in place, chosen by block_index.
  */
-void aes_decrypt(uint8_t data[],
-                 const uint8_t round_keys[][16],
-                 const uint8_t key_count,
-                 const uint8_t block_count,
-                 const uint8_t block_index,
-                 const AES_YieldCallback callback) {
+void clean_aes_decrypt(
+        uint8_t data[],
+        const uint8_t round_keys[][16],
+        const uint8_t key_count,
+        const uint8_t block_count,
+        const uint8_t block_index,
+        const AES_YieldCallback callback
+) {
     const uint8_t n_rounds = key_count - 1;
     uint8_t *state = data + (size_t)block_index * 16;
     const uint8_t (*keys)[16] = &round_keys[block_index * key_count];

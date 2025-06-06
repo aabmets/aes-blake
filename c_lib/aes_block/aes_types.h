@@ -9,8 +9,9 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef AES_H
-#define AES_H
+
+#ifndef AES_TYPES_H
+#define AES_TYPES_H
 
 
 #ifdef __cplusplus
@@ -29,27 +30,9 @@ extern "C" {
         uint8_t block_index
     );
 
-    void aes_encrypt(
-        uint8_t data[],
-        const uint8_t round_keys[][16],
-        uint8_t key_count,
-        uint8_t block_count,
-        uint8_t block_index,
-        AES_YieldCallback callback
-    );
-
-    void aes_decrypt(
-        uint8_t data[],
-        const uint8_t round_keys[][16],
-        uint8_t key_count,
-        uint8_t block_count,
-        uint8_t block_index,
-        AES_YieldCallback callback
-    );
-
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //AES_H
+#endif //AES_TYPES_H
