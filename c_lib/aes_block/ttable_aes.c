@@ -20,7 +20,13 @@ static uint32_t Te1[256];
 static uint32_t Te2[256];
 static uint32_t Te3[256];
 
+static uint32_t Td0[256];
+static uint32_t Td1[256];
+static uint32_t Td2[256];
+static uint32_t Td3[256];
+
 static bool tables_generated = false;
+static bool inv_tables_generated = false;
 
 
 /**
@@ -70,6 +76,48 @@ static void generate_tables(void) {
                | (uint32_t)s;
     }
     tables_generated = true;
+}
+
+
+/**
+ * Precomputes AES decryption T-tables (Td0 - Td3) for fast
+ * InvSubBytes + InvShiftRows + InvMixColumns.
+ *
+ * Uses aes_inv_sbox[i] to get the inverse-substituted byte s,
+ * then forms s2 = 2·s, s4 = 4·s, s8 = 8·s, and from those
+ * builds:
+ *   s9 =  s8 ^ s       (9·s)
+ *   sb =  s8 ^ s2 ^ s  (0x0b·s)
+ *   sd =  s8 ^ s4 ^ s  (0x0d·s)
+ *   se =  s8 ^ s4 ^ s2 (0x0e·s)
+ *
+ * Finally, each Td-table packs these four multiplications
+ * into a 32-bit little-endian word, and rotates for Td1–Td3.
+ */
+static void generate_inv_tables(void) {
+    for (int i = 0; i < 256; i++) {
+        uint8_t s  = aes_inv_sbox[i];
+        uint8_t s2 = (uint8_t)(s << 1) ^ (uint8_t)((s >> 7) * 0x1B);
+        uint8_t s4 = (uint8_t)(s2 << 1) ^ (uint8_t)((s2 >> 7) * 0x1B);
+        uint8_t s8 = (uint8_t)(s4 << 1) ^ (uint8_t)((s4 >> 7) * 0x1B);
+
+        uint8_t s9 = s8 ^ s;
+        uint8_t sb = s8 ^ s2 ^ s;
+        uint8_t sd = s8 ^ s4 ^ s;
+        uint8_t se = s8 ^ s4 ^ s2;
+
+        // Td0: [0x0e·s, 0x0b·s, 0x0d·s, 0x09·s]
+        Td0[i] = ((uint32_t)se << 24)
+               | ((uint32_t)sb << 16)
+               | ((uint32_t)sd <<  8)
+               | (uint32_t)s9;
+
+        // rotate byte-wise for Td1–Td3
+        Td1[i] = (Td0[i] << 8)  | (Td0[i] >> 24);
+        Td2[i] = (Td1[i] << 8)  | (Td1[i] >> 24);
+        Td3[i] = (Td2[i] << 8)  | (Td2[i] >> 24);
+    }
+    inv_tables_generated = true;
 }
 
 
@@ -135,12 +183,12 @@ static void generate_tables(void) {
  *   with the encrypted AES ciphertext for that block.
  */
 void ttable_aes_encrypt(
-    uint8_t data[],
-    const uint8_t round_keys[][16],
-    const uint8_t key_count,
-    const uint8_t block_count,
-    const uint8_t block_index,
-    const AES_YieldCallback callback
+        uint8_t data[],
+        const uint8_t round_keys[][16],
+        const uint8_t key_count,
+        const uint8_t block_count,
+        const uint8_t block_index,
+        const AES_YieldCallback callback
 ) {
     if (!tables_generated) {
         generate_tables();
@@ -151,12 +199,17 @@ void ttable_aes_encrypt(
     const uint8_t (*keys)[16] = &round_keys[block_index * key_count];
     const uint8_t n_rounds = key_count - 1;
 
-    const uint32_t *rkey = (uint32_t *)keys[0];
-    state[0] ^= rkey[0];
-    state[1] ^= rkey[1];
-    state[2] ^= rkey[2];
-    state[3] ^= rkey[3];
+    // First round
+    {
+        const uint32_t *rkey = (uint32_t *)keys[0];
 
+        state[0] ^= rkey[0];
+        state[1] ^= rkey[1];
+        state[2] ^= rkey[2];
+        state[3] ^= rkey[3];
+    }
+
+    // Middle rounds
     for (uint8_t round = 1; round < n_rounds; round++) {
         callback(
             data,
@@ -165,7 +218,7 @@ void ttable_aes_encrypt(
             block_count,
             block_index + 1
         );
-        rkey = (uint32_t *)keys[round];
+        const uint32_t *rkey = (uint32_t *)keys[round];
 
         const uint32_t t0 = Te0[b[0]] ^ Te1[b[5]] ^ Te2[b[10]] ^ Te3[b[15]];
         const uint32_t t1 = Te0[b[4]] ^ Te1[b[9]] ^ Te2[b[14]] ^ Te3[b[3]];
@@ -178,43 +231,241 @@ void ttable_aes_encrypt(
         state[3] = t3 ^ rkey[3];
     }
 
-    rkey = (uint32_t *)keys[n_rounds];
+    // Final round
+    {
+        const uint32_t* rkey = (uint32_t*)keys[n_rounds];
 
-    const uint32_t t0 = aes_sbox[b[0]]
-                      | aes_sbox[b[5]] << 8
-                      | aes_sbox[b[10]] << 16
-                      | aes_sbox[b[15]] << 24;
+        const uint32_t t0 = aes_sbox[b[0]]
+                          | aes_sbox[b[5]] << 8
+                          | aes_sbox[b[10]] << 16
+                          | aes_sbox[b[15]] << 24;
 
-    const uint32_t t1 = aes_sbox[b[4]]
-                      | aes_sbox[b[9]] << 8
-                      | aes_sbox[b[14]] << 16
-                      | aes_sbox[b[3]] << 24;
+        const uint32_t t1 = aes_sbox[b[4]]
+                          | aes_sbox[b[9]] << 8
+                          | aes_sbox[b[14]] << 16
+                          | aes_sbox[b[3]] << 24;
 
-    const uint32_t t2 = aes_sbox[b[8]]
-                      | aes_sbox[b[13]] << 8
-                      | aes_sbox[b[2]] << 16
-                      | aes_sbox[b[7]] << 24;
+        const uint32_t t2 = aes_sbox[b[8]]
+                          | aes_sbox[b[13]] << 8
+                          | aes_sbox[b[2]] << 16
+                          | aes_sbox[b[7]] << 24;
 
-    const uint32_t t3 = aes_sbox[b[12]]
-                      | aes_sbox[b[1]] << 8
-                      | aes_sbox[b[6]] << 16
-                      | aes_sbox[b[11]] << 24;
+        const uint32_t t3 = aes_sbox[b[12]]
+                          | aes_sbox[b[1]] << 8
+                          | aes_sbox[b[6]] << 16
+                          | aes_sbox[b[11]] << 24;
 
-    state[0] = t0 ^ rkey[0];
-    state[1] = t1 ^ rkey[1];
-    state[2] = t2 ^ rkey[2];
-    state[3] = t3 ^ rkey[3];
+        state[0] = t0 ^ rkey[0];
+        state[1] = t1 ^ rkey[1];
+        state[2] = t2 ^ rkey[2];
+        state[3] = t3 ^ rkey[3];
+    }
+}
+
+
+// ================================================================================
+// AES decryption
+// ================================================================================
+
+/*
+ * Applies the SubBytes transformation to the 16-byte AES state in-place.
+ */
+void sub_bytes(uint8_t state[16], const uint8_t sbox[256]) {
+    state[0]  = sbox[state[0]];
+    state[1]  = sbox[state[1]];
+    state[2]  = sbox[state[2]];
+    state[3]  = sbox[state[3]];
+    state[4]  = sbox[state[4]];
+    state[5]  = sbox[state[5]];
+    state[6]  = sbox[state[6]];
+    state[7]  = sbox[state[7]];
+    state[8]  = sbox[state[8]];
+    state[9]  = sbox[state[9]];
+    state[10] = sbox[state[10]];
+    state[11] = sbox[state[11]];
+    state[12] = sbox[state[12]];
+    state[13] = sbox[state[13]];
+    state[14] = sbox[state[14]];
+    state[15] = sbox[state[15]];
+}
+
+
+/*
+ * Applies the AES InvShiftRows transformation in-place on a 16-byte state.
+ */
+void inv_shift_rows(uint8_t state[16]) {
+    // Row 1 (indices 1,5,9,13): right rotate by 1 (equiv. left rotate by 3)
+    uint8_t tmp = state[13];
+    state[13]   = state[9];
+    state[9]    = state[5];
+    state[5]    = state[1];
+    state[1]    = tmp;
+
+    // Row 2 (indices 2,6,10,14): right rotate by 2
+    tmp       = state[2];
+    state[2]  = state[10];
+    state[10] = tmp;
+    tmp       = state[6];
+    state[6]  = state[14];
+    state[14] = tmp;
+
+    // Row 3 (indices 3,7,11,15): right rotate by 3 (equiv. left rotate by 1)
+    tmp       = state[3];
+    state[3]  = state[7];
+    state[7]  = state[11];
+    state[11] = state[15];
+    state[15] = tmp;
+}
+
+
+/*
+ * Multiplies a byte by {02} in GF(2^8)
+ */
+uint8_t xtime(const uint8_t a) {
+    const uint8_t x = (uint8_t)(a << 1);
+    const uint8_t y = (uint8_t)(a >> 7);
+    return x ^ (uint8_t)(y * 0x1B);
+}
+
+
+/**
+ * Applies the AES MixColumns transformation to one 4-byte column.
+ */
+void mix_single_column(uint8_t state[16], const uint8_t i) {
+    const uint8_t a = i;
+    const uint8_t b = i + 1;
+    const uint8_t c = i + 2;
+    const uint8_t d = i + 3;
+
+    const uint8_t x = (uint8_t)(state[a] ^ state[b] ^ state[c] ^ state[d]);
+    const uint8_t y = state[a];
+
+    state[a] = (uint8_t)(state[a] ^ x ^ xtime((uint8_t)(state[a] ^ state[b])));
+    state[b] = (uint8_t)(state[b] ^ x ^ xtime((uint8_t)(state[b] ^ state[c])));
+    state[c] = (uint8_t)(state[c] ^ x ^ xtime((uint8_t)(state[c] ^ state[d])));
+    state[d] = (uint8_t)(state[d] ^ x ^ xtime((uint8_t)(state[d] ^ y)));
+}
+
+
+/**
+ * Apply the AES InvMixColumns transformation to one 4-byte column.
+ */
+void inv_mix_single_column(uint8_t state[16], const uint8_t i) {
+    const uint8_t a = i;
+    const uint8_t b = i + 1;
+    const uint8_t c = i + 2;
+    const uint8_t d = i + 3;
+
+    const uint8_t m = (uint8_t)(state[a] ^ state[c]);
+    const uint8_t n = (uint8_t)(state[b] ^ state[d]);
+    const uint8_t x = xtime(xtime(m));
+    const uint8_t y = xtime(xtime(n));
+
+    state[a] = (uint8_t)(state[a] ^ x);
+    state[b] = (uint8_t)(state[b] ^ y);
+    state[c] = (uint8_t)(state[c] ^ x);
+    state[d] = (uint8_t)(state[d] ^ y);
+}
+
+
+/**
+ * Applies the AES InvMixColumns transformation to the entire state.
+ */
+void inv_mix_columns(uint8_t state[16]) {
+    inv_mix_single_column(state, 0);
+    inv_mix_single_column(state, 4);
+    inv_mix_single_column(state, 8);
+    inv_mix_single_column(state, 12);
+    mix_single_column(state, 0);
+    mix_single_column(state, 4);
+    mix_single_column(state, 8);
+    mix_single_column(state, 12);
 }
 
 
 void ttable_aes_decrypt(
-    uint8_t data[],
-    const uint8_t round_keys[][16],
-    uint8_t key_count,
-    uint8_t block_count,
-    uint8_t block_index,
-    AES_YieldCallback callback
-)
-{
-    // Not implemented
+        uint8_t data[],
+        const uint8_t round_keys[][16],
+        const uint8_t key_count,
+        const uint8_t block_count,
+        const uint8_t block_index,
+        const AES_YieldCallback callback
+) {
+    if (!inv_tables_generated) {
+        generate_inv_tables();
+    }
+    uint32_t *state = (uint32_t *)(data + block_index * 16);
+    const uint8_t *b = data + block_index * 16;
+
+    const uint8_t (*keys)[16] = &round_keys[block_index * key_count];
+    const uint8_t n_rounds = key_count - 1;
+
+    // First round
+    {
+        const uint32_t *rkey = (uint32_t *)keys[n_rounds];
+
+        state[0] ^= rkey[0];
+        state[1] ^= rkey[1];
+        state[2] ^= rkey[2];
+        state[3] ^= rkey[3];
+
+        const uint32_t t0 = aes_inv_sbox[b[0]]
+                          | aes_inv_sbox[b[13]] << 8
+                          | aes_inv_sbox[b[10]] << 16
+                          | aes_inv_sbox[b[7]] << 24;
+
+        const uint32_t t1 = aes_inv_sbox[b[4]]
+                          | aes_inv_sbox[b[1]] << 8
+                          | aes_inv_sbox[b[14]] << 16
+                          | aes_inv_sbox[b[11]] << 24;
+
+        const uint32_t t2 = aes_inv_sbox[b[8]]
+                          | aes_inv_sbox[b[5]] << 8
+                          | aes_inv_sbox[b[2]] << 16
+                          | aes_inv_sbox[b[15]] << 24;
+
+        const uint32_t t3 = aes_inv_sbox[b[12]]
+                          | aes_inv_sbox[b[9]] << 8
+                          | aes_inv_sbox[b[6]] << 16
+                          | aes_inv_sbox[b[3]] << 24;
+
+        state[0] = t0;
+        state[1] = t1;
+        state[2] = t2;
+        state[3] = t3;
+    }
+
+    // Middle round
+    uint8_t *state8 = data + block_index * 16;
+    for (uint8_t round = n_rounds - 1; round > 0; round--) {
+        const uint32_t *rkey = (uint32_t *)keys[round];
+
+        state[0] ^= rkey[0];
+        state[1] ^= rkey[1];
+        state[2] ^= rkey[2];
+        state[3] ^= rkey[3];
+
+        // add_round_key(state8, keys, round);
+        inv_mix_columns(state8);
+        inv_shift_rows(state8);
+        sub_bytes(state8, aes_inv_sbox);
+
+        callback(
+            data,
+            round_keys,
+            key_count,
+            block_count,
+            block_index + 1
+        );
+    }
+
+    // Final round
+    {
+        const uint32_t *rkey = (uint32_t *)keys[0];
+
+        state[0] ^= rkey[0];
+        state[1] ^= rkey[1];
+        state[2] ^= rkey[2];
+        state[3] ^= rkey[3];
+    }
 }
