@@ -11,16 +11,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "../aes_block/aes_sbox.h"
+#include "aes_sbox.h"
 #include "blake_const.h"
-
-
-/*
- * Rotates a 32-bit word `x` right by `r` bits. Assumes 0 ≤ r < 32.
- */
-uint32_t rotr32(const uint32_t x, const unsigned int r) {
-    return (x >> r) | (x << (32 - r));
-}
+#include "blake32.h"
 
 
 /*

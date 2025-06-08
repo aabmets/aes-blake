@@ -22,7 +22,10 @@ extern "C" {
 #endif
 
 
-    uint32_t rotr32(uint32_t x, unsigned int r);
+    //Rotates a 32-bit word `x` right by `r` bits. Assumes 0 ≤ r < 32.
+    inline uint32_t rotr32(const uint32_t x, const unsigned int r) {
+        return (x >> r) | (x << (32 - r));
+    }
 
     void g_mix32(uint32_t state[16], int a, int b, int c, int d, uint32_t mx, uint32_t my);
 
@@ -32,7 +35,7 @@ extern "C" {
 
     void sub_bytes32(uint32_t state[16]);
 
-    void compute_key_nonce_composite32(uint32_t key[8], uint32_t nonce[8], uint32_t out[16]);
+    void compute_key_nonce_composite32(const uint32_t key[8], const uint32_t nonce[8], uint32_t out[16]);
 
     void init_state_vector32(uint32_t state[16], const uint32_t entropy[8], uint64_t counter, KDFDomain domain);
 

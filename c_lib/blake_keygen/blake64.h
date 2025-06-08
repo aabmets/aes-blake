@@ -22,7 +22,10 @@ extern "C" {
 #endif
 
 
-    uint64_t rotr64(uint64_t x, unsigned int r);
+    // Rotates a 64-bit word `x` right by `r` bits. Assumes 0 ≤ r < 64.
+    inline uint64_t rotr64(const uint64_t x, const unsigned int r) {
+        return (x >> r) | (x << (64 - r));
+    }
 
     void g_mix64(uint64_t state[16], int a, int b, int c, int d, uint64_t mx, uint64_t my);
 
@@ -32,7 +35,7 @@ extern "C" {
 
     void sub_bytes64(uint64_t state[16]);
 
-    void compute_key_nonce_composite64(uint64_t key[8], uint64_t nonce[8], uint64_t out[16]);
+    void compute_key_nonce_composite64(const uint64_t key[8], const uint64_t nonce[8], uint64_t out[16]);
 
     void init_state_vector64(uint64_t state[16], const uint64_t entropy[8], uint64_t counter, KDFDomain domain);
 

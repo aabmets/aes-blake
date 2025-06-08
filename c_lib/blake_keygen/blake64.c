@@ -13,14 +13,7 @@
 #include <stddef.h>
 #include "../aes_block/aes_sbox.h"
 #include "blake_const.h"
-
-
-/*
- * Rotates a 64-bit word `x` right by `r` bits. Assumes 0 ≤ r < 64.
- */
-uint64_t rotr64(const uint64_t x, const unsigned int r) {
-    return (x >> r) | (x << (64 - r));
-}
+#include "blake64.h"
 
 
 /*
