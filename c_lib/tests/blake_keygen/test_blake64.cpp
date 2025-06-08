@@ -10,8 +10,8 @@
  */
 
 #include <catch2/catch_all.hpp>
-#include "blake64.h"
-#include "aes_sbox.h"
+#include "../../blake_keygen/blake64.h"
+#include "../../aes_block/aes_sbox.h"
 
 
 TEST_CASE("rotr64: rotating by 0 returns the original value", "[rotr64]") {

@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "aes_sbox.h"
+#include "../aes_block/aes_sbox.h"
 #include "blake_const.h"
 
 

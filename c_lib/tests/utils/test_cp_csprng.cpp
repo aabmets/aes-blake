@@ -24,11 +24,10 @@ std::vector<unsigned char> getCsprngSamples(const std::size_t numSamples) {
         constexpr std::size_t TOTAL_SAMPLES = 300000;
         samples.resize(TOTAL_SAMPLES);
 
-        csprng_open();
-        for (unsigned char & sample : samples) {
-            sample = csprng_read();
-        }
-        csprng_close();
+        csprng_read_array(
+            samples.data(),
+            static_cast<uint32_t>(samples.size())
+        );
     }
 
     if (numSamples < samples.size()) {

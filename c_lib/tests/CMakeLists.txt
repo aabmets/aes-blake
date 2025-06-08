@@ -22,8 +22,13 @@ add_executable(tests
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
     aes_block_lib
-    shared_lib
+    blake_keygen_lib
+    utils_lib
 )
+
+if (WIN32)
+    target_link_libraries(tests PRIVATE bcrypt)
+endif()
 
 include(CTest)
 include(Catch)
