@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include "aes_sbox.h"
 #include "clean_aes.h"
+#include "aes_utils.h"
 
 
 /*
@@ -116,16 +117,6 @@ void inv_shift_rows(uint8_t state[16]) {
     state[7]  = state[11];
     state[11] = state[15];
     state[15] = tmp;
-}
-
-
-/*
- * Multiplies a byte by {02} in GF(2^8)
- */
-uint8_t xtime(const uint8_t a) {
-    const uint8_t x = (uint8_t)(a << 1);
-    const uint8_t y = (uint8_t)(a >> 7);
-    return x ^ (uint8_t)(y * 0x1B);
 }
 
 
