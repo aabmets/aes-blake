@@ -71,6 +71,7 @@ void print_uint32_array_hex_table(const uint32_t* array, const size_t length, co
     if (!array || per_row == 0) {
         return;
     }
+    printf("\n");
     for (size_t i = 0; i < length; ++i) {
         printf("0x%08XU", array[i]);
         if ((i + 1) % per_row == 0 || i + 1 == length) {

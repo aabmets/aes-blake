@@ -9,15 +9,10 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef AES_UTILS_H
-#define AES_UTILS_H
+#ifndef TEST_DEBUG_H
+#define TEST_DEBUG_H
 
-#ifdef __cplusplus
 #include <cstdint>
-extern "C" {
-#else
-#include <stdint.h>
-#endif
 
 
     void print_state(const uint8_t state[16], const char* sep);
@@ -41,8 +36,4 @@ extern "C" {
     void print_uint32_array_hex_table(const uint32_t* array, size_t length, size_t per_row);
 
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif //AES_UTILS_H
+#endif // TEST_DEBUG_H
