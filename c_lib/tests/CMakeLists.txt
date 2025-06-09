@@ -21,9 +21,9 @@ add_executable(tests
 )
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
+    aes_blake_lib
     aes_block_lib
     blake_keygen_lib
-    utils_lib
 )
 
 if (WIN32)

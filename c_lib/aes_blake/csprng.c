@@ -9,33 +9,18 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CROSS_PLATFORM_CSPRNG_H
-#define CROSS_PLATFORM_CSPRNG_H
-
-
-#ifdef __cplusplus
-#include <cstdlib>
-#include <cstdint>
-#include <cstdio>
-extern "C" {
-#else
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#endif
 
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <wincrypt.h>
 
-inline void csprng_read_array(uint8_t* buffer, const uint32_t length) {
-    HCRYPTPROV provider;
+void csprng_read_array(uint8_t* buffer, const uint32_t length) {
     const NTSTATUS status = BCryptGenRandom(
-        NULL,
-        buffer,
-        length,
-        BCRYPT_USE_SYSTEM_PREFERRED_RNG
+        NULL, buffer, length, BCRYPT_USE_SYSTEM_PREFERRED_RNG
     );
     if (status != 0) {
         fprintf(stderr, "BCryptGenRandom failed: 0x%lx\n", status);
@@ -43,7 +28,7 @@ inline void csprng_read_array(uint8_t* buffer, const uint32_t length) {
     }
 }
 
-inline uint8_t csprng_read(void) {
+uint8_t csprng_read(void) {
     uint8_t value;
     csprng_read_array(&value, 1);
     return value;
@@ -53,7 +38,7 @@ inline uint8_t csprng_read(void) {
 #include <fcntl.h>
 #include <unistd.h>
 
-inline void csprng_read_array(uint8_t* buffer, const uint32_t length) {
+void csprng_read_array(uint8_t* buffer, const uint32_t length) {
     const int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0) {
         perror("Failed to open /dev/urandom");
@@ -67,17 +52,10 @@ inline void csprng_read_array(uint8_t* buffer, const uint32_t length) {
     }
 }
 
-inline uint8_t csprng_read(void) {
+uint8_t csprng_read(void) {
     uint8_t value;
     csprng_read_array(&value, 1);
     return value;
 }
 
 #endif
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // CROSS_PLATFORM_CSPRNG_H

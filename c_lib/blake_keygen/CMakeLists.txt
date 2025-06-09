@@ -1,7 +1,7 @@
-file(GLOB_RECURSE SHARED_SOURCES CONFIGURE_DEPENDS *.c)
+file(GLOB_RECURSE BLAKE_KEYGEN_SOURCES CONFIGURE_DEPENDS *.c)
 
 add_library(blake_keygen_lib
-    ${SHARED_SOURCES}
+    ${BLAKE_KEYGEN_SOURCES}
 )
 
 target_include_directories(blake_keygen_lib

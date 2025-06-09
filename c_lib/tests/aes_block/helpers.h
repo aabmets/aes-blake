@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <cerrno>
 #include "aes_sbox.h"
-#include "cp_csprng.h"
+#include "csprng.h"
 
 
 inline void noop_callback(
@@ -143,11 +143,11 @@ inline void run_fips197_vectors(const AesFunc encrypt_fn, const AesFunc decrypt_
             "2b7e151628aed2a6abf7158809cf4f3c", // secret_key
             "3925841d02dc09fbdc118597196a0b32"  // expected ciphertext
         },
-        // {
-        //     "00112233445566778899aabbccddeeff", // plaintext
-        //     "000102030405060708090a0b0c0d0e0f", // secret_key
-        //     "69c4e0d86a7b0430d8cdb78070b4c55a"  // expected ciphertext
-        // }
+        {
+            "00112233445566778899aabbccddeeff", // plaintext
+            "000102030405060708090a0b0c0d0e0f", // secret_key
+            "69c4e0d86a7b0430d8cdb78070b4c55a"  // expected ciphertext
+        }
     };
 
     for (const auto & [plaintext_hex, key_hex, ciphertext_hex] : vectors) {

@@ -14,7 +14,7 @@
 #include <vector>
 #include <cstddef>
 #include <array>
-#include "cp_csprng.h"
+#include "csprng.h"
 
 
 // Helper function to read csprng samples only once
