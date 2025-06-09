@@ -22,11 +22,17 @@ extern "C" {
 #endif
 
 
-    inline uint8_t xtime(const uint8_t a) {
+    static uint8_t xtime(const uint8_t a) {
         return a << 1 ^ (uint8_t)((a >> 7) * 0x1B);
     }
 
+    void transpose_state_matrix(uint8_t state[16]);
+
     uint8_t gf_mul(uint8_t x, uint8_t y);
+
+    uint8_t gf_inv(uint8_t x);
+
+    uint8_t compute_sbox(uint8_t x);
 
     void generate_enc_tables(
         uint32_t Te0[256],
@@ -44,14 +50,6 @@ extern "C" {
         uint32_t *t3,
         bool little_endian
     );
-
-    void print_state_matrix(uint8_t state[16]);
-
-    void print_state_vector(uint8_t state[16]);
-
-    void print_words_matrix(uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3);
-
-    void print_words_vector(uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3);
 
 
 #ifdef __cplusplus

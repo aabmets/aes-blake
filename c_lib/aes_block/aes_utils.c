@@ -9,11 +9,21 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "aes_sbox.h"
 #include "aes_utils.h"
+
+
+void transpose_state_matrix(uint8_t state[16]) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = i + 1; j < 4; ++j) {
+            const uint8_t tmp = state[4*i + j];
+            state[4*i + j] = state[4*j + i];
+            state[4*j + i] = tmp;
+        }
+    }
+}
 
 
 uint8_t gf_mul(uint8_t x, uint8_t y) {
@@ -24,6 +34,33 @@ uint8_t gf_mul(uint8_t x, uint8_t y) {
         y >>= 1;
     }
     return r;
+}
+
+
+uint8_t gf_inv(const uint8_t x) {
+    if (!x) return 0;
+    uint8_t result = 1;
+    uint8_t base = x;
+    uint8_t exp = 254; // Since x^(254) equals the inverse in GF(2^8)
+    while (exp) {
+        if (exp & 1)
+            result = gf_mul(result, base);
+        base = gf_mul(base, base);
+        exp >>= 1;
+    }
+    return result;
+}
+
+
+uint8_t compute_sbox(const uint8_t x) {
+    const uint8_t inv = gf_inv(x);
+    uint8_t y = inv;
+    y ^= (inv << 1) | (inv >> 7);
+    y ^= (inv << 2) | (inv >> 6);
+    y ^= (inv << 3) | (inv >> 5);
+    y ^= (inv << 4) | (inv >> 4);
+    y ^= 0x63;
+    return y;
 }
 
 
@@ -84,58 +121,4 @@ void compute_enc_table_words(
         *t2 = __builtin_bswap32(*t2);
         *t3 = __builtin_bswap32(*t3);
     }
-}
-
-
-static void print_state(const uint8_t state[16], const char* sep) {
-    printf("\n");
-    for (int row = 0; row < 4; ++row) {
-        for (int col = 0; col < 4; ++col) {
-            printf("%02X ", state[row * 4 + col]);
-        }
-        if (row < 3) {
-            printf("%s", sep);
-        }
-    }
-    printf("\n");
-}
-
-
-void print_state_matrix(uint8_t state[16]) {
-    print_state(state, "\n");
-}
-
-
-void print_state_vector(uint8_t state[16]) {
-    print_state(state, " ");
-}
-
-
-static void words_into_state(
-        uint8_t state[16],
-        const uint32_t w0,
-        const uint32_t w1,
-        const uint32_t w2,
-        const uint32_t w3
-) {
-    for (int i = 0; i < 4; ++i) {
-        state[i     ] = (uint8_t)(w0 >> (8 * i));
-        state[i + 4 ] = (uint8_t)(w1 >> (8 * i));
-        state[i + 8 ] = (uint8_t)(w2 >> (8 * i));
-        state[i + 12] = (uint8_t)(w3 >> (8 * i));
-    }
-}
-
-
-void print_words_matrix(const uint32_t w0, const uint32_t w1, const uint32_t w2, const uint32_t w3) {
-    uint8_t state[16];
-    words_into_state(state, w0, w1, w2, w3);
-    print_state(state, "\n");
-}
-
-
-void print_words_vector(const uint32_t w0, const uint32_t w1, const uint32_t w2, const uint32_t w3) {
-    uint8_t state[16];
-    words_into_state(state, w0, w1, w2, w3);
-    print_state(state, " ");
 }
