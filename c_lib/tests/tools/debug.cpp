@@ -65,3 +65,19 @@ void print_words_vector(const uint32_t w0, const uint32_t w1, const uint32_t w2,
     words_into_state(state, w0, w1, w2, w3);
     print_state(state, " ");
 }
+
+
+void print_uint32_array_hex_table(const uint32_t* array, const size_t length, const size_t per_row) {
+    if (!array || per_row == 0) {
+        return;
+    }
+    for (size_t i = 0; i < length; ++i) {
+        printf("0x%08XU", array[i]);
+        if ((i + 1) % per_row == 0 || i + 1 == length) {
+            printf(",\n");
+        } else {
+            printf(", ");
+        }
+    }
+    printf("\n");
+}

@@ -38,6 +38,8 @@ extern "C" {
 
     void print_words_vector(uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3);
 
+    void print_uint32_array_hex_table(const uint32_t* array, size_t length, size_t per_row);
+
 
 #ifdef __cplusplus
 }
