@@ -7,5 +7,6 @@ add_library(blake_keygen_lib
 target_include_directories(blake_keygen_lib
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../tools
     ${CMAKE_CURRENT_SOURCE_DIR}/../aes_block
 )

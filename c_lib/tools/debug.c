@@ -45,10 +45,10 @@ void words_into_state(
         const uint32_t w3
 ) {
     for (int i = 0; i < 4; ++i) {
-        state[i     ] = static_cast<uint8_t>(w0 >> (8 * i));
-        state[i + 4 ] = static_cast<uint8_t>(w1 >> (8 * i));
-        state[i + 8 ] = static_cast<uint8_t>(w2 >> (8 * i));
-        state[i + 12] = static_cast<uint8_t>(w3 >> (8 * i));
+        state[i     ] = (uint8_t)(w0 >> (8 * i));
+        state[i + 4 ] = (uint8_t)(w1 >> (8 * i));
+        state[i + 8 ] = (uint8_t)(w2 >> (8 * i));
+        state[i + 12] = (uint8_t)(w3 >> (8 * i));
     }
 }
 
