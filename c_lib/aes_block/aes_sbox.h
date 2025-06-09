@@ -21,9 +21,9 @@ extern "C" {
 #endif
 
 
-    extern uint8_t aes_sbox[];
+    extern const uint8_t aes_sbox[];
 
-    extern uint8_t aes_inv_sbox[];
+    extern const uint8_t aes_inv_sbox[];
 
 
 #ifdef __cplusplus
