@@ -45,6 +45,14 @@ extern "C" {
         bool little_endian
     );
 
+    void print_state_matrix(uint8_t state[16]);
+
+    void print_state_vector(uint8_t state[16]);
+
+    void print_words_matrix(uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3);
+
+    void print_words_vector(uint32_t w0, uint32_t w1, uint32_t w2, uint32_t w3);
+
 
 #ifdef __cplusplus
 }
