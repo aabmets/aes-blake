@@ -12,7 +12,13 @@
 #ifndef TEST_DEBUG_H
 #define TEST_DEBUG_H
 
+
+#ifdef __cplusplus
 #include <cstdint>
+extern "C" {
+#else
+#include <stdint.h>
+#endif
 
 
     void print_state(const uint8_t state[16], const char* sep);
@@ -35,5 +41,9 @@
 
     void print_uint32_array_hex_table(const uint32_t* array, size_t length, size_t per_row);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // TEST_DEBUG_H
