@@ -132,18 +132,16 @@ void inv_shift_rows(uint8_t state[16]) {
  * Applies the AES MixColumns transformation to one 4-byte column.
  */
 void mix_single_column(uint8_t state[16], const uint8_t i) {
-    const uint8_t a = i;
-    const uint8_t b = i + 1;
-    const uint8_t c = i + 2;
-    const uint8_t d = i + 3;
+    const uint8_t a = state[i    ];
+    const uint8_t b = state[i + 1];
+    const uint8_t c = state[i + 2];
+    const uint8_t d = state[i + 3];
+    const uint8_t x = a ^ b ^ c ^ d;
 
-    const uint8_t x = (uint8_t)(state[a] ^ state[b] ^ state[c] ^ state[d]);
-    const uint8_t y = state[a];
-
-    state[a] = (uint8_t)(state[a] ^ x ^ xtime((uint8_t)(state[a] ^ state[b])));
-    state[b] = (uint8_t)(state[b] ^ x ^ xtime((uint8_t)(state[b] ^ state[c])));
-    state[c] = (uint8_t)(state[c] ^ x ^ xtime((uint8_t)(state[c] ^ state[d])));
-    state[d] = (uint8_t)(state[d] ^ x ^ xtime((uint8_t)(state[d] ^ y)));
+    state[i    ] = a ^ x ^ xtime(a ^ b);
+    state[i + 1] = b ^ x ^ xtime(b ^ c);
+    state[i + 2] = c ^ x ^ xtime(c ^ d);
+    state[i + 3] = d ^ x ^ xtime(d ^ a);
 }
 
 
@@ -151,20 +149,15 @@ void mix_single_column(uint8_t state[16], const uint8_t i) {
  * Apply the AES InvMixColumns transformation to one 4-byte column.
  */
 void inv_mix_single_column(uint8_t state[16], const uint8_t i) {
-    const uint8_t a = i;
-    const uint8_t b = i + 1;
-    const uint8_t c = i + 2;
-    const uint8_t d = i + 3;
+    const uint8_t a = state[i    ];
+    const uint8_t b = state[i + 1];
+    const uint8_t c = state[i + 2];
+    const uint8_t d = state[i + 3];
 
-    const uint8_t m = (uint8_t)(state[a] ^ state[c]);
-    const uint8_t n = (uint8_t)(state[b] ^ state[d]);
-    const uint8_t x = xtime(xtime(m));
-    const uint8_t y = xtime(xtime(n));
-
-    state[a] = (uint8_t)(state[a] ^ x);
-    state[b] = (uint8_t)(state[b] ^ y);
-    state[c] = (uint8_t)(state[c] ^ x);
-    state[d] = (uint8_t)(state[d] ^ y);
+    state[i    ] = a ^ xtime(xtime(a ^ c));
+    state[i + 1] = b ^ xtime(xtime(b ^ d));
+    state[i + 2] = c ^ xtime(xtime(a ^ c));
+    state[i + 3] = d ^ xtime(xtime(b ^ d));
 }
 
 
