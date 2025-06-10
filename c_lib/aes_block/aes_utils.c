@@ -16,13 +16,31 @@
 
 
 void transpose_state_matrix(uint8_t state[16]) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = i + 1; j < 4; ++j) {
-            const uint8_t tmp = state[4*i + j];
-            state[4*i + j] = state[4*j + i];
-            state[4*j + i] = tmp;
-        }
-    }
+    uint32_t *ptr = (uint32_t*)state;
+    const uint32_t buf0 = ptr[0];
+    const uint32_t buf1 = ptr[1];
+    const uint32_t buf2 = ptr[2];
+    const uint32_t buf3 = ptr[3];
+
+    ptr[0] = buf0       & 0x000000FF
+           | buf1 <<  8 & 0x0000FF00
+           | buf2 << 16 & 0x00FF0000
+           | buf3 << 24 & 0xFF000000;
+
+    ptr[1] = buf0 >>  8 & 0x000000FF
+           | buf1       & 0x0000FF00
+           | buf2 <<  8 & 0x00FF0000
+           | buf3 << 16 & 0xFF000000;
+
+    ptr[2] = buf0 >> 16 & 0x000000FF
+           | buf1 >>  8 & 0x0000FF00
+           | buf2       & 0x00FF0000
+           | buf3 <<  8 & 0xFF000000;
+
+    ptr[3] = buf0 >> 24 & 0x000000FF
+           | buf1 >> 16 & 0x0000FF00
+           | buf2 >>  8 & 0x00FF0000
+           | buf3       & 0xFF000000;
 }
 
 
