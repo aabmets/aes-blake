@@ -68,27 +68,31 @@ void add_round_key(uint8_t state[16],
  * Applies the AES ShiftRows transformation in-place on a 16-byte state.
  */
 void shift_rows(uint8_t state[16]) {
-    // Row 1 (indices 1,5,9,13): rotate left by 1
-    uint8_t tmp = state[1];
-    state[1]    = state[5];
-    state[5]    = state[9];
-    state[9]    = state[13];
-    state[13]   = tmp;
+    uint32_t *ptr = (uint32_t*)state;
+    const uint32_t buf0 = ptr[0];
+    const uint32_t buf1 = ptr[1];
+    const uint32_t buf2 = ptr[2];
+    const uint32_t buf3 = ptr[3];
 
-    // Row 2 (indices 2,6,10,14): rotate left by 2
-    tmp       = state[2];
-    state[2]  = state[10];
-    state[10] = tmp;
-    tmp       = state[6];
-    state[6]  = state[14];
-    state[14] = tmp;
+    ptr[0] = buf0 & 0x000000FF
+           | buf1 & 0x0000FF00
+           | buf2 & 0x00FF0000
+           | buf3 & 0xFF000000;
 
-    // Row 3 (indices 3,7,11,15): rotate left by 3 (equiv. rotate right by 1)
-    tmp       = state[15];
-    state[15] = state[11];
-    state[11] = state[7];
-    state[7]  = state[3];
-    state[3]  = tmp;
+    ptr[1] = buf1 & 0x000000FF
+           | buf2 & 0x0000FF00
+           | buf3 & 0x00FF0000
+           | buf0 & 0xFF000000;
+
+    ptr[2] = buf2 & 0x000000FF
+           | buf3 & 0x0000FF00
+           | buf0 & 0x00FF0000
+           | buf1 & 0xFF000000;
+
+    ptr[3] = buf3 & 0x000000FF
+           | buf0 & 0x0000FF00
+           | buf1 & 0x00FF0000
+           | buf2 & 0xFF000000;
 }
 
 
@@ -96,27 +100,31 @@ void shift_rows(uint8_t state[16]) {
  * Applies the AES InvShiftRows transformation in-place on a 16-byte state.
  */
 void inv_shift_rows(uint8_t state[16]) {
-    // Row 1 (indices 1,5,9,13): right rotate by 1 (equiv. left rotate by 3)
-    uint8_t tmp = state[13];
-    state[13]   = state[9];
-    state[9]    = state[5];
-    state[5]    = state[1];
-    state[1]    = tmp;
+    uint32_t *ptr = (uint32_t*)state;
+    const uint32_t buf0 = ptr[0];
+    const uint32_t buf1 = ptr[1];
+    const uint32_t buf2 = ptr[2];
+    const uint32_t buf3 = ptr[3];
 
-    // Row 2 (indices 2,6,10,14): right rotate by 2
-    tmp       = state[2];
-    state[2]  = state[10];
-    state[10] = tmp;
-    tmp       = state[6];
-    state[6]  = state[14];
-    state[14] = tmp;
+    ptr[0] = buf0 & 0x000000FF
+           | buf3 & 0x0000FF00
+           | buf2 & 0x00FF0000
+           | buf1 & 0xFF000000;
 
-    // Row 3 (indices 3,7,11,15): right rotate by 3 (equiv. left rotate by 1)
-    tmp       = state[3];
-    state[3]  = state[7];
-    state[7]  = state[11];
-    state[11] = state[15];
-    state[15] = tmp;
+    ptr[1] = buf1 & 0x000000FF
+           | buf0 & 0x0000FF00
+           | buf3 & 0x00FF0000
+           | buf2 & 0xFF000000;
+
+    ptr[2] = buf2 & 0x000000FF
+           | buf1 & 0x0000FF00
+           | buf0 & 0x00FF0000
+           | buf3 & 0xFF000000;
+
+    ptr[3] = buf3 & 0x000000FF
+           | buf2 & 0x0000FF00
+           | buf1 & 0x00FF0000
+           | buf0 & 0xFF000000;
 }
 
 
