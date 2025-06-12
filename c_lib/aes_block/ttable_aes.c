@@ -10,10 +10,66 @@
  */
 
 #include <stdint.h>
-#include "ttable_aes.h"
 #include "aes_sbox.h"
 #include "aes_tables.h"
 #include "aes_shared.h"
+#include "aes_types.h"
+
+
+static void shift_rows_sub_bytes(uint32_t state[4], const uint8_t b[16]) {
+    const uint32_t t0 = aes_sbox[b[ 0]]
+                      | aes_sbox[b[ 5]] <<  8
+                      | aes_sbox[b[10]] << 16
+                      | aes_sbox[b[15]] << 24;
+
+    const uint32_t t1 = aes_sbox[b[ 4]]
+                      | aes_sbox[b[ 9]] <<  8
+                      | aes_sbox[b[14]] << 16
+                      | aes_sbox[b[ 3]] << 24;
+
+    const uint32_t t2 = aes_sbox[b[ 8]]
+                      | aes_sbox[b[13]] <<  8
+                      | aes_sbox[b[ 2]] << 16
+                      | aes_sbox[b[ 7]] << 24;
+
+    const uint32_t t3 = aes_sbox[b[12]]
+                      | aes_sbox[b[ 1]] <<  8
+                      | aes_sbox[b[ 6]] << 16
+                      | aes_sbox[b[11]] << 24;
+
+    state[0] = t0;
+    state[1] = t1;
+    state[2] = t2;
+    state[3] = t3;
+}
+
+
+static void inv_shift_rows_inv_sub_bytes(uint32_t state[4], const uint8_t b[16]) {
+    const uint32_t t0 = aes_inv_sbox[b[ 0]]
+                      | aes_inv_sbox[b[13]] <<  8
+                      | aes_inv_sbox[b[10]] << 16
+                      | aes_inv_sbox[b[ 7]] << 24;
+
+    const uint32_t t1 = aes_inv_sbox[b[ 4]]
+                      | aes_inv_sbox[b[ 1]] <<  8
+                      | aes_inv_sbox[b[14]] << 16
+                      | aes_inv_sbox[b[11]] << 24;
+
+    const uint32_t t2 = aes_inv_sbox[b[ 8]]
+                      | aes_inv_sbox[b[ 5]] <<  8
+                      | aes_inv_sbox[b[ 2]] << 16
+                      | aes_inv_sbox[b[15]] << 24;
+
+    const uint32_t t3 = aes_inv_sbox[b[12]]
+                      | aes_inv_sbox[b[ 9]] <<  8
+                      | aes_inv_sbox[b[ 6]] << 16
+                      | aes_inv_sbox[b[ 3]] << 24;
+
+    state[0] = t0;
+    state[1] = t1;
+    state[2] = t2;
+    state[3] = t3;
+}
 
 
 void ttable_aes_encrypt(
@@ -57,35 +113,8 @@ void ttable_aes_encrypt(
     }
 
     // Final round
-    {
-        // SubBytes -> ShiftRows
-        const uint32_t t0 = aes_sbox[b[ 0]]
-                          | aes_sbox[b[ 5]] <<  8
-                          | aes_sbox[b[10]] << 16
-                          | aes_sbox[b[15]] << 24;
-
-        const uint32_t t1 = aes_sbox[b[ 4]]
-                          | aes_sbox[b[ 9]] <<  8
-                          | aes_sbox[b[14]] << 16
-                          | aes_sbox[b[ 3]] << 24;
-
-        const uint32_t t2 = aes_sbox[b[ 8]]
-                          | aes_sbox[b[13]] <<  8
-                          | aes_sbox[b[ 2]] << 16
-                          | aes_sbox[b[ 7]] << 24;
-
-        const uint32_t t3 = aes_sbox[b[12]]
-                          | aes_sbox[b[ 1]] <<  8
-                          | aes_sbox[b[ 6]] << 16
-                          | aes_sbox[b[11]] << 24;
-
-        state[0] = t0;
-        state[1] = t1;
-        state[2] = t2;
-        state[3] = t3;
-
-        add_round_key(b, keys, n_rounds);
-    }
+    shift_rows_sub_bytes(state, b);
+    add_round_key(b, keys, n_rounds);
 }
 
 
@@ -104,37 +133,10 @@ void ttable_aes_decrypt(
     const uint8_t n_rounds = key_count - 1;
 
     // First round
-    {
-        add_round_key(b, keys, n_rounds);
+    add_round_key(b, keys, n_rounds);
+    inv_shift_rows_inv_sub_bytes(state, b);
 
-        // InvShiftRows -> InvSubBytes
-        const uint32_t t0 = aes_inv_sbox[b[ 0]]
-                          | aes_inv_sbox[b[13]] <<  8
-                          | aes_inv_sbox[b[10]] << 16
-                          | aes_inv_sbox[b[ 7]] << 24;
-
-        const uint32_t t1 = aes_inv_sbox[b[ 4]]
-                          | aes_inv_sbox[b[ 1]] <<  8
-                          | aes_inv_sbox[b[14]] << 16
-                          | aes_inv_sbox[b[11]] << 24;
-
-        const uint32_t t2 = aes_inv_sbox[b[ 8]]
-                          | aes_inv_sbox[b[ 5]] <<  8
-                          | aes_inv_sbox[b[ 2]] << 16
-                          | aes_inv_sbox[b[15]] << 24;
-
-        const uint32_t t3 = aes_inv_sbox[b[12]]
-                          | aes_inv_sbox[b[ 9]] <<  8
-                          | aes_inv_sbox[b[ 6]] << 16
-                          | aes_inv_sbox[b[ 3]] << 24;
-
-        state[0] = t0;
-        state[1] = t1;
-        state[2] = t2;
-        state[3] = t3;
-    }
-
-    // Middle round
+    // Middle rounds
     for (uint8_t round = n_rounds - 1; round > 0; round--) {
         add_round_key(b, keys, round);
 
@@ -148,8 +150,7 @@ void ttable_aes_decrypt(
         state[2] = t2;
         state[3] = t3;
 
-        inv_shift_rows(b);
-        inv_sub_bytes(b);
+        inv_shift_rows_inv_sub_bytes(state, b);
 
         callback(
             data,
