@@ -10,7 +10,7 @@
  */
 
 #include <catch2/catch_all.hpp>
-#include "blake32.h"
+#include "clean_blake32.h"
 #include "aes_sbox.h"
 
 

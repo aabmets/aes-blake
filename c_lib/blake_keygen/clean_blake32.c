@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include "aes_sbox.h"
 #include "blake_const.h"
-#include "blake32.h"
+#include "clean_blake32.h"
 
 
 /*

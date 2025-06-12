@@ -10,11 +10,11 @@
  */
 
 #include <catch2/catch_all.hpp>
-#include "blake_const.h"
-#include "blake32.h"
-#include "blake64.h"
 #include <vector>
 #include <random>
+#include "blake_const.h"
+#include "clean_blake32.h"
+#include "clean_blake64.h"
 
 
 // Helper function to set up 1KB worth of key generation for BLAKE32
