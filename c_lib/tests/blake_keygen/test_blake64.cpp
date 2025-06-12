@@ -1,5 +1,5 @@
 /*
-*   Apache License 2.0
+ *   Apache License 2.0
  *
  *   Copyright (c) 2024, Mattias Aabmets
  *
@@ -14,13 +14,13 @@
 #include "../../aes_block/aes_sbox.h"
 
 
-TEST_CASE("rotr64: rotating by 0 returns the original value", "[rotr64]") {
+TEST_CASE("rotr64: rotating by 0 returns the original value", "[unittest][keygen]") {
     REQUIRE(rotr64(0x0000000000000000ULL, 0) == 0x0000000000000000ULL);
     REQUIRE(rotr64(0x0123456789ABCDEFULL, 0) == 0x0123456789ABCDEFULL);
 }
 
 
-TEST_CASE("rotr64: basic rotations", "[rotr64]") {
+TEST_CASE("rotr64: basic rotations", "[unittest][keygen]") {
     SECTION("rotate a single bit from LSB to MSB") {
         uint64_t x = 0x0000000000000001ULL; // bit0 set
         REQUIRE(rotr64(x, 1) == 0x8000000000000000ULL);
@@ -50,7 +50,7 @@ TEST_CASE("rotr64: basic rotations", "[rotr64]") {
 }
 
 
-TEST_CASE("permute64: zeros remain zeros", "[permute64]") {
+TEST_CASE("permute64: zeros remain zeros", "[unittest][keygen]") {
     uint64_t m[16] = {0};
     permute64(m);
     for (const unsigned long long i : m) {
@@ -59,7 +59,7 @@ TEST_CASE("permute64: zeros remain zeros", "[permute64]") {
 }
 
 
-TEST_CASE("permute64: identity mapping yields expected schedule (cast to uint64_t)", "[permute64]") {
+TEST_CASE("permute64: identity mapping yields expected schedule (cast to uint64_t)", "[unittest][keygen]") {
     uint64_t m[16];
     for (uint64_t i = 0; i < 16; ++i) {
         m[i] = i;
@@ -76,7 +76,7 @@ TEST_CASE("permute64: identity mapping yields expected schedule (cast to uint64_
 }
 
 
-TEST_CASE("g_mix64 produces expected state after successive calls", "[g_mix64]") {
+TEST_CASE("g_mix64 produces expected state after successive calls", "[unittest][keygen]") {
     uint64_t state[16] = {};
 
     // After the first call: g_mix(0,4,8,12, 1,2)
@@ -137,7 +137,7 @@ TEST_CASE("g_mix64 produces expected state after successive calls", "[g_mix64]")
 }
 
 
-TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[blake64]") {
+TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[unittest][keygen]") {
     uint64_t state[16] = {};
 
     uint64_t m[16];
@@ -158,7 +158,7 @@ TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[blake64]") {
 }
 
 
-TEST_CASE("sub_bytes64: ENC maps all-zero words → 0x6363636363636363", "[sub_bytes64][ENC]") {
+TEST_CASE("sub_bytes64: ENC maps all-zero words → 0x6363636363636363", "[unittest][keygen]") {
     uint64_t state[16] = {0};
 
     sub_bytes64(state);
@@ -169,7 +169,7 @@ TEST_CASE("sub_bytes64: ENC maps all-zero words → 0x6363636363636363", "[sub_b
 }
 
 
-TEST_CASE("sub_bytes64: DEC (inverse) of 0x6363636363636363 returns zero", "[sub_bytes64][DEC]") {
+TEST_CASE("sub_bytes64: DEC (inverse) of 0x6363636363636363 returns zero", "[unittest][keygen]") {
     uint64_t state[16] = {0};
 
     sub_bytes64(state);
@@ -211,7 +211,7 @@ TEST_CASE("sub_bytes64: DEC (inverse) of 0x6363636363636363 returns zero", "[sub
 }
 
 
-TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[composite64][mirror_pytest]") {
+TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[unittest][keygen]") {
     uint64_t key[8];
     uint64_t nonce[8];
     uint64_t out[16];
@@ -229,7 +229,7 @@ TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alter
 }
 
 
-TEST_CASE("init_state_vector64 produces the expected 16-word state", "[init_state_vector64]") {
+TEST_CASE("init_state_vector64 produces the expected 16-word state", "[unittest][keygen]") {
     constexpr uint64_t entropy[8] = {
         0x0001020304050607ULL, 0x08090A0B0C0D0E0FULL,
         0x1011121314151617ULL, 0x18191A1B1C1D1E1FULL,
@@ -284,7 +284,7 @@ TEST_CASE("init_state_vector64 produces the expected 16-word state", "[init_stat
 }
 
 
-TEST_CASE("digest_context64 produces expected final state", "[digest_context64]") {
+TEST_CASE("digest_context64 produces expected final state", "[unittest][keygen]") {
     constexpr uint64_t key[8] = {};
     uint64_t context[8] = {};
     uint64_t state[16] = {};
@@ -307,7 +307,7 @@ TEST_CASE("digest_context64 produces expected final state", "[digest_context64]"
 }
 
 
-TEST_CASE("derive_keys64 matches Python test vectors", "[derive_keys64]") {
+TEST_CASE("derive_keys64 matches Python test vectors", "[unittest][keygen]") {
     // 1) Prepare a zeroed key[8] and zeroed nonce/context[8].
     uint64_t zero_key[8]   = {};
     uint64_t zero_nonce[8] = {};

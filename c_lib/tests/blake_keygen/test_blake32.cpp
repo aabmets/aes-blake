@@ -14,13 +14,13 @@
 #include "aes_sbox.h"
 
 
-TEST_CASE("rotr32: rotating by 0 returns the original value", "[rotr32]") {
+TEST_CASE("rotr32: rotating by 0 returns the original value", "[unittest][keygen]") {
     REQUIRE(rotr32(0x00000000u, 0) == 0x00000000u);
     REQUIRE(rotr32(0xDEADBEEFu, 0) == 0xDEADBEEFu);
 }
 
 
-TEST_CASE("rotr32: basic rotations", "[rotr32]") {
+TEST_CASE("rotr32: basic rotations", "[unittest][keygen]") {
     SECTION("rotate a single bit from LSB to MSB") {
         uint32_t x = 0x00000001u; // bit0 set
         REQUIRE(rotr32(x, 1) == 0x80000000u);
@@ -50,7 +50,7 @@ TEST_CASE("rotr32: basic rotations", "[rotr32]") {
 }
 
 
-TEST_CASE("permute32: zeros remain zeros", "[permute32]") {
+TEST_CASE("permute32: zeros remain zeros", "[unittest][keygen]") {
     uint32_t m[16] = {0};
     permute32(m);
     for (const unsigned int i : m) {
@@ -59,7 +59,7 @@ TEST_CASE("permute32: zeros remain zeros", "[permute32]") {
 }
 
 
-TEST_CASE("permute32: identity mapping yields expected schedule", "[permute32]") {
+TEST_CASE("permute32: identity mapping yields expected schedule", "[unittest][keygen]") {
     uint32_t m[16];
     for (uint32_t i = 0; i < 16; ++i) {
         m[i] = i;
@@ -75,7 +75,7 @@ TEST_CASE("permute32: identity mapping yields expected schedule", "[permute32]")
 }
 
 
-TEST_CASE("g_mix32 produces expected state after successive calls", "[g_mix32]") {
+TEST_CASE("g_mix32 produces expected state after successive calls", "[unittest][keygen]") {
     uint32_t state[16] = {};
 
     // After the first call: g_mix(0,4,8,12, 1,2)
@@ -136,7 +136,7 @@ TEST_CASE("g_mix32 produces expected state after successive calls", "[g_mix32]")
 }
 
 
-TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[blake32]") {
+TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[unittest][keygen]") {
     uint32_t state[16] = {};
 
     uint32_t m[16];
@@ -157,7 +157,7 @@ TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[blake32]") {
 }
 
 
-TEST_CASE("sub_bytes32: DEC (inverse) of 0x63636363 returns zero", "[sub_bytes32][DEC]") {
+TEST_CASE("sub_bytes32: DEC (inverse) of 0x63636363 returns zero", "[unittest][keygen]") {
     uint32_t state[16] = {};
 
     sub_bytes32(state);
@@ -187,7 +187,7 @@ TEST_CASE("sub_bytes32: DEC (inverse) of 0x63636363 returns zero", "[sub_bytes32
 }
 
 
-TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAABBBB/0xBBBBAAAA", "[composite32][mirror_pytest]") {
+TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAABBBB/0xBBBBAAAA", "[unittest][keygen]") {
     uint32_t key[8];
     uint32_t nonce[8];
     uint32_t out[16];
@@ -205,7 +205,7 @@ TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alter
 }
 
 
-TEST_CASE("init_state_vector32 produces the expected 16-word state", "[init_state_vector32]") {
+TEST_CASE("init_state_vector32 produces the expected 16-word state", "[unittest][keygen]") {
     constexpr uint32_t entropy[8] = {
         0x00010203u, 0x04050607u, 0x08090A0Bu, 0x0C0D0E0Fu,
         0x10111213u, 0x14151617u, 0x18191A1Bu, 0x1C1D1E1Fu
@@ -257,7 +257,7 @@ TEST_CASE("init_state_vector32 produces the expected 16-word state", "[init_stat
 }
 
 
-TEST_CASE("digest_context32 produces expected final state", "[digest_context32]") {
+TEST_CASE("digest_context32 produces expected final state", "[unittest][keygen]") {
     constexpr uint32_t key[8] = {};
     uint32_t context[8] = {};
     uint32_t state[16] = {};
@@ -276,7 +276,7 @@ TEST_CASE("digest_context32 produces expected final state", "[digest_context32]"
 }
 
 
-TEST_CASE("derive_keys32 matches Python test vectors", "[derive_keys32]") {
+TEST_CASE("derive_keys32 matches Python test vectors", "[unittest][keygen]") {
     // 1) Prepare a zeroed key[8] and zeroed nonce/context[8].
     uint32_t zero_key[8]   = {};
     uint32_t zero_nonce[8] = {};

@@ -39,7 +39,7 @@ std::vector<unsigned char> getCsprngSamples(const std::size_t numSamples) {
 }
 
 
-TEST_CASE("CSPRNG generated data passes Shannon entropy estimation", "[csprng]") {
+TEST_CASE("CSPRNG generated data passes Shannon entropy estimation", "[unittest][csprng]") {
     constexpr int N_SAMPLES = 100000;
     constexpr int ALPHABET_SIZE = 256;
     constexpr double MIN_ENTROPY = 7.99;
@@ -64,7 +64,7 @@ TEST_CASE("CSPRNG generated data passes Shannon entropy estimation", "[csprng]")
 }
 
 
-TEST_CASE("CSPRNG generated data passes serial correlation test", "[csprng]") {
+TEST_CASE("CSPRNG generated data passes serial correlation test", "[unittest][csprng]") {
     constexpr int N_SAMPLES = 100000;
     constexpr double MAX_SERIAL_CORR = 0.01;
 
@@ -90,7 +90,7 @@ TEST_CASE("CSPRNG generated data passes serial correlation test", "[csprng]") {
 }
 
 
-TEST_CASE("CSPRNG generated data passes Maurer's universal statistical test", "[csprng]") {
+TEST_CASE("CSPRNG generated data passes Maurer's universal statistical test", "[unittest][csprng]") {
     constexpr int L = 8;
     constexpr int Q = 2560;  // 10 × 2^L
     constexpr int K = 256000;  // 1000 × 2^L

@@ -15,7 +15,7 @@
 #include "aes_utils.h"
 
 
-TEST_CASE("Computed AES S-box matches hardcoded array", "[aes]") {
+TEST_CASE("Computed AES S-box matches hardcoded array", "[unittest][aes]") {
     for (int x = 0; x < 256; x++) {
         const auto idx = static_cast<uint8_t>(x);
         REQUIRE(aes_sbox[idx] == compute_sbox(idx));
@@ -23,7 +23,7 @@ TEST_CASE("Computed AES S-box matches hardcoded array", "[aes]") {
 }
 
 
-TEST_CASE("Computed AES inverse S-box matches hardcoded array", "[aes]") {
+TEST_CASE("Computed AES inverse S-box matches hardcoded array", "[unittest][aes]") {
     for (int x = 0; x < 256; x++) {
         const auto idx = static_cast<uint8_t>(x);
         const uint8_t s_val = compute_sbox(idx);
@@ -32,7 +32,7 @@ TEST_CASE("Computed AES inverse S-box matches hardcoded array", "[aes]") {
 }
 
 
-TEST_CASE("Computed AES encryption T-tables match hardcoded arrays", "[aes]") {
+TEST_CASE("Computed AES encryption T-tables match hardcoded arrays", "[unittest][aes]") {
     for (int x = 0; x < 256; x++) {
         const auto idx = static_cast<uint8_t>(x);
 
@@ -47,7 +47,7 @@ TEST_CASE("Computed AES encryption T-tables match hardcoded arrays", "[aes]") {
 }
 
 
-TEST_CASE("Computed AES decryption IMC tables match hardcoded arrays", "[aes]") {
+TEST_CASE("Computed AES decryption IMC tables match hardcoded arrays", "[unittest][aes]") {
     for (int x = 0; x < 256; x++) {
         const auto idx = static_cast<uint8_t>(x);
 

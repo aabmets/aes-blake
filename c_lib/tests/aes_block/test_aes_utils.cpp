@@ -13,7 +13,7 @@
 #include "aes_utils.h"
 
 
-TEST_CASE("Transposed state matrix matches expected value", "[aes]") {
+TEST_CASE("Transposed state matrix matches expected value", "[unittest][aes]") {
     const uint8_t initial[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     const uint8_t expected[16] = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
     uint8_t tmp[16];

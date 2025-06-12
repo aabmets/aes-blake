@@ -16,29 +16,21 @@
 #include "helpers.h"
 
 
-TEST_CASE("Clean AES-128 FIPS-197 Vectors", "[aes]") {
+TEST_CASE("Clean AES-128 FIPS-197 Vectors", "[unittest][aes]") {
     run_fips197_vectors(clean_aes_encrypt, clean_aes_decrypt);
 }
 
 
-TEST_CASE("Clean AES-128 Two-Block Random Keys", "[aes]") {
+TEST_CASE("Clean AES-128 Two-Block Random Keys", "[unittest][aes]") {
     run_two_block_random_vectors(clean_aes_encrypt, clean_aes_decrypt);
 }
 
 
-TEST_CASE("T-table AES-128 FIPS-197 Vectors", "[aes]") {
+TEST_CASE("T-table AES-128 FIPS-197 Vectors", "[unittest][aes]") {
     run_fips197_vectors(ttable_aes_encrypt, ttable_aes_decrypt);
 }
 
 
-TEST_CASE("T-table AES-128 Two-Block Random Keys", "[aes]") {
+TEST_CASE("T-table AES-128 Two-Block Random Keys", "[unittest][aes]") {
     run_two_block_random_vectors(ttable_aes_encrypt, ttable_aes_decrypt);
-}
-
-
-TEST_CASE("Benchmark AES implementations with 1KB data", "[benchmark][aes]") {
-    benchmark_aes_1kb("Clean AES Encrypt 1KB", clean_aes_encrypt);
-    benchmark_aes_1kb("Clean AES Decrypt 1KB", clean_aes_decrypt);
-    benchmark_aes_1kb("T-table AES Encrypt 1KB", ttable_aes_encrypt);
-    benchmark_aes_1kb("T-table AES Decrypt 1KB", ttable_aes_decrypt);
 }
