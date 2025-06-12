@@ -25,6 +25,11 @@ extern "C" {
     extern const uint32_t Te2[256];
     extern const uint32_t Te3[256];
 
+    extern const uint32_t IMC0[256];
+    extern const uint32_t IMC1[256];
+    extern const uint32_t IMC2[256];
+    extern const uint32_t IMC3[256];
+
 
 #ifdef __cplusplus
 }
