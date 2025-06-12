@@ -43,7 +43,24 @@ extern "C" {
     );
 
     void compute_enc_table_words(
-        uint8_t index,
+        uint8_t x,
+        uint32_t *t0,
+        uint32_t *t1,
+        uint32_t *t2,
+        uint32_t *t3,
+        bool little_endian
+    );
+
+    void generate_imc_tables(
+        uint32_t IMC0[256],
+        uint32_t IMC1[256],
+        uint32_t IMC2[256],
+        uint32_t IMC3[256],
+        bool little_endian
+    );
+
+    void compute_imc_table_words(
+        uint8_t x,
         uint32_t *t0,
         uint32_t *t1,
         uint32_t *t2,

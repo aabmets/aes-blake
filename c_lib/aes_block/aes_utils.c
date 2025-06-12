@@ -89,49 +89,84 @@ void generate_enc_tables(
         uint32_t Te3[256],
         const bool little_endian
 ) {
-    for (int i = 0; i < 256; i++) {
+    for (int x = 0; x < 256; x++) {
         uint32_t t0, t1, t2, t3;
-        compute_enc_table_words(i, &t0, &t1, &t2, &t3, little_endian);
+        compute_enc_table_words(x, &t0, &t1, &t2, &t3, little_endian);
 
-        Te0[i] = t0;
-        Te1[i] = t1;
-        Te2[i] = t2;
-        Te3[i] = t3;
+        Te0[x] = t0;
+        Te1[x] = t1;
+        Te2[x] = t2;
+        Te3[x] = t3;
     }
 }
 
 
 void compute_enc_table_words(
-        const uint8_t index,
+        const uint8_t x,
         uint32_t *t0,
         uint32_t *t1,
         uint32_t *t2,
         uint32_t *t3,
         const bool little_endian
 ) {
-    const uint8_t s1 = aes_sbox[index];
+    const uint8_t s1 = aes_sbox[x];
     const uint8_t s2 = xtime(s1);
     const uint8_t s3 = s2 ^ s1;
 
-    *t0 = (uint32_t)s2 << 24
-        | (uint32_t)s1 << 16
-        | (uint32_t)s1 << 8
-        | (uint32_t)s3;
+    *t0 = s2 << 24 | s1 << 16 | s1 << 8 | s3;
+    *t1 = s3 << 24 | s2 << 16 | s1 << 8 | s1;
+    *t2 = s1 << 24 | s3 << 16 | s2 << 8 | s1;
+    *t3 = s1 << 24 | s1 << 16 | s3 << 8 | s2;
 
-    *t1 = (uint32_t)s3 << 24
-        | (uint32_t)s2 << 16
-        | (uint32_t)s1 << 8
-        | (uint32_t)s1;
+    if (little_endian)  {
+        *t0 = __builtin_bswap32(*t0);
+        *t1 = __builtin_bswap32(*t1);
+        *t2 = __builtin_bswap32(*t2);
+        *t3 = __builtin_bswap32(*t3);
+    }
+}
 
-    *t2 = (uint32_t)s1 << 24
-        | (uint32_t)s3 << 16
-        | (uint32_t)s2 << 8
-        | (uint32_t)s1;
 
-    *t3 = (uint32_t)s1 << 24
-        | (uint32_t)s1 << 16
-        | (uint32_t)s3 <<  8
-        | (uint32_t)s2;
+void generate_imc_tables(
+        uint32_t IMC0[256],
+        uint32_t IMC1[256],
+        uint32_t IMC2[256],
+        uint32_t IMC3[256],
+        const bool little_endian
+) {
+    for (uint8_t x = 0; x < 256; x++) {
+        uint32_t t0, t1, t2, t3;
+        compute_enc_table_words(x, &t0, &t1, &t2, &t3, little_endian);
+
+        IMC0[x] = t0;
+        IMC1[x] = t1;
+        IMC2[x] = t2;
+        IMC3[x] = t3;
+    }
+}
+
+
+void compute_imc_table_words(
+        const uint8_t x,
+        uint32_t *t0,
+        uint32_t *t1,
+        uint32_t *t2,
+        uint32_t *t3,
+        const bool little_endian
+) {
+    const uint8_t x2 = xtime(x);   // 2·x
+    const uint8_t x4 = xtime(x2);  // 4·x
+    const uint8_t x8 = xtime(x4);  // 8·x
+
+    const uint32_t m9  = x8 ^ x;        // 9·x = 8·x ⊕ x
+    const uint32_t m11 = x8 ^ x2 ^ x;   // 11·x = 8·x ⊕ 2·x ⊕ x
+    const uint32_t m13 = x8 ^ x4 ^ x;   // 13·x = 8·x ⊕ 4·x ⊕ x
+    const uint32_t m14 = x8 ^ x4 ^ x2;  // 14·x = 8·x ⊕ 4·x ⊕ 2·x
+
+    *t0 = m11 | m13 <<  8 | m9  << 16 | m14 << 24;
+    *t1 = m13 | m9  <<  8 | m14 << 16 | m11 << 24;
+    *t2 = m9  | m14 <<  8 | m11 << 16 | m13 << 24;
+    *t3 = m14 | m11 <<  8 | m13 << 16 | m9  << 24;
 
     if (little_endian)  {
         *t0 = __builtin_bswap32(*t0);
