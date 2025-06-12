@@ -27,10 +27,10 @@ TEST_CASE("Clean AES-128 Two-Block Random Keys", "[aes]") {
 
 
 TEST_CASE("T-table AES-128 FIPS-197 Vectors", "[aes]") {
-    run_fips197_vectors(ttable_aes_encrypt, clean_aes_decrypt);
+    run_fips197_vectors(ttable_aes_encrypt, ttable_aes_decrypt);
 }
 
 
 TEST_CASE("T-table AES-128 Two-Block Random Keys", "[aes]") {
-    run_two_block_random_vectors(ttable_aes_encrypt, clean_aes_decrypt);
+    run_two_block_random_vectors(ttable_aes_encrypt, ttable_aes_decrypt);
 }
