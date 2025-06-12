@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <cerrno>
+#include <random>
 #include "aes_sbox.h"
 #include "csprng.h"
 
@@ -261,5 +262,51 @@ inline void run_two_block_random_vectors(const AesFunc encrypt_fn, const AesFunc
         REQUIRE(data[i] == plaintext[i]);
     }
 }
+
+
+inline void generate_random_data(uint8_t* data, const size_t size) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+
+    for (size_t i = 0; i < size; ++i) {
+        data[i] = static_cast<uint8_t>(dis(gen));
+    }
+}
+
+
+// Helper function to benchmark AES cipher functions with 1KB of data
+inline void benchmark_aes_1kb(const char* benchmark_name, const AesFunc cipher_func) {
+    // 1KB = 1024 bytes = 64 blocks of 16 bytes each
+    constexpr size_t total_blocks = 64;
+    constexpr size_t data_size = total_blocks * 16;
+
+    // Prepare data and keys
+    std::vector<uint8_t> data(data_size);
+    std::vector<uint8_t> round_keys(total_blocks * 11 * 16); // 11 round keys per block
+
+    // Generate random data and keys
+    generate_random_data(data.data(), data_size);
+    generate_random_data(round_keys.data(), round_keys.size());
+
+    // Configure AES parameters
+    constexpr uint8_t key_count = 11;  // AES-128 uses 11 round keys
+    constexpr uint8_t block_count = total_blocks;
+
+    BENCHMARK(benchmark_name) {
+        for (uint8_t block_index = 0; block_index < block_count; ++block_index) {
+            cipher_func(
+                data.data(),
+                reinterpret_cast<uint8_t (*)[16]>(round_keys.data()),
+                key_count,
+                block_count,
+                block_index,
+                noop_callback
+            );
+        }
+        return data[0]; // Return something to prevent optimization
+    };
+}
+
 
 #endif // TEST_HELPERS_H
