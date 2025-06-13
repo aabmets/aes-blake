@@ -10,9 +10,7 @@
  */
 
 #include <catch2/catch_all.hpp>
-#include <vector>
 #include <random>
-#include "blake_const.h"
 #include "clean_blake32.h"
 #include "clean_blake64.h"
 
