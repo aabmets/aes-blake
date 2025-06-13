@@ -36,21 +36,19 @@ extern "C" {
 
     void permute64(uint64_t m[16]);
 
-    void sub_bytes64(uint64_t state[16]);
-
-    void compute_key_nonce_composite64(
+    void clean_compute_knc64(
         const uint64_t key[8],
         const uint64_t nonce[8],
         uint64_t out[16]
     );
 
-    void digest_context64(
+    void clean_digest_context64(
         uint64_t state[16],
         const uint64_t key[8],
         uint64_t context[8]
     );
 
-    void derive_keys64(
+    void clean_derive_keys64(
         const uint64_t init_state[16],
         const uint64_t knc[16],
         uint8_t key_count,

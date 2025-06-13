@@ -121,18 +121,7 @@ TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[unittest][keygen]"
 }
 
 
-TEST_CASE("sub_bytes64: ENC maps all-zero words → 0x6363636363636363", "[unittest][keygen]") {
-    uint64_t state[16] = {0};
-
-    sub_bytes64(state);
-
-    for (const unsigned long long i : state) {
-        REQUIRE(i == 0x6363636363636363ULL);
-    }
-}
-
-
-TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[unittest][keygen]") {
+TEST_CASE("clean_compute_knc64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[unittest][keygen]") {
     uint64_t key[8];
     uint64_t nonce[8];
     uint64_t out[16];
@@ -141,7 +130,7 @@ TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alter
         key[i] = 0xAAAAAAAAAAAAAAAAULL;
         nonce[i] = 0xBBBBBBBBBBBBBBBBULL;
     }
-    compute_key_nonce_composite64(key, nonce, out);
+    clean_compute_knc64(key, nonce, out);
 
     for (size_t i = 0; i < 8; ++i) {
         REQUIRE(out[2*i]     == 0xAAAAAAAABBBBBBBBULL);
@@ -150,12 +139,12 @@ TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alter
 }
 
 
-TEST_CASE("digest_context64 produces expected final state", "[unittest][keygen]") {
+TEST_CASE("clean_digest_context64 produces expected final state", "[unittest][keygen]") {
     constexpr uint64_t key[8] = {};
     uint64_t context[8] = {};
     uint64_t state[16] = {};
 
-    digest_context64(state, key, context);
+    clean_digest_context64(state, key, context);
 
     uint64_t expected[16] = {
         0x863DEBC71AE04878ULL, 0x6A0146661D0C3AA8ULL,

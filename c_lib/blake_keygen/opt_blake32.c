@@ -181,7 +181,7 @@ static void permute32(uint32_t m[16]) {
  * Splices together 8‐element key and nonce arrays of uint32_t by exchanging
  * their upper and lower 16‐bit halves. Produces a 16‐element output array.
  */
-void opt_compute_key_nonce_composite32(
+void opt_compute_knc32(
         const uint32_t key[8],
         const uint32_t nonce[8],
         uint32_t out[16]

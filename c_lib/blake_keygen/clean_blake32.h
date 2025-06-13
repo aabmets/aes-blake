@@ -36,21 +36,19 @@ extern "C" {
 
     void permute32(uint32_t m[16]);
 
-    void sub_bytes32(uint32_t state[16]);
-
-    void compute_key_nonce_composite32(
+    void clean_compute_knc32(
         const uint32_t key[8],
         const uint32_t nonce[8],
         uint32_t out[16]
     );
 
-    void digest_context32(
+    void clean_digest_context32(
         uint32_t state[16],
         const uint32_t key[8],
         uint32_t context[8]
     );
 
-    void derive_keys32(
+    void clean_derive_keys32(
         const uint32_t init_state[16],
         const uint32_t knc[16],
         uint8_t        key_count,

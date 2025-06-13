@@ -181,7 +181,7 @@ static void permute64(uint64_t m[16]) {
  * Splices together 8‐element key and nonce arrays of uint64_t by exchanging
  * their upper and lower 32‐bit halves. Produces a 16‐element output array.
  */
-void opt_compute_key_nonce_composite64(
+void opt_compute_knc64(
         const uint64_t key[8],
         const uint64_t nonce[8],
         uint64_t out[16]

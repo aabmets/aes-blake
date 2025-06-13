@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 
-    void opt_compute_key_nonce_composite64(const uint64_t key[8], const uint64_t nonce[8], uint64_t out[16]);
+    void opt_compute_knc64(const uint64_t key[8], const uint64_t nonce[8], uint64_t out[16]);
 
     void opt_digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t context[8]);
 

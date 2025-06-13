@@ -81,10 +81,11 @@ void permute32(uint32_t m[16]) {
 
 
 /**
- * Splices together 8‐element key and nonce arrays of uint32_t by exchanging
- * their upper and lower 16‐bit halves. Produces a 16‐element output array.
+ * Computes Key-Nonce Composite by splicing together 8‐element key and
+ * nonce arrays of uint32_t by exchanging their upper and lower 16‐bit
+ * halves into the 16-element output array.
  */
-void compute_key_nonce_composite32(
+void clean_compute_knc32(
         const uint32_t key[8],
         const uint32_t nonce[8],
         uint32_t out[16]
@@ -106,7 +107,7 @@ void compute_key_nonce_composite32(
 /*
  * Digests the cipher context through ten rounds of compression.
  */
-void digest_context32(
+void clean_digest_context32(
         uint32_t state[16],
         const uint32_t key[8],
         uint32_t context[8]
@@ -182,7 +183,7 @@ static void compute_round_keys32(
  *   - out_keys1[][16]: output buffer for stream #1
  *   - out_keys2[][16]: output buffer for stream #2
  */
-void derive_keys32(
+void clean_derive_keys32(
         const uint32_t init_state[16],
         const uint32_t knc[16],
         const uint8_t key_count,

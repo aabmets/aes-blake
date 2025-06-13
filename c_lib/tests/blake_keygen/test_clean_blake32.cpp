@@ -120,7 +120,7 @@ TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[unittest][keygen]"
 }
 
 
-TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAABBBB/0xBBBBAAAA", "[unittest][keygen]") {
+TEST_CASE("clean_compute_knc32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAABBBB/0xBBBBAAAA", "[unittest][keygen]") {
     uint32_t key[8];
     uint32_t nonce[8];
     uint32_t out[16];
@@ -129,7 +129,7 @@ TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alter
         key[i] = 0xAAAAAAAAu;
         nonce[i] = 0xBBBBBBBBu;
     }
-    compute_key_nonce_composite32(key, nonce, out);
+    clean_compute_knc32(key, nonce, out);
 
     for (size_t i = 0; i < 8; ++i) {
         REQUIRE(out[2*i]     == 0xAAAABBBBu);
@@ -138,12 +138,12 @@ TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alter
 }
 
 
-TEST_CASE("digest_context32 produces expected final state", "[unittest][keygen]") {
+TEST_CASE("clean_digest_context32 produces expected final state", "[unittest][keygen]") {
     constexpr uint32_t key[8] = {};
     uint32_t context[8] = {};
     uint32_t state[16] = {};
 
-    digest_context32(state, key, context);
+    clean_digest_context32(state, key, context);
 
     uint32_t expected[16] = {
         0x25E9A784u, 0xE2FAF387u, 0xE4BE9C6Cu, 0x60E3426Fu,

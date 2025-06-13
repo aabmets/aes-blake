@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 
-    void opt_compute_key_nonce_composite32(const uint32_t key[8], const uint32_t nonce[8], uint32_t out[16]);
+    void opt_compute_knc32(const uint32_t key[8], const uint32_t nonce[8], uint32_t out[16]);
 
     void opt_digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t context[8]);
 
