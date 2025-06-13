@@ -105,28 +105,30 @@ static void benchmark_blake64_1kb(
 
 
 TEST_CASE("Benchmark BLAKE key generation (1KB)", "[benchmark][keygen]") {
-    benchmark_blake32_1kb(
-        clean_compute_knc32,
-        clean_digest_context32,
-        clean_derive_keys32,
-        "Clean Blake32 Keygen 1KB"
-    );
-    benchmark_blake64_1kb(
-        clean_compute_knc64,
-        clean_digest_context64,
-        clean_derive_keys64,
-        "Clean Blake64 Keygen 1KB"
-    );
-    benchmark_blake32_1kb(
-        opt_compute_knc32,
-        opt_digest_context32,
-        opt_derive_keys32,
-        "Optimized Blake32 Keygen 1KB"
-    );
-    benchmark_blake64_1kb(
-        opt_compute_knc64,
-        opt_digest_context64,
-        opt_derive_keys64,
-        "Optimized Blake64 Keygen 1KB"
-    );
+    if (std::getenv("BENCHMARK")) {
+        benchmark_blake32_1kb(
+            clean_compute_knc32,
+            clean_digest_context32,
+            clean_derive_keys32,
+            "Clean Blake32 Keygen 1KB"
+        );
+        benchmark_blake64_1kb(
+            clean_compute_knc64,
+            clean_digest_context64,
+            clean_derive_keys64,
+            "Clean Blake64 Keygen 1KB"
+        );
+        benchmark_blake32_1kb(
+            opt_compute_knc32,
+            opt_digest_context32,
+            opt_derive_keys32,
+            "Optimized Blake32 Keygen 1KB"
+        );
+        benchmark_blake64_1kb(
+            opt_compute_knc64,
+            opt_digest_context64,
+            opt_derive_keys64,
+            "Optimized Blake64 Keygen 1KB"
+        );
+    }
 }

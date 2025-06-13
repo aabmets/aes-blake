@@ -62,8 +62,10 @@ static void benchmark_aes_1kb(const AesFunc cipher_func, const char* benchmark_n
 
 
 TEST_CASE("Benchmark AES implementations with 1KB data", "[benchmark][aes]") {
-    benchmark_aes_1kb(clean_aes_encrypt, "Clean AES Encrypt 1KB");
-    benchmark_aes_1kb(clean_aes_decrypt, "Clean AES Decrypt 1KB");
-    benchmark_aes_1kb(ttable_aes_encrypt, "T-table AES Encrypt 1KB");
-    benchmark_aes_1kb(ttable_aes_decrypt, "T-table AES Decrypt 1KB");
+    if (std::getenv("BENCHMARK")) {
+        benchmark_aes_1kb(clean_aes_encrypt, "Clean AES Encrypt 1KB");
+        benchmark_aes_1kb(clean_aes_decrypt, "Clean AES Decrypt 1KB");
+        benchmark_aes_1kb(ttable_aes_encrypt, "T-table AES Encrypt 1KB");
+        benchmark_aes_1kb(ttable_aes_decrypt, "T-table AES Decrypt 1KB");
+    }
 }
