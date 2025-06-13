@@ -10,14 +10,25 @@
  */
 
 #include <catch2/catch_all.hpp>
+#include <random>
 #include "../aes_block/helpers.h"
 #include "clean_aes.h"
 #include "ttable_aes.h"
-#include "shared.h"
+
+
+static void generate_random_data(uint8_t* data, const size_t size) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+
+    for (size_t i = 0; i < size; ++i) {
+        data[i] = static_cast<uint8_t>(dis(gen));
+    }
+}
 
 
 // Helper function to benchmark AES cipher functions with 1KB of data
-inline void benchmark_aes_1kb(const char* benchmark_name, const AesFunc cipher_func) {
+static void benchmark_aes_1kb(const AesFunc cipher_func, const char* benchmark_name) {
     // 1KB = 1024 bytes = 64 blocks of 16 bytes each
     constexpr size_t total_blocks = 64;
     constexpr size_t data_size = total_blocks * 16;
@@ -51,8 +62,8 @@ inline void benchmark_aes_1kb(const char* benchmark_name, const AesFunc cipher_f
 
 
 TEST_CASE("Benchmark AES implementations with 1KB data", "[benchmark][aes]") {
-    benchmark_aes_1kb("Clean AES Encrypt 1KB", clean_aes_encrypt);
-    benchmark_aes_1kb("Clean AES Decrypt 1KB", clean_aes_decrypt);
-    benchmark_aes_1kb("T-table AES Encrypt 1KB", ttable_aes_encrypt);
-    benchmark_aes_1kb("T-table AES Decrypt 1KB", ttable_aes_decrypt);
+    benchmark_aes_1kb(clean_aes_encrypt, "Clean AES Encrypt 1KB");
+    benchmark_aes_1kb(ttable_aes_encrypt, "T-table AES Encrypt 1KB");
+    benchmark_aes_1kb(clean_aes_decrypt, "Clean AES Decrypt 1KB");
+    benchmark_aes_1kb(ttable_aes_decrypt, "T-table AES Decrypt 1KB");
 }

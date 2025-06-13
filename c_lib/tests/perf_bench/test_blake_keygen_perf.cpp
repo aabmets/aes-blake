@@ -11,28 +11,36 @@
 
 #include <catch2/catch_all.hpp>
 #include <random>
+#include "../blake_keygen/helpers.h"
 #include "clean_blake32.h"
 #include "clean_blake64.h"
+#include "opt_blake32.h"
+#include "opt_blake64.h"
 
 
 // Helper function to set up 1KB worth of key generation for BLAKE32
-static void benchmark_blake32_1kb() {
+static void benchmark_blake32_1kb(
+        const KncFunc32 knc_fn,
+        const DigestFunc32 digest_fn,
+        const DeriveFunc32 derive_fn,
+        const char* benchmark_name
+) {
     uint32_t zero_key[8]   = {};
     uint32_t zero_nonce[8] = {};
 
     uint32_t init_state[16] = {};
-    digest_context32(init_state, zero_key, zero_nonce);
+    digest_fn(init_state, zero_key, zero_nonce);
 
     uint32_t knc[16];
-    compute_key_nonce_composite32(zero_key, zero_nonce, knc);
+    knc_fn(zero_key, zero_nonce, knc);
 
     constexpr size_t key_count = 10;
     uint8_t out_keys1[key_count][16];
     uint8_t out_keys2[key_count][16];
 
-    BENCHMARK("BLAKE32 Generate 1KB Keys") {
+    BENCHMARK(benchmark_name) {
         for (int i = 0; i < 64; ++i) {
-            derive_keys32(
+            derive_fn(
                 init_state,
                 knc,
                 key_count,
@@ -48,15 +56,20 @@ static void benchmark_blake32_1kb() {
 
 
 // Helper function to set up 1KB worth of key generation for BLAKE64
-static void benchmark_blake64_1kb() {
+static void benchmark_blake64_1kb(
+        const KncFunc64 knc_fn,
+        const DigestFunc64 digest_fn,
+        const DeriveFunc64 derive_fn,
+        const char* benchmark_name
+) {
     uint64_t zero_key[8]   = {};
     uint64_t zero_nonce[8] = {};
 
     uint64_t init_state[16] = {};
-    digest_context64(init_state, zero_key, zero_nonce);
+    digest_fn(init_state, zero_key, zero_nonce);
 
     uint64_t knc[16];
-    compute_key_nonce_composite64(zero_key, zero_nonce, knc);
+    knc_fn(zero_key, zero_nonce, knc);
 
     constexpr size_t key_count = 10;
     uint8_t out_keys1[key_count][16];
@@ -64,9 +77,9 @@ static void benchmark_blake64_1kb() {
     uint8_t out_keys3[key_count][16];
     uint8_t out_keys4[key_count][16];
 
-    BENCHMARK("BLAKE64 Generate 1KB Keys") {
+    BENCHMARK(benchmark_name) {
         for (int i = 0; i < 64; ++i) {
-            derive_keys64(
+            derive_fn(
                 init_state,
                 knc,
                 key_count,
@@ -84,6 +97,28 @@ static void benchmark_blake64_1kb() {
 
 
 TEST_CASE("Benchmark BLAKE key generation (1KB)", "[benchmark][keygen]") {
-    benchmark_blake32_1kb();
-    benchmark_blake64_1kb();
+    benchmark_blake32_1kb(
+        clean_compute_knc32,
+        clean_digest_context32,
+        clean_derive_keys32,
+        "Clean Blake32 Keygen 1KB"
+    );
+    benchmark_blake32_1kb(
+        opt_compute_knc32,
+        opt_digest_context32,
+        opt_derive_keys32,
+        "Optimized Blake32 Keygen 1KB"
+    );
+    benchmark_blake64_1kb(
+        clean_compute_knc64,
+        clean_digest_context64,
+        clean_derive_keys64,
+        "Clean Blake64 Keygen 1KB"
+    );
+    benchmark_blake64_1kb(
+        opt_compute_knc64,
+        opt_digest_context64,
+        opt_derive_keys64,
+        "Optimized Blake64 Keygen 1KB"
+    );
 }
