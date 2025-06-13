@@ -18,7 +18,11 @@
 #include "opt_blake64.h"
 
 
-// Helper function to set up 1KB worth of key generation for BLAKE32
+/*
+ * Benchmarks keygen for encrypting 1KB of data with AES (64 AES blocks).
+ * One Blake32 derive_keys call outputs 352 bytes of keys for 2 AES blocks.
+ * We generate keys for 64 AES blocks by calling 32bit keygen for 32 times.
+ */
 static void benchmark_blake32_1kb(
         const KncFunc32 knc_fn,
         const DigestFunc32 digest_fn,
@@ -34,12 +38,12 @@ static void benchmark_blake32_1kb(
     uint32_t knc[16];
     knc_fn(zero_key, zero_nonce, knc);
 
-    constexpr size_t key_count = 10;
+    constexpr size_t key_count = 11;
     uint8_t out_keys1[key_count][16];
     uint8_t out_keys2[key_count][16];
 
     BENCHMARK(benchmark_name) {
-        for (int i = 0; i < 64; ++i) {
+        for (int i = 0; i < 32; ++i) {
             derive_fn(
                 init_state,
                 knc,
@@ -55,7 +59,11 @@ static void benchmark_blake32_1kb(
 }
 
 
-// Helper function to set up 1KB worth of key generation for BLAKE64
+/*
+ * Benchmarks keygen for encrypting 1KB of data with AES (64 AES blocks).
+ * One Blake64 derive_keys call outputs 704 bytes of keys for 4 AES blocks.
+ * We generate keys for 64 AES blocks by calling 64bit keygen for 16 times.
+ */
 static void benchmark_blake64_1kb(
         const KncFunc64 knc_fn,
         const DigestFunc64 digest_fn,
@@ -71,14 +79,14 @@ static void benchmark_blake64_1kb(
     uint64_t knc[16];
     knc_fn(zero_key, zero_nonce, knc);
 
-    constexpr size_t key_count = 10;
+    constexpr size_t key_count = 11;
     uint8_t out_keys1[key_count][16];
     uint8_t out_keys2[key_count][16];
     uint8_t out_keys3[key_count][16];
     uint8_t out_keys4[key_count][16];
 
     BENCHMARK(benchmark_name) {
-        for (int i = 0; i < 64; ++i) {
+        for (int i = 0; i < 16; ++i) {
             derive_fn(
                 init_state,
                 knc,
@@ -103,17 +111,17 @@ TEST_CASE("Benchmark BLAKE key generation (1KB)", "[benchmark][keygen]") {
         clean_derive_keys32,
         "Clean Blake32 Keygen 1KB"
     );
-    benchmark_blake32_1kb(
-        opt_compute_knc32,
-        opt_digest_context32,
-        opt_derive_keys32,
-        "Optimized Blake32 Keygen 1KB"
-    );
     benchmark_blake64_1kb(
         clean_compute_knc64,
         clean_digest_context64,
         clean_derive_keys64,
         "Clean Blake64 Keygen 1KB"
+    );
+    benchmark_blake32_1kb(
+        opt_compute_knc32,
+        opt_digest_context32,
+        opt_derive_keys32,
+        "Optimized Blake32 Keygen 1KB"
     );
     benchmark_blake64_1kb(
         opt_compute_knc64,
