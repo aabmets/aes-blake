@@ -11,7 +11,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "aes_sbox.h"
 #include "blake_shared.h"
 
 
@@ -90,15 +89,16 @@ void compute_key_nonce_composite64(
         const uint64_t nonce[8],
         uint64_t out[16]
 ) {
-    const int half = 32;
-    const uint64_t mask1 = (1ULL << half) - 1ULL; // 0x00000000FFFFFFFF
-    const uint64_t mask2 = mask1 << half;         // 0xFFFFFFFF00000000
+    const uint64_t mask1 = 0x00000000FFFFFFFFU;
+    const uint64_t mask2 = 0xFFFFFFFF00000000U;
+
+    uint64_t k_val;
+    uint64_t n_val;
 
     for (size_t i = 0; i < 8; ++i) {
-        const uint64_t a = (key[i]   & mask2) | (nonce[i] & mask1);
-        const uint64_t b = (nonce[i] & mask2) | (key[i]   & mask1);
-        out[2*i]     = a;
-        out[2*i + 1] = b;
+        k_val = key[i], n_val = nonce[i];
+        out[2*i]     = k_val & mask2 | n_val & mask1;
+        out[2*i + 1] = n_val & mask2 | k_val & mask1;
     }
 }
 
