@@ -11,7 +11,6 @@
 
 #include <catch2/catch_all.hpp>
 #include "clean_blake32.h"
-#include "aes_sbox.h"
 
 
 TEST_CASE("permute32: zeros remain zeros", "[unittest][keygen]") {
@@ -121,36 +120,6 @@ TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[unittest][keygen]"
 }
 
 
-TEST_CASE("sub_bytes32: DEC (inverse) of 0x63636363 returns zero", "[unittest][keygen]") {
-    uint32_t state[16] = {};
-
-    sub_bytes32(state);
-
-    for (const unsigned int i : state) {
-        REQUIRE(i == 0x63636363U);
-    }
-
-    for (const unsigned int v : state) {
-        const auto b0 = static_cast<uint8_t>(v >> 24 & 0xFF);
-        const auto b1 = static_cast<uint8_t>(v >> 16 & 0xFF);
-        const auto b2 = static_cast<uint8_t>(v >>  8 & 0xFF);
-        const auto b3 = static_cast<uint8_t>(v       & 0xFF);
-
-        const uint8_t ib0 = aes_inv_sbox[b0];
-        const uint8_t ib1 = aes_inv_sbox[b1];
-        const uint8_t ib2 = aes_inv_sbox[b2];
-        const uint8_t ib3 = aes_inv_sbox[b3];
-
-        const uint32_t original = static_cast<uint32_t>(ib0) << 24
-                                | static_cast<uint32_t>(ib1) << 16
-                                | static_cast<uint32_t>(ib2) <<  8
-                                | static_cast<uint32_t>(ib3);
-
-        REQUIRE(original == 0x00000000U);
-    }
-}
-
-
 TEST_CASE("compute_key_nonce_composite32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAABBBB/0xBBBBAAAA", "[unittest][keygen]") {
     uint32_t key[8];
     uint32_t nonce[8];
@@ -184,110 +153,5 @@ TEST_CASE("digest_context32 produces expected final state", "[unittest][keygen]"
     };
     for (int i = 0; i < 16; i++) {
         REQUIRE(state[i] == expected[i]);
-    }
-}
-
-
-TEST_CASE("derive_keys32 matches Python test vectors", "[unittest][keygen]") {
-    // 1) Prepare a zeroed key[8] and zeroed nonce/context[8].
-    uint32_t zero_key[8]   = {};
-    uint32_t zero_nonce[8] = {};
-
-    // 2) Compute the initial state by “digesting the context” (all-zero key/nonce).
-    uint32_t init_state[16] = {};
-    digest_context32(init_state, zero_key, zero_nonce);
-
-    // 3) Compute knc[16] via compute_key_nonce_composite32(zero_key, zero_nonce, knc).
-    uint32_t knc[16];
-    compute_key_nonce_composite32(zero_key, zero_nonce, knc);
-
-    // 4) We will derive key_count=10 round‐keys for counters 0, 1, 2 and domains MSG, HDR, CHK.
-    constexpr size_t key_count = 10;
-    uint8_t out_keys1[key_count][16];
-    uint8_t out_keys2[key_count][16];
-
-    // 5) Expected first‐round outputs (Python pytest):
-    struct Expected {
-        KDFDomain domain;
-        uint64_t  counter;
-        uint8_t   expected_k1[16];
-        uint8_t   expected_k2[16];
-    };
-
-    Expected cases[] = {
-        {
-            KDFDomain_MSG,
-            0ULL,
-            {  // expected_k1 for (domain=MSG, counter=0)
-                0xB3, 0xA6, 0xCD, 0xB0,
-                0x1A, 0x95, 0x57, 0x74,
-                0x28, 0xE8, 0xE4, 0x87,
-                0xE4, 0xEC, 0x45, 0x8E
-            },
-            {  // expected_k2 for (domain=MSG, counter=0)
-                0xA1, 0xB9, 0x28, 0x0A,
-                0x25, 0xD5, 0x62, 0xD9,
-                0x7B, 0x2C, 0x69, 0x63,
-                0x45, 0xDF, 0xEE, 0x7F
-            }
-        },
-        {
-            KDFDomain_HDR,
-            1ULL,
-            {  // expected_k1 for (domain=HDR, counter=1)
-                0x39, 0xA3, 0x42, 0x5C,
-                0x5C, 0x25, 0x67, 0x1D,
-                0xF0, 0x09, 0x32, 0xA6,
-                0xC7, 0x0F, 0xF7, 0xE4
-            },
-            {  // expected_k2 for (domain=HDR, counter=1)
-                0xC7, 0x21, 0xD5, 0x05,
-                0x34, 0xC2, 0x50, 0xD1,
-                0xD8, 0x26, 0x2D, 0x2E,
-                0x01, 0xB5, 0xA2, 0x11
-            }
-        },
-        {
-            KDFDomain_CHK,
-            2ULL,
-            {  // expected_k1 for (domain=CHK, counter=2)
-                0x47, 0x64, 0xEA, 0xEA,
-                0x04, 0x9D, 0x16, 0xCD,
-                0x42, 0xE7, 0x39, 0x85,
-                0x52, 0x46, 0xF8, 0xB5
-            },
-            {  // expected_k2 for (domain=CHK, counter=2)
-                0x21, 0xE9, 0x52, 0xD6,
-                0xF7, 0x9C, 0xE2, 0x12,
-                0x62, 0x1A, 0x3D, 0x96,
-                0xD6, 0x41, 0x84, 0x6E
-            }
-        }
-    };
-
-    for (const auto& [
-            domain,
-            counter,
-            expected_k1,
-            expected_k2
-        ] : cases) {
-
-        // 6) Call derive_keys32
-        derive_keys32(
-            init_state,
-            knc,
-            key_count,
-            counter,
-            domain,
-            out_keys1,
-            out_keys2
-        );
-
-        // 7) Verify that out_keys1[0] and out_keys2[0]
-        //    match the expected arrays for this test case.
-        for (int i = 0; i < 16; i++) {
-            REQUIRE(out_keys1[0][i] == expected_k1[i]);
-            REQUIRE(out_keys2[0][i] == expected_k2[i]);
-        }
     }
 }

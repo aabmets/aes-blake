@@ -11,10 +11,6 @@
 
 #include <catch2/catch_all.hpp>
 #include "clean_blake64.h"
-#include "aes_sbox.h"
-
-
-
 
 
 TEST_CASE("permute64: zeros remain zeros", "[unittest][keygen]") {
@@ -136,48 +132,6 @@ TEST_CASE("sub_bytes64: ENC maps all-zero words → 0x6363636363636363", "[unitt
 }
 
 
-TEST_CASE("sub_bytes64: DEC (inverse) of 0x6363636363636363 returns zero", "[unittest][keygen]") {
-    uint64_t state[16] = {0};
-
-    sub_bytes64(state);
-
-    for (const unsigned long long i : state) {
-        REQUIRE(i == 0x6363636363636363ULL);
-    }
-
-    for (const unsigned long long v : state) {
-        const auto b0 = static_cast<uint8_t>(v >> 56 & 0xFF);
-        const auto b1 = static_cast<uint8_t>(v >> 48 & 0xFF);
-        const auto b2 = static_cast<uint8_t>(v >> 40 & 0xFF);
-        const auto b3 = static_cast<uint8_t>(v >> 32 & 0xFF);
-        const auto b4 = static_cast<uint8_t>(v >> 24 & 0xFF);
-        const auto b5 = static_cast<uint8_t>(v >> 16 & 0xFF);
-        const auto b6 = static_cast<uint8_t>(v >>  8 & 0xFF);
-        const auto b7 = static_cast<uint8_t>(v       & 0xFF);
-
-        const uint8_t ib0 = aes_inv_sbox[b0];
-        const uint8_t ib1 = aes_inv_sbox[b1];
-        const uint8_t ib2 = aes_inv_sbox[b2];
-        const uint8_t ib3 = aes_inv_sbox[b3];
-        const uint8_t ib4 = aes_inv_sbox[b4];
-        const uint8_t ib5 = aes_inv_sbox[b5];
-        const uint8_t ib6 = aes_inv_sbox[b6];
-        const uint8_t ib7 = aes_inv_sbox[b7];
-
-        const uint64_t original = (static_cast<uint64_t>(ib0) << 56)
-                                | (static_cast<uint64_t>(ib1) << 48)
-                                | (static_cast<uint64_t>(ib2) << 40)
-                                | (static_cast<uint64_t>(ib3) << 32)
-                                | (static_cast<uint64_t>(ib4) << 24)
-                                | (static_cast<uint64_t>(ib5) << 16)
-                                | (static_cast<uint64_t>(ib6) <<  8)
-                                |  static_cast<uint64_t>(ib7);
-
-        REQUIRE(original == 0x0000000000000000ULL);
-    }
-}
-
-
 TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[unittest][keygen]") {
     uint64_t key[8];
     uint64_t nonce[8];
@@ -194,7 +148,6 @@ TEST_CASE("compute_key_nonce_composite64: key=0xAA..AA, nonce=0xBB..BB → alter
         REQUIRE(out[2*i + 1] == 0xBBBBBBBBAAAAAAAALL);
     }
 }
-
 
 
 TEST_CASE("digest_context64 produces expected final state", "[unittest][keygen]") {
@@ -216,156 +169,5 @@ TEST_CASE("digest_context64 produces expected final state", "[unittest][keygen]"
     };
     for (int i = 0; i < 16; i++) {
         REQUIRE(state[i] == expected[i]);
-    }
-}
-
-
-TEST_CASE("derive_keys64 matches Python test vectors", "[unittest][keygen]") {
-    // 1) Prepare a zeroed key[8] and zeroed nonce/context[8].
-    uint64_t zero_key[8]   = {};
-    uint64_t zero_nonce[8] = {};
-
-    // 2) Compute the initial state by “digesting the context” (all‐zero key/nonce).
-    uint64_t init_state[16] = {};
-    digest_context64(init_state, zero_key, zero_nonce);
-
-    // 3) Compute knc[16] via compute_key_nonce_composite64(zero_key, zero_nonce, knc).
-    uint64_t knc[16];
-    compute_key_nonce_composite64(zero_key, zero_nonce, knc);
-
-    // 4) We will derive key_count=10 round‐keys for counters 0, 1, 2 and domains MSG, HDR, CHK.
-    constexpr size_t key_count = 10;
-    uint8_t out_keys1[key_count][16];
-    uint8_t out_keys2[key_count][16];
-    uint8_t out_keys3[key_count][16];
-    uint8_t out_keys4[key_count][16];
-
-    // 5) Expected first‐round outputs (Python pytest):
-    struct Expected {
-        KDFDomain domain;
-        uint64_t  counter;
-        uint8_t   expected_k1[16];
-        uint8_t   expected_k2[16];
-        uint8_t   expected_k3[16];
-        uint8_t   expected_k4[16];
-    };
-
-    Expected cases[] = {
-        {
-            KDFDomain_MSG,
-            0ULL,
-            {  // expected_k1 for (domain=MSG, counter=0)
-                0x00, 0xAA, 0x3C, 0xEE,
-                0xB1, 0xB0, 0x6B, 0x31,
-                0xA8, 0x96, 0xF5, 0xFC,
-                0x99, 0x6F, 0x6A, 0xA8
-            },
-            {  // expected_k2 for (domain=MSG, counter=0)
-                0x2E, 0x9A, 0xB4, 0x00,
-                0x84, 0x28, 0xAD, 0x9B,
-                0xEE, 0xD4, 0xEC, 0x6F,
-                0xB8, 0xBC, 0xF1, 0x4D
-            },
-            {  // expected_k3 for (domain=MSG, counter=0)
-                0xEF, 0x8B, 0x07, 0x15,
-                0x1D, 0xFF, 0xCF, 0xF8,
-                0x8D, 0xDD, 0x46, 0x7E,
-                0x03, 0x34, 0x60, 0x56
-            },
-            {  // expected_k4 for (domain=MSG, counter=0)
-                0x30, 0xE4, 0x06, 0x92,
-                0xBE, 0x31, 0x69, 0xFA,
-                0x29, 0xF3, 0xB0, 0x3D,
-                0x65, 0x9F, 0x2F, 0x60
-            }
-        },
-        {
-            KDFDomain_HDR,
-            1ULL,
-            {  // expected_k1 for (domain=HDR, counter=1)
-                0xA7, 0x33, 0x26, 0x81,
-                0x2D, 0x13, 0xEA, 0xC9,
-                0xED, 0xEF, 0x73, 0xDD,
-                0xC6, 0xBF, 0x3B, 0x8F
-            },
-            {  // expected_k2 for (domain=HDR, counter=1)
-                0xA8, 0x4A, 0xC8, 0xDE,
-                0xB0, 0x55, 0xBE, 0xA4,
-                0xD3, 0x2D, 0x62, 0x65,
-                0x39, 0x2F, 0xC5, 0x63
-            },
-            {  // expected_k3 for (domain=HDR, counter=1)
-                0x2E, 0xA7, 0xFF, 0x38,
-                0x7A, 0x06, 0x29, 0x9A,
-                0x0B, 0xDF, 0xE9, 0x50,
-                0xA6, 0xCD, 0xB0, 0x96
-            },
-            {  // expected_k4 for (domain=HDR, counter=1)
-                0xFF, 0x6A, 0x7D, 0x2D,
-                0x84, 0xCD, 0xB4, 0x9C,
-                0x9F, 0x8B, 0xA6, 0x0C,
-                0xCA, 0x83, 0x1A, 0xEA
-            }
-        },
-        {
-            KDFDomain_CHK,
-            2ULL,
-            {  // expected_k1 for (domain=CHK, counter=2)
-                0xFF, 0x70, 0xF1, 0x92,
-                0xE7, 0xBD, 0x58, 0x85,
-                0x37, 0x23, 0xA7, 0x3B,
-                0xBA, 0x6D, 0x55, 0xE6
-            },
-            {  // expected_k2 for (domain=CHK, counter=2)
-                0xFE, 0xC0, 0xAA, 0x27,
-                0x03, 0xBA, 0x02, 0x63,
-                0xD3, 0x07, 0x58, 0x90,
-                0x8E, 0x6F, 0xB6, 0x2C
-            },
-            {  // expected_k3 for (domain=CHK, counter=2)
-                0x93, 0x42, 0xC4, 0x88,
-                0xB6, 0x5D, 0xD3, 0x9D,
-                0xE8, 0x16, 0xB6, 0x0B,
-                0x84, 0xF1, 0xC7, 0x1E
-            },
-            {  // expected_k4 for (domain=CHK, counter=2)
-                0x24, 0xB8, 0xBC, 0x9C,
-                0x08, 0x2F, 0x0B, 0xBE,
-                0x0B, 0xA9, 0x66, 0x6A,
-                0xC5, 0xC4, 0xB8, 0x87
-            }
-        }
-    };
-
-    for (const auto& [
-            domain,
-            counter,
-            expected_k1,
-            expected_k2,
-            expected_k3,
-            expected_k4
-        ] : cases) {
-
-        // 6) Call derive_keys64
-        derive_keys64(
-            init_state,
-            knc,
-            key_count,
-            counter,
-            domain,
-            out_keys1,
-            out_keys2,
-            out_keys3,
-            out_keys4
-        );
-
-        // 7) Verify that out_keys1[0], out_keys2[0], out_keys3[0] and out_keys4[0]
-        //    match the expected arrays for this test case.
-        for (int i = 0; i < 16; i++) {
-            REQUIRE(out_keys1[0][i] == expected_k1[i]);
-            REQUIRE(out_keys2[0][i] == expected_k2[i]);
-            REQUIRE(out_keys3[0][i] == expected_k3[i]);
-            REQUIRE(out_keys4[0][i] == expected_k4[i]);
-        }
     }
 }

@@ -13,6 +13,7 @@
 #ifndef AES_BLOCK_HELPERS_H
 #define AES_BLOCK_HELPERS_H
 
+#include <catch2/catch_all.hpp>
 #include <cstring>
 #include <cstdint>
 #include <cstdio>
