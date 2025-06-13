@@ -13,6 +13,7 @@
 #include "clean_blake32.h"
 #include "clean_blake64.h"
 #include "opt_blake32.h"
+#include "opt_blake64.h"
 #include "helpers.h"
 
 
@@ -39,5 +40,14 @@ TEST_CASE("Optimized derive_keys32 matches Python test vectors", "[unittest][key
         opt_compute_key_nonce_composite32,
         opt_digest_context32,
         opt_derive_keys32
+    );
+}
+
+
+TEST_CASE("Optimized derive_keys64 matches Python test vectors", "[unittest][keygen]") {
+    run_blake64_tests(
+        opt_compute_key_nonce_composite64,
+        opt_digest_context64,
+        opt_derive_keys64
     );
 }
