@@ -12,7 +12,7 @@
 #ifndef BLAKE32_H
 #define BLAKE32_H
 
-#include "blake_const.h"
+#include "blake_shared.h"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -22,12 +22,15 @@ extern "C" {
 #endif
 
 
-    //Rotates a 32-bit word `x` right by `r` bits. Assumes 0 ≤ r < 32.
-    inline uint32_t rotr32(const uint32_t x, const unsigned int r) {
-        return (x >> r) | (x << (32 - r));
-    }
-
-    void g_mix32(uint32_t state[16], int a, int b, int c, int d, uint32_t mx, uint32_t my);
+    void g_mix32(
+        uint32_t state[16],
+        uint8_t a,
+        uint8_t b,
+        uint8_t c,
+        uint8_t d,
+        uint32_t mx,
+        uint32_t my
+    );
 
     void mix_into_state32(uint32_t state[16], uint32_t m[16]);
 
@@ -35,16 +38,22 @@ extern "C" {
 
     void sub_bytes32(uint32_t state[16]);
 
-    void compute_key_nonce_composite32(const uint32_t key[8], const uint32_t nonce[8], uint32_t out[16]);
+    void compute_key_nonce_composite32(
+        const uint32_t key[8],
+        const uint32_t nonce[8],
+        uint32_t out[16]
+    );
 
-    void init_state_vector32(uint32_t state[16], const uint32_t entropy[8], uint64_t counter, KDFDomain domain);
-
-    void digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t context[8]);
+    void digest_context32(
+        uint32_t state[16],
+        const uint32_t key[8],
+        uint32_t context[8]
+    );
 
     void derive_keys32(
         const uint32_t init_state[16],
         const uint32_t knc[16],
-        size_t         key_count,
+        uint8_t        key_count,
         uint64_t       block_counter,
         KDFDomain      domain,
         uint8_t        out_keys1[][16],

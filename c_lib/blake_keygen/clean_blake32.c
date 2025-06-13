@@ -12,8 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "aes_sbox.h"
-#include "blake_const.h"
-#include "clean_blake32.h"
+#include "blake_shared.h"
 
 
 /*
@@ -22,8 +21,12 @@
  */
 void g_mix32(
         uint32_t state[16],
-        const int a, const int b, const int c, const int d,
-        const uint32_t mx, const uint32_t my
+        const uint8_t a,
+        const uint8_t b,
+        const uint8_t c,
+        const uint8_t d,
+        const uint32_t mx,
+        const uint32_t my
 ) {
     /* First mixing round */
     state[a] = state[a] + state[b] + mx;
@@ -128,49 +131,13 @@ void compute_key_nonce_composite32(
 
 
 /*
- * Initializes the 16-word state matrix for the compression function.
- * Implements:
- *   state[0..3]   = IV constants (BLAKE2s)
- *   state[4..11]  = entropy[0..7]
- *   state[12..15] = IV constants (BLAKE2s)
- *   then:
- *     add low‐32 bits of counter to state[4..7]
- *     add high‐32 bits of counter to state[8..11]
- *     XOR each of state[12..15] with the domain mask
- */
-void init_state_vector32(
-    uint32_t state[16], const uint32_t entropy[8],
-    const uint64_t counter, const KDFDomain domain
-) {
-    for (int i = 0; i < 4; i++) {
-        state[i] = IV32[i];
-    }
-    for (int i = 0; i < 8; i++) {
-        state[i+4] = entropy[i];
-    }
-    for (int i = 4; i < 8; i++) {
-        state[i+8] = IV32[i];
-    }
-    const uint32_t ctr_low  = (uint32_t)(counter & 0xFFFFFFFFu);
-    const uint32_t ctr_high = (uint32_t)(counter >> 32 & 0xFFFFFFFFu);
-    const uint32_t d_mask = get_domain_mask32(domain);
-
-    for (int i = 4; i <= 7; i++) {
-        state[i] += ctr_low;
-    }
-    for (int i = 8; i <= 11; i++) {
-        state[i] += ctr_high;
-    }
-    for (int i = 12; i <= 15; i++) {
-        state[i] ^= d_mask;
-    }
-}
-
-
-/*
  * Digests the cipher context through ten rounds of compression.
  */
-void digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t context[8]) {
+void digest_context32(
+        uint32_t state[16],
+        const uint32_t key[8],
+        uint32_t context[8]
+) {
     init_state_vector32(state, key, 0, KDFDomain_CTX);
     for (int i = 0; i < 9; i++) {
         mix_into_state32(state, context);
@@ -193,7 +160,7 @@ void digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t contex
 static void compute_round_keys32(
         const uint32_t entropy[8],
         const uint32_t knc[16],
-        const size_t key_count,
+        const uint8_t key_count,
         const uint64_t block_counter,
         const KDFDomain domain,
         uint8_t out_keys[][16]
@@ -245,7 +212,7 @@ static void compute_round_keys32(
 void derive_keys32(
         const uint32_t init_state[16],
         const uint32_t knc[16],
-        const size_t key_count,
+        const uint8_t key_count,
         const uint64_t block_counter,
         const KDFDomain domain,
         uint8_t out_keys1[][16],

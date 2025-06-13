@@ -12,7 +12,7 @@
 #ifndef BLAKE64_H
 #define BLAKE64_H
 
-#include "blake_const.h"
+#include "blake_shared.h"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -22,12 +22,15 @@ extern "C" {
 #endif
 
 
-    // Rotates a 64-bit word `x` right by `r` bits. Assumes 0 ≤ r < 64.
-    inline uint64_t rotr64(const uint64_t x, const unsigned int r) {
-        return (x >> r) | (x << (64 - r));
-    }
-
-    void g_mix64(uint64_t state[16], int a, int b, int c, int d, uint64_t mx, uint64_t my);
+    void g_mix64(
+        uint64_t state[16],
+        uint8_t a,
+        uint8_t b,
+        uint8_t c,
+        uint8_t d,
+        uint64_t mx,
+        uint64_t my
+        );
 
     void mix_into_state64(uint64_t state[16], uint64_t m[16]);
 
@@ -35,16 +38,22 @@ extern "C" {
 
     void sub_bytes64(uint64_t state[16]);
 
-    void compute_key_nonce_composite64(const uint64_t key[8], const uint64_t nonce[8], uint64_t out[16]);
+    void compute_key_nonce_composite64(
+        const uint64_t key[8],
+        const uint64_t nonce[8],
+        uint64_t out[16]
+    );
 
-    void init_state_vector64(uint64_t state[16], const uint64_t entropy[8], uint64_t counter, KDFDomain domain);
-
-    void digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t context[8]);
+    void digest_context64(
+        uint64_t state[16],
+        const uint64_t key[8],
+        uint64_t context[8]
+    );
 
     void derive_keys64(
         const uint64_t init_state[16],
         const uint64_t knc[16],
-        size_t key_count,
+        uint8_t key_count,
         uint64_t block_counter,
         KDFDomain domain,
         uint8_t out_keys1[][16],
