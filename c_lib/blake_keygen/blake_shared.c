@@ -105,35 +105,3 @@ void init_state_vector64(
     state[14] = IV64[6] ^ d_mask;
     state[15] = IV64[7] ^ d_mask;
 }
-
-
-/**
- * Applies AES SubBytes to each word of the keygen state matrix.
- */
-void sub_bytes32(uint32_t state[16]) {
-    for (size_t i = 0; i < 16; i++) {
-        const uint8_t *b = (uint8_t *)&state[i];
-        state[i] = (uint32_t)aes_sbox[b[3]] << 24
-                 | (uint32_t)aes_sbox[b[2]] << 16
-                 | (uint32_t)aes_sbox[b[1]] <<  8
-                 | (uint32_t)aes_sbox[b[0]];
-    }
-}
-
-
-/**
- * Applies AES SubBytes to each word of the keygen state matrix.
- */
-void sub_bytes64(uint64_t state[16]) {
-    for (size_t i = 0; i < 16; i++) {
-        const uint8_t *b = (uint8_t *)&state[i];
-        state[i] = (uint64_t)aes_sbox[b[7]] << 56
-                 | (uint64_t)aes_sbox[b[6]] << 48
-                 | (uint64_t)aes_sbox[b[5]] << 40
-                 | (uint64_t)aes_sbox[b[4]] << 32
-                 | (uint64_t)aes_sbox[b[3]] << 24
-                 | (uint64_t)aes_sbox[b[2]] << 16
-                 | (uint64_t)aes_sbox[b[1]] <<  8
-                 | (uint64_t)aes_sbox[b[0]];
-    }
-}

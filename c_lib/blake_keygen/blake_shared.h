@@ -73,10 +73,6 @@ extern "C" {
         KDFDomain domain
     );
 
-    void sub_bytes32(uint32_t state[16]);
-
-    void sub_bytes64(uint64_t state[16]);
-
 
 #ifdef __cplusplus
 }

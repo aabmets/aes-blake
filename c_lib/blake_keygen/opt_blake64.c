@@ -270,7 +270,6 @@ void opt_digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t co
 
     // Round 10
     mix_into_state64(state, context);
-    sub_bytes64(state);
 }
 
 

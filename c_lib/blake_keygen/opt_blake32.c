@@ -270,7 +270,6 @@ void opt_digest_context32(uint32_t state[16], const uint32_t key[8], uint32_t co
 
     // Round 10
     mix_into_state32(state, context);
-    sub_bytes32(state);
 }
 
 

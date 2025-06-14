@@ -146,10 +146,10 @@ TEST_CASE("clean_digest_context32 produces expected final state", "[unittest][ke
     clean_digest_context32(state, key, context);
 
     uint32_t expected[16] = {
-        0x25E9A784u, 0xE2FAF387u, 0xE4BE9C6Cu, 0x60E3426Fu,
-        0xA612B241u, 0xC548772Fu, 0x5F312628u, 0x078F9137u,
-        0xC298046Bu, 0x1D50312Bu, 0x80379CAFu, 0x367F3A30u,
-        0x7A9686B5u, 0x3BF916B4u, 0xE1125F2Du, 0x697D1244u
+        0xC2EB894Fu, 0x3B147EEAu, 0xAE5A1CB8u, 0x904DF606u,
+        0xC5393EF8u, 0x07D4024Eu, 0x842E23EEu, 0x3873ACB2u,
+        0xA8E23005u, 0xDE6C2E0Bu, 0x3AB21C1Bu, 0x246BA208u,
+        0xBD35DCD2u, 0x4969FFC6u, 0xE03984FAu, 0xE4133986u,
     };
     for (int i = 0; i < 16; i++) {
         REQUIRE(state[i] == expected[i]);

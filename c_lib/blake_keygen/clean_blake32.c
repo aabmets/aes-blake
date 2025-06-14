@@ -118,7 +118,6 @@ void clean_digest_context32(
         permute32(context);
     }
     mix_into_state32(state, context);
-    sub_bytes32(state);
 }
 
 

@@ -118,7 +118,6 @@ void clean_digest_context64(
         permute64(context);
     }
     mix_into_state64(state, context);
-    sub_bytes64(state);
 }
 
 
