@@ -191,27 +191,6 @@ class BaseBlake(ABC):
         schedule = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
         return [m[i] for i in schedule]
 
-    def sub_bytes(self, sbox: SBox = SBox.ENC) -> None:
-        """
-        Applies the AES SubBytes transformation to each word in-place.
-
-        For each Uint object in the state:
-          - Split into bytes.
-          - Substitute each byte through the AES S-box.
-          - Reassemble into a new Uint from the substituted bytes.
-
-        Args:
-            sbox (SBox): The AES S-box to use for transformation. This is parametrized
-                for debugging purposes, the cipher always uses the encryption S-box.
-
-        Returns:
-            None: The internal state vector is modified in-place.
-        """
-        uint = self.uint()
-        for i, v in enumerate(self.state):
-            s_bytes = [sbox.value[b] for b in v.to_bytes()]
-            self.state[i] = uint.from_bytes(s_bytes)
-
     def digest_context(self) -> None:
         """
         Digest the internal context through ten rounds of compression.
@@ -234,7 +213,6 @@ class BaseBlake(ABC):
             self.mix_into_state(self.context)
             self.context = self.permute(self.context)
         self.mix_into_state(self.context)  # 10th round
-        self.sub_bytes()
 
 
 class Blake32(BaseBlake):
