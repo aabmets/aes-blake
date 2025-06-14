@@ -12,7 +12,6 @@
 #ifndef AES_SBOX_H
 #define AES_SBOX_H
 
-
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" {
@@ -30,4 +29,4 @@ extern "C" {
 }
 #endif
 
-#endif // AES_SBOX_H
+#endif //AES_SBOX_H

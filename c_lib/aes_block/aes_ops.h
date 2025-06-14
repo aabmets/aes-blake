@@ -9,10 +9,8 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-
-#ifndef AES_TYPES_H
-#define AES_TYPES_H
-
+#ifndef AES_OPS_H
+#define AES_OPS_H
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -22,17 +20,25 @@ extern "C" {
 #endif
 
 
-    typedef void (*AES_YieldCallback)(
-        uint8_t state[],
+    #define XTIME(a) ((uint8_t)(((a) << 1) ^ (((a) >> 7) * 0x1B)))
+
+    void add_round_key(
+        uint8_t state[16],
         const uint8_t round_keys[][16],
-        uint8_t key_count,
-        uint8_t block_count,
-        uint8_t block_index
+        uint8_t round
     );
+
+    void shift_rows(uint8_t state[16]);
+
+    void inv_shift_rows(uint8_t state[16]);
+
+    void sub_bytes(uint8_t state[16]);
+
+    void inv_sub_bytes(uint8_t state[16]);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //AES_TYPES_H
+#endif //AES_OPS_H

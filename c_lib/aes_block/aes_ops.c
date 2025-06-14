@@ -14,52 +14,6 @@
 
 
 /*
- * Applies the SubBytes transformation to the 16-byte AES state in-place.
- */
-void sub_bytes(uint8_t state[16]) {
-    state[0]  = aes_sbox[state[0]];
-    state[1]  = aes_sbox[state[1]];
-    state[2]  = aes_sbox[state[2]];
-    state[3]  = aes_sbox[state[3]];
-    state[4]  = aes_sbox[state[4]];
-    state[5]  = aes_sbox[state[5]];
-    state[6]  = aes_sbox[state[6]];
-    state[7]  = aes_sbox[state[7]];
-    state[8]  = aes_sbox[state[8]];
-    state[9]  = aes_sbox[state[9]];
-    state[10] = aes_sbox[state[10]];
-    state[11] = aes_sbox[state[11]];
-    state[12] = aes_sbox[state[12]];
-    state[13] = aes_sbox[state[13]];
-    state[14] = aes_sbox[state[14]];
-    state[15] = aes_sbox[state[15]];
-}
-
-
-/*
- * Applies the InvSubBytes transformation to the 16-byte AES state in-place.
- */
-void inv_sub_bytes(uint8_t state[16]) {
-    state[0]  = aes_inv_sbox[state[0]];
-    state[1]  = aes_inv_sbox[state[1]];
-    state[2]  = aes_inv_sbox[state[2]];
-    state[3]  = aes_inv_sbox[state[3]];
-    state[4]  = aes_inv_sbox[state[4]];
-    state[5]  = aes_inv_sbox[state[5]];
-    state[6]  = aes_inv_sbox[state[6]];
-    state[7]  = aes_inv_sbox[state[7]];
-    state[8]  = aes_inv_sbox[state[8]];
-    state[9]  = aes_inv_sbox[state[9]];
-    state[10] = aes_inv_sbox[state[10]];
-    state[11] = aes_inv_sbox[state[11]];
-    state[12] = aes_inv_sbox[state[12]];
-    state[13] = aes_inv_sbox[state[13]];
-    state[14] = aes_inv_sbox[state[14]];
-    state[15] = aes_inv_sbox[state[15]];
-}
-
-
-/*
  * Single AddRoundKey function that uses preprocessor directives
  * to choose between a 32-bit variant (default) and a 64-bit variant.
  *
@@ -144,4 +98,50 @@ void inv_shift_rows(uint8_t state[16]) {
            | buf2 & 0x0000FF00
            | buf1 & 0x00FF0000
            | buf0 & 0xFF000000;
+}
+
+
+/*
+ * Applies the SubBytes transformation to the 16-byte AES state in-place.
+ */
+void sub_bytes(uint8_t state[16]) {
+    state[0]  = aes_sbox[state[0]];
+    state[1]  = aes_sbox[state[1]];
+    state[2]  = aes_sbox[state[2]];
+    state[3]  = aes_sbox[state[3]];
+    state[4]  = aes_sbox[state[4]];
+    state[5]  = aes_sbox[state[5]];
+    state[6]  = aes_sbox[state[6]];
+    state[7]  = aes_sbox[state[7]];
+    state[8]  = aes_sbox[state[8]];
+    state[9]  = aes_sbox[state[9]];
+    state[10] = aes_sbox[state[10]];
+    state[11] = aes_sbox[state[11]];
+    state[12] = aes_sbox[state[12]];
+    state[13] = aes_sbox[state[13]];
+    state[14] = aes_sbox[state[14]];
+    state[15] = aes_sbox[state[15]];
+}
+
+
+/*
+ * Applies the InvSubBytes transformation to the 16-byte AES state in-place.
+ */
+void inv_sub_bytes(uint8_t state[16]) {
+    state[0]  = aes_inv_sbox[state[0]];
+    state[1]  = aes_inv_sbox[state[1]];
+    state[2]  = aes_inv_sbox[state[2]];
+    state[3]  = aes_inv_sbox[state[3]];
+    state[4]  = aes_inv_sbox[state[4]];
+    state[5]  = aes_inv_sbox[state[5]];
+    state[6]  = aes_inv_sbox[state[6]];
+    state[7]  = aes_inv_sbox[state[7]];
+    state[8]  = aes_inv_sbox[state[8]];
+    state[9]  = aes_inv_sbox[state[9]];
+    state[10] = aes_inv_sbox[state[10]];
+    state[11] = aes_inv_sbox[state[11]];
+    state[12] = aes_inv_sbox[state[12]];
+    state[13] = aes_inv_sbox[state[13]];
+    state[14] = aes_inv_sbox[state[14]];
+    state[15] = aes_inv_sbox[state[15]];
 }

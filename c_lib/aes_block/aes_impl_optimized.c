@@ -10,10 +10,10 @@
  */
 
 #include <stdint.h>
+#include "aes_ops.h"
 #include "aes_sbox.h"
 #include "aes_tables.h"
-#include "aes_shared.h"
-#include "aes_types.h"
+#include "aes_block.h"
 
 
 static void shift_rows_sub_bytes(uint32_t state[4], const uint8_t b[16]) {
@@ -72,7 +72,7 @@ static void inv_shift_rows_inv_sub_bytes(uint32_t state[4], const uint8_t b[16])
 }
 
 
-void ttable_aes_encrypt(
+void aes_encrypt_optimized(
         uint8_t data[],
         const uint8_t round_keys[][16],
         const uint8_t key_count,
@@ -118,7 +118,7 @@ void ttable_aes_encrypt(
 }
 
 
-void ttable_aes_decrypt(
+void aes_decrypt_optimized(
         uint8_t data[],
         const uint8_t round_keys[][16],
         const uint8_t key_count,

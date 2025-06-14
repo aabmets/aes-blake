@@ -22,10 +22,6 @@ extern "C" {
 #endif
 
 
-    static uint8_t xtime(const uint8_t a) {
-        return a << 1 ^ (uint8_t)((a >> 7) * 0x1B);
-    }
-
     void transpose_state_matrix(uint8_t state[16]);
 
     uint8_t gf_mul(uint8_t x, uint8_t y);
@@ -33,6 +29,15 @@ extern "C" {
     uint8_t gf_inv(uint8_t x);
 
     uint8_t compute_sbox(uint8_t x);
+
+    void compute_enc_table_words(
+        uint8_t x,
+        uint32_t *t0,
+        uint32_t *t1,
+        uint32_t *t2,
+        uint32_t *t3,
+        bool little_endian
+    );
 
     void generate_enc_tables(
         uint32_t Te0[256],
@@ -42,7 +47,7 @@ extern "C" {
         bool little_endian
     );
 
-    void compute_enc_table_words(
+    void compute_imc_table_words(
         uint8_t x,
         uint32_t *t0,
         uint32_t *t1,
@@ -56,15 +61,6 @@ extern "C" {
         uint32_t IMC1[256],
         uint32_t IMC2[256],
         uint32_t IMC3[256],
-        bool little_endian
-    );
-
-    void compute_imc_table_words(
-        uint8_t x,
-        uint32_t *t0,
-        uint32_t *t1,
-        uint32_t *t2,
-        uint32_t *t3,
         bool little_endian
     );
 

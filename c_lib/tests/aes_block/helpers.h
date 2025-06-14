@@ -19,9 +19,8 @@
 #include <cstdio>
 #include <stdexcept>
 #include <cerrno>
-#include <random>
 #include "aes_sbox.h"
-#include "aes_types.h"
+#include "aes_block.h"
 #include "csprng.h"
 
 
@@ -122,17 +121,7 @@ inline void generate_original_aes128_round_keys(
 }
 
 
-using AesFunc = void (*)(
-    uint8_t data[],
-    const uint8_t round_keys[][16],
-    uint8_t key_count,
-    uint8_t block_count,
-    uint8_t block_index,
-    AES_YieldCallback callback
-);
-
-
-inline void run_fips197_vectors(const AesFunc encrypt_fn, const AesFunc decrypt_fn) {
+inline void run_fips197_vectors(const AES_Func encrypt_fn, const AES_Func decrypt_fn) {
     struct TestVector {
         const char *plaintext_hex;
         const char *key_hex;
@@ -204,7 +193,7 @@ inline void run_fips197_vectors(const AesFunc encrypt_fn, const AesFunc decrypt_
 }
 
 
-inline void run_two_block_random_vectors(const AesFunc encrypt_fn, const AesFunc decrypt_fn) {
+inline void run_two_block_random_vectors(const AES_Func encrypt_fn, const AES_Func decrypt_fn) {
     // Generate a random plaintext
     uint8_t plaintext[32];
     csprng_read_array(plaintext, sizeof(plaintext));

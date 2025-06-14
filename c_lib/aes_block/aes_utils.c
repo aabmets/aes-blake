@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "aes_sbox.h"
-#include "aes_utils.h"
+#include "aes_ops.h"
 
 
 void transpose_state_matrix(uint8_t state[16]) {
@@ -48,7 +48,7 @@ uint8_t gf_mul(uint8_t x, uint8_t y) {
     uint8_t r = 0;
     for (uint8_t i = 0; i < 8; i++) {
         if (y & 1) r ^= x;
-        x = xtime(x);
+        x = XTIME(x);
         y >>= 1;
     }
     return r;
@@ -82,6 +82,32 @@ uint8_t compute_sbox(const uint8_t x) {
 }
 
 
+void compute_enc_table_words(
+        const uint8_t x,
+        uint32_t *t0,
+        uint32_t *t1,
+        uint32_t *t2,
+        uint32_t *t3,
+        const bool little_endian
+) {
+    const uint8_t s1 = aes_sbox[x];
+    const uint8_t s2 = XTIME(s1);
+    const uint8_t s3 = s2 ^ s1;
+
+    *t0 = s2 << 24 | s1 << 16 | s1 << 8 | s3;
+    *t1 = s3 << 24 | s2 << 16 | s1 << 8 | s1;
+    *t2 = s1 << 24 | s3 << 16 | s2 << 8 | s1;
+    *t3 = s1 << 24 | s1 << 16 | s3 << 8 | s2;
+
+    if (little_endian)  {
+        *t0 = __builtin_bswap32(*t0);
+        *t1 = __builtin_bswap32(*t1);
+        *t2 = __builtin_bswap32(*t2);
+        *t3 = __builtin_bswap32(*t3);
+    }
+}
+
+
 void generate_enc_tables(
         uint32_t Te0[256],
         uint32_t Te1[256],
@@ -101,7 +127,7 @@ void generate_enc_tables(
 }
 
 
-void compute_enc_table_words(
+void compute_imc_table_words(
         const uint8_t x,
         uint32_t *t0,
         uint32_t *t1,
@@ -109,14 +135,19 @@ void compute_enc_table_words(
         uint32_t *t3,
         const bool little_endian
 ) {
-    const uint8_t s1 = aes_sbox[x];
-    const uint8_t s2 = xtime(s1);
-    const uint8_t s3 = s2 ^ s1;
+    const uint8_t x2 = XTIME(x);   // 2·x
+    const uint8_t x4 = XTIME(x2);  // 4·x
+    const uint8_t x8 = XTIME(x4);  // 8·x
 
-    *t0 = s2 << 24 | s1 << 16 | s1 << 8 | s3;
-    *t1 = s3 << 24 | s2 << 16 | s1 << 8 | s1;
-    *t2 = s1 << 24 | s3 << 16 | s2 << 8 | s1;
-    *t3 = s1 << 24 | s1 << 16 | s3 << 8 | s2;
+    const uint32_t m9  = x8 ^ x;        // 9·x = 8·x ⊕ x
+    const uint32_t m11 = x8 ^ x2 ^ x;   // 11·x = 8·x ⊕ 2·x ⊕ x
+    const uint32_t m13 = x8 ^ x4 ^ x;   // 13·x = 8·x ⊕ 4·x ⊕ x
+    const uint32_t m14 = x8 ^ x4 ^ x2;  // 14·x = 8·x ⊕ 4·x ⊕ 2·x
+
+    *t0 = m11 | m13 <<  8 | m9  << 16 | m14 << 24;
+    *t1 = m13 | m9  <<  8 | m14 << 16 | m11 << 24;
+    *t2 = m9  | m14 <<  8 | m11 << 16 | m13 << 24;
+    *t3 = m14 | m11 <<  8 | m13 << 16 | m9  << 24;
 
     if (little_endian)  {
         *t0 = __builtin_bswap32(*t0);
@@ -136,42 +167,11 @@ void generate_imc_tables(
 ) {
     for (uint8_t x = 0; x < 256; x++) {
         uint32_t t0, t1, t2, t3;
-        compute_enc_table_words(x, &t0, &t1, &t2, &t3, little_endian);
+        compute_imc_table_words(x, &t0, &t1, &t2, &t3, little_endian);
 
         IMC0[x] = t0;
         IMC1[x] = t1;
         IMC2[x] = t2;
         IMC3[x] = t3;
-    }
-}
-
-
-void compute_imc_table_words(
-        const uint8_t x,
-        uint32_t *t0,
-        uint32_t *t1,
-        uint32_t *t2,
-        uint32_t *t3,
-        const bool little_endian
-) {
-    const uint8_t x2 = xtime(x);   // 2·x
-    const uint8_t x4 = xtime(x2);  // 4·x
-    const uint8_t x8 = xtime(x4);  // 8·x
-
-    const uint32_t m9  = x8 ^ x;        // 9·x = 8·x ⊕ x
-    const uint32_t m11 = x8 ^ x2 ^ x;   // 11·x = 8·x ⊕ 2·x ⊕ x
-    const uint32_t m13 = x8 ^ x4 ^ x;   // 13·x = 8·x ⊕ 4·x ⊕ x
-    const uint32_t m14 = x8 ^ x4 ^ x2;  // 14·x = 8·x ⊕ 4·x ⊕ 2·x
-
-    *t0 = m11 | m13 <<  8 | m9  << 16 | m14 << 24;
-    *t1 = m13 | m9  <<  8 | m14 << 16 | m11 << 24;
-    *t2 = m9  | m14 <<  8 | m11 << 16 | m13 << 24;
-    *t3 = m14 | m11 <<  8 | m13 << 16 | m9  << 24;
-
-    if (little_endian)  {
-        *t0 = __builtin_bswap32(*t0);
-        *t1 = __builtin_bswap32(*t1);
-        *t2 = __builtin_bswap32(*t2);
-        *t3 = __builtin_bswap32(*t3);
     }
 }

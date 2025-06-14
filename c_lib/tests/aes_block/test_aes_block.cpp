@@ -11,26 +11,25 @@
 
 #include <catch2/catch_all.hpp>
 #include <cstring>
-#include "clean_aes.h"
-#include "ttable_aes.h"
+#include "aes_block.h"
 #include "helpers.h"
 
 
 TEST_CASE("Clean AES-128 FIPS-197 Vectors", "[unittest][aes]") {
-    run_fips197_vectors(clean_aes_encrypt, clean_aes_decrypt);
+    run_fips197_vectors(aes_encrypt_clean, aes_decrypt_clean);
 }
 
 
 TEST_CASE("Clean AES-128 Two-Block Random Keys", "[unittest][aes]") {
-    run_two_block_random_vectors(clean_aes_encrypt, clean_aes_decrypt);
+    run_two_block_random_vectors(aes_encrypt_clean, aes_decrypt_clean);
 }
 
 
 TEST_CASE("T-table AES-128 FIPS-197 Vectors", "[unittest][aes]") {
-    run_fips197_vectors(ttable_aes_encrypt, ttable_aes_decrypt);
+    run_fips197_vectors(aes_encrypt_optimized, aes_decrypt_optimized);
 }
 
 
 TEST_CASE("T-table AES-128 Two-Block Random Keys", "[unittest][aes]") {
-    run_two_block_random_vectors(ttable_aes_encrypt, ttable_aes_decrypt);
+    run_two_block_random_vectors(aes_encrypt_optimized, aes_decrypt_optimized);
 }

@@ -10,9 +10,8 @@
  */
 
 #include <stdint.h>
-#include "clean_aes.h"
-#include "aes_utils.h"
-#include "aes_shared.h"
+#include "aes_ops.h"
+#include "aes_block.h"
 
 
 /**
@@ -25,10 +24,10 @@ static void mix_single_column(uint8_t state[16], const uint8_t i) {
     const uint8_t d = state[i + 3];
     const uint8_t x = a ^ b ^ c ^ d;
 
-    state[i    ] = a ^ x ^ xtime(a ^ b);
-    state[i + 1] = b ^ x ^ xtime(b ^ c);
-    state[i + 2] = c ^ x ^ xtime(c ^ d);
-    state[i + 3] = d ^ x ^ xtime(d ^ a);
+    state[i    ] = a ^ x ^ XTIME(a ^ b);
+    state[i + 1] = b ^ x ^ XTIME(b ^ c);
+    state[i + 2] = c ^ x ^ XTIME(c ^ d);
+    state[i + 3] = d ^ x ^ XTIME(d ^ a);
 }
 
 
@@ -41,10 +40,10 @@ static void inv_mix_single_column(uint8_t state[16], const uint8_t i) {
     const uint8_t c = state[i + 2];
     const uint8_t d = state[i + 3];
 
-    state[i    ] = a ^ xtime(xtime(a ^ c));
-    state[i + 1] = b ^ xtime(xtime(b ^ d));
-    state[i + 2] = c ^ xtime(xtime(a ^ c));
-    state[i + 3] = d ^ xtime(xtime(b ^ d));
+    state[i    ] = a ^ XTIME(XTIME(a ^ c));
+    state[i + 1] = b ^ XTIME(XTIME(b ^ d));
+    state[i + 2] = c ^ XTIME(XTIME(a ^ c));
+    state[i + 3] = d ^ XTIME(XTIME(b ^ d));
 }
 
 
@@ -74,7 +73,7 @@ static void inv_mix_columns(uint8_t state[16]) {
 /**
  * Encrypts a single 16‐byte block in place, chosen by block_index.
  */
-void clean_aes_encrypt(
+void aes_encrypt_clean(
         uint8_t data[],
         const uint8_t round_keys[][16],
         const uint8_t key_count,
@@ -109,7 +108,7 @@ void clean_aes_encrypt(
 /**
  * Decrypts a single 16‐byte block in place, chosen by block_index.
  */
-void clean_aes_decrypt(
+void aes_decrypt_clean(
         uint8_t data[],
         const uint8_t round_keys[][16],
         const uint8_t key_count,
