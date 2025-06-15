@@ -9,8 +9,9 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
+
 #include <stdint.h>
-#include "aes_sbox.h"
+#include "blake_types.h"
 #include "blake_shared.h"
 
 
@@ -35,7 +36,7 @@ const uint64_t IV64[8] = {
  *   state[8..11] = entropy[4..7] + high‐32 bits of counter
  *   state[12..15] = IV constants[4..7] (BLAKE2s) ⊕ domain mask
  */
-void init_state_vector32(
+void blake32_init_state_vector(
         uint32_t state[16],
         const uint32_t entropy[8],
         const uint64_t counter,
@@ -43,7 +44,7 @@ void init_state_vector32(
 ) {
     const uint32_t ctr_low  = (uint32_t)(counter & 0xFFFFFFFFu);
     const uint32_t ctr_high = (uint32_t)(counter >> 32 & 0xFFFFFFFFu);
-    const uint32_t d_mask = get_domain_mask32(domain);
+    const uint32_t d_mask = blake32_get_domain_mask(domain);
 
     state[0] = IV32[0];
     state[1] = IV32[1];
@@ -75,7 +76,7 @@ void init_state_vector32(
  *   state[8..11] = entropy[4..7] + high‐32 bits of counter
  *   state[12..15] = IV constants[4..7] (BLAKE2b) ⊕ domain mask
  */
-void init_state_vector64(
+void blake64_init_state_vector(
         uint64_t state[16],
         const uint64_t entropy[8],
         const uint64_t counter,
@@ -83,7 +84,7 @@ void init_state_vector64(
 ) {
     const uint32_t ctr_low  = (uint32_t)(counter & 0xFFFFFFFFu);
     const uint32_t ctr_high = (uint32_t)(counter >> 32 & 0xFFFFFFFFu);
-    const uint64_t d_mask = get_domain_mask64(domain);
+    const uint64_t d_mask = blake64_get_domain_mask(domain);
 
     state[0] = IV64[0];
     state[1] = IV64[1];

@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "blake_types.h"
 #include "blake_shared.h"
 
 
@@ -18,7 +19,7 @@
  * Performs the BLAKE3 G‐mix operation on four state vector elements.
  * Uses fixed rotation distances for BLAKE3/32: { 16, 12, 8, 7 }.
  */
-void g_mix32(
+void blake32_clean_gmix(
         uint32_t state[16],
         const uint8_t a,
         const uint8_t b,
@@ -43,21 +44,21 @@ void g_mix32(
 
 /*
  * Performs the BLAKE3 mixing function on the state matrix using the provided
- * message words. The `g_mix` function is first applied across the columns, then
- * across the diagonals of the state matrix. Each call to `g_mix` uses a pair of
- * message words from the input list.
+ * message words. The `blake32_clean_gmix` function is first applied across the columns,
+ * then across the diagonals of the state matrix. Each call to `blake32_clean_gmix` uses
+ * a pair of message words from the input list.
  */
-void mix_into_state32(uint32_t state[16], uint32_t m[16]) {
+void blake32_clean_mix_state(uint32_t state[16], const uint32_t m[16]) {
     // columnar mixing
-    g_mix32(state, 0, 4, 8, 12, m[0], m[1]);
-    g_mix32(state, 1, 5, 9, 13, m[2], m[3]);
-    g_mix32(state, 2, 6, 10, 14, m[4], m[5]);
-    g_mix32(state, 3, 7, 11, 15, m[6], m[7]);
+    blake32_clean_gmix(state, 0, 4, 8, 12, m[0], m[1]);
+    blake32_clean_gmix(state, 1, 5, 9, 13, m[2], m[3]);
+    blake32_clean_gmix(state, 2, 6, 10, 14, m[4], m[5]);
+    blake32_clean_gmix(state, 3, 7, 11, 15, m[6], m[7]);
     // diagonal mixing
-    g_mix32(state, 0, 5, 10, 15, m[8], m[9]);
-    g_mix32(state, 1, 6, 11, 12, m[10], m[11]);
-    g_mix32(state, 2, 7, 8, 13, m[12], m[13]);
-    g_mix32(state, 3, 4, 9, 14, m[14], m[15]);
+    blake32_clean_gmix(state, 0, 5, 10, 15, m[8], m[9]);
+    blake32_clean_gmix(state, 1, 6, 11, 12, m[10], m[11]);
+    blake32_clean_gmix(state, 2, 7, 8, 13, m[12], m[13]);
+    blake32_clean_gmix(state, 3, 4, 9, 14, m[14], m[15]);
 }
 
 
@@ -66,7 +67,7 @@ void mix_into_state32(uint32_t state[16], uint32_t m[16]) {
  * The function reorders a list of BaseUint elements according to the
  * fixed BLAKE3 permutation schedule and returns the permuted list.
  */
-void permute32(uint32_t m[16]) {
+void blake32_clean_permute(uint32_t m[16]) {
     const int schedule[16] = {
         2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8
     };
@@ -85,7 +86,7 @@ void permute32(uint32_t m[16]) {
  * nonce arrays of uint32_t by exchanging their upper and lower 16‐bit
  * halves into the 16-element output array.
  */
-void clean_compute_knc32(
+void blake32_clean_compute_knc(
         const uint32_t key[8],
         const uint32_t nonce[8],
         uint32_t out[16]
@@ -107,17 +108,17 @@ void clean_compute_knc32(
 /*
  * Digests the cipher context through ten rounds of compression.
  */
-void clean_digest_context32(
+void blake32_clean_digest_context(
         uint32_t state[16],
         const uint32_t key[8],
         uint32_t context[8]
 ) {
-    init_state_vector32(state, key, 0, KDFDomain_CTX);
+    blake32_init_state_vector(state, key, 0, KDFDomain_CTX);
     for (int i = 0; i < 9; i++) {
-        mix_into_state32(state, context);
-        permute32(context);
+        blake32_clean_mix_state(state, context);
+        blake32_clean_permute(context);
     }
-    mix_into_state32(state, context);
+    blake32_clean_mix_state(state, context);
 }
 
 
@@ -130,7 +131,7 @@ void clean_digest_context32(
  *   - domain:         KDFDomain for domain separation
  *   - out_keys[][16]: output buffer for 128‐bit keys
  */
-static void compute_round_keys32(
+static void compute_round_keys(
         const uint32_t entropy[8],
         const uint32_t knc[16],
         const uint8_t key_count,
@@ -147,13 +148,13 @@ static void compute_round_keys32(
     }
 
     // 2) Initialize BLAKE state from this entropy, counter, and domain
-    init_state_vector32(state_buf, entropy, block_counter, domain);
+    blake32_init_state_vector(state_buf, entropy, block_counter, domain);
 
     // 3) For each round, mix and extract a 128‐bit key
     for (size_t round = 0; round < key_count; round++) {
 
         // a) Mix key+nonce composite into the state
-        mix_into_state32(state_buf, knc_local);
+        blake32_clean_mix_state(state_buf, knc_local);
 
         // b) Extract state_buf[4..7] → out_keys[round][0..15]
         for (int w = 0; w < 4; w++) {
@@ -166,7 +167,7 @@ static void compute_round_keys32(
 
         // c) Permute knc_local for the next round (unless this was the last round)
         if (round + 1 < key_count) {
-            permute32(knc_local);
+            blake32_clean_permute(knc_local);
         }
     }
 }
@@ -182,7 +183,7 @@ static void compute_round_keys32(
  *   - out_keys1[][16]: output buffer for stream #1
  *   - out_keys2[][16]: output buffer for stream #2
  */
-void clean_derive_keys32(
+void blake32_clean_derive_keys(
         const uint32_t init_state[16],
         const uint32_t knc[16],
         const uint8_t key_count,
@@ -201,7 +202,7 @@ void clean_derive_keys32(
     }
 
     // 2) Derive stream #1 keys from entropy1
-    compute_round_keys32(
+    compute_round_keys(
         entropy1,
         knc,
         key_count,
@@ -211,7 +212,7 @@ void clean_derive_keys32(
     );
 
     // 3) Derive stream #2 keys from entropy2
-    compute_round_keys32(
+    compute_round_keys(
         entropy2,
         knc,
         key_count,

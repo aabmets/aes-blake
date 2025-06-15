@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "blake_types.h"
 #include "blake_shared.h"
 
 
@@ -18,7 +19,7 @@
  * Performs the BLAKE3 mixing function on the state matrix using the provided message words.
  * Uses fully unrolled `g_mix` function calls and local registers for optimization.
  */
-static void mix_into_state64(uint64_t state[16], uint64_t m[16]) {
+void blake64_optimized_mix_state(uint64_t state[16], const uint64_t m[16]) {
     uint64_t s0 = state[0];
     uint64_t s1 = state[1];
     uint64_t s2 = state[2];
@@ -140,7 +141,7 @@ static void mix_into_state64(uint64_t state[16], uint64_t m[16]) {
  * The function reorders a list of BaseUint elements according to the
  * fixed BLAKE3 permutation schedule and returns the permuted list.
  */
-static void permute64(uint64_t m[16]) {
+void blake64_optimized_permute(uint64_t m[16]) {
     const uint64_t t0  = m[2];
     const uint64_t t1  = m[6];
     const uint64_t t2  = m[3];
@@ -181,7 +182,7 @@ static void permute64(uint64_t m[16]) {
  * Splices together 8‐element key and nonce arrays of uint64_t by exchanging
  * their upper and lower 32‐bit halves. Produces a 16‐element output array.
  */
-void opt_compute_knc64(
+void blake64_optimized_compute_knc(
         const uint64_t key[8],
         const uint64_t nonce[8],
         uint64_t out[16]
@@ -229,47 +230,51 @@ void opt_compute_knc64(
 /*
  * Digests the cipher context through ten rounds of compression.
  */
-void opt_digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t context[8]) {
-    init_state_vector64(state, key, 0, KDFDomain_CTX);
+void blake64_optimized_digest_context(
+        uint64_t state[16],
+        const uint64_t key[8],
+        uint64_t context[8]
+) {
+    blake64_init_state_vector(state, key, 0, KDFDomain_CTX);
 
     // Round 1
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 2
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 3
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 4
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 5
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 6
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 7
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 8
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 9
-    mix_into_state64(state, context);
-    permute64(context);
+    blake64_optimized_mix_state(state, context);
+    blake64_optimized_permute(context);
 
     // Round 10
-    mix_into_state64(state, context);
+    blake64_optimized_mix_state(state, context);
 }
 
 
@@ -282,7 +287,7 @@ void opt_digest_context64(uint64_t state[16], const uint64_t key[8], uint64_t co
  *   - domain:         KDFDomain for domain separation
  *   - out_keys[][16]: output buffer for 128‐bit keys
  */
-static void compute_round_keys64(
+static void compute_round_keys(
         const uint64_t entropy[8],
         const uint64_t knc[16],
         const size_t key_count,
@@ -300,13 +305,13 @@ static void compute_round_keys64(
     }
 
     // 2) Initialize BLAKE state from this entropy, counter, and domain
-    init_state_vector64(state_buf, entropy, block_counter, domain);
+    blake64_init_state_vector(state_buf, entropy, block_counter, domain);
 
     // 3) For each round, mix and extract two 128-bit keys
     for (size_t round = 0; round < key_count; round++) {
 
         // a) Mix key+nonce composite into the state
-        mix_into_state64(state_buf, knc_local);
+        blake64_optimized_mix_state(state_buf, knc_local);
 
         // b) Extract state_buf[4..5] → out_keys1[round][0..15]
         for (int w = 0; w < 2; w++) {
@@ -336,7 +341,7 @@ static void compute_round_keys64(
 
         // d) Permute knc_local for the next round (unless this was the last round)
         if (round + 1 < key_count) {
-            permute64(knc_local);
+            blake64_optimized_permute(knc_local);
         }
     }
 }
@@ -354,7 +359,7 @@ static void compute_round_keys64(
  *   - out_keys3[][16]: output buffer for stream #3
  *   - out_keys4[][16]: output buffer for stream #4
  */
-void opt_derive_keys64(
+void blake64_optimized_derive_keys(
         const uint64_t init_state[16],
         const uint64_t knc[16],
         const uint8_t key_count,
@@ -376,7 +381,7 @@ void opt_derive_keys64(
     }
 
     // 2) Derive streams #1 and #2 from entropy1
-    compute_round_keys64(
+    compute_round_keys(
         entropy1,
         knc,
         key_count,
@@ -387,7 +392,7 @@ void opt_derive_keys64(
     );
 
     // 3) Derive streams #3 and #4 from entropy2
-    compute_round_keys64(
+    compute_round_keys(
         entropy2,
         knc,
         key_count,
