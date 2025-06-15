@@ -55,6 +55,10 @@ extern "C" {
         s[2] ^= r1 ^ r2;
     }
 
+    inline void dom_copy8(uint8_t x[N_SHARES], uint8_t s[N_SHARES]) {
+        s[0] = x[0]; s[1] = x[1]; s[2] = x[2];
+    }
+
     void dom_bw_and8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
 
     void dom_bw_or8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
@@ -88,6 +92,10 @@ extern "C" {
         s[2] ^= r1 ^ r2;
     }
 
+    inline void dom_copy32(uint32_t x[N_SHARES], uint32_t s[N_SHARES]) {
+        s[0] = x[0]; s[1] = x[1]; s[2] = x[2];
+    }
+
     void dom_bw_and32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
 
     void dom_bw_or32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
@@ -119,6 +127,10 @@ extern "C" {
         s[0] ^= r1;
         s[1] ^= r2;
         s[2] ^= r1 ^ r2;
+    }
+
+    inline void dom_copy64(uint64_t x[N_SHARES], uint64_t s[N_SHARES]) {
+        s[0] = x[0]; s[1] = x[1]; s[2] = x[2];
     }
 
     void dom_bw_and64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]);
