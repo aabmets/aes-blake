@@ -10,24 +10,20 @@
  */
 
 #include <catch2/catch_all.hpp>
-#include "clean_blake64.h"
+#include "blake_types.h"
 
 
-TEST_CASE("permute64: zeros remain zeros", "[unittest][keygen]") {
+void run_blake64_permutation_test(const PermuteFunc64 permute_fn) {
     uint64_t m[16] = {0};
-    permute64(m);
+    permute_fn(m);
     for (const unsigned long long i : m) {
         REQUIRE(i == 0ULL);
     }
-}
 
-
-TEST_CASE("permute64: identity mapping yields expected schedule (cast to uint64_t)", "[unittest][keygen]") {
-    uint64_t m[16];
     for (uint64_t i = 0; i < 16; ++i) {
         m[i] = i;
     }
-    permute64(m);
+    permute_fn(m);
 
     const uint64_t expected[16] = {
         2ULL, 6ULL, 3ULL, 10ULL, 7ULL,  0ULL,  4ULL, 13ULL,
@@ -39,11 +35,11 @@ TEST_CASE("permute64: identity mapping yields expected schedule (cast to uint64_
 }
 
 
-TEST_CASE("g_mix64 produces expected state after successive calls", "[unittest][keygen]") {
+void run_blake64_gmix_test(const GmixFunc64 gmix_fn) {
     uint64_t state[16] = {};
 
     // After the first call: g_mix(0,4,8,12, 1,2)
-    g_mix64(state, 0, 4, 8, 12, 1ULL, 2ULL);
+    gmix_fn(state, 0, 4, 8, 12, 1ULL, 2ULL);
     {
         const uint64_t expected1[16] = {
             0x0000000000000103ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
@@ -57,7 +53,7 @@ TEST_CASE("g_mix64 produces expected state after successive calls", "[unittest][
     }
 
     // After the second call: g_mix(1,5,9,13, 1,2)
-    g_mix64(state, 1, 5, 9, 13, 1ULL, 2ULL);
+    gmix_fn(state, 1, 5, 9, 13, 1ULL, 2ULL);
     {
         const uint64_t expected2[16] = {
             0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
@@ -71,7 +67,7 @@ TEST_CASE("g_mix64 produces expected state after successive calls", "[unittest][
     }
 
     // After the third call: g_mix(2,6,10,14, 1,2)
-    g_mix64(state, 2, 6, 10, 14, 1ULL, 2ULL);
+    gmix_fn(state, 2, 6, 10, 14, 1ULL, 2ULL);
     {
         const uint64_t expected3[16] = {
             0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000000ULL,
@@ -85,7 +81,7 @@ TEST_CASE("g_mix64 produces expected state after successive calls", "[unittest][
     }
 
     // After the fourth call: g_mix(3,7,11,15, 1,2)
-    g_mix64(state, 3, 7, 11, 15, 1ULL, 2ULL);
+    gmix_fn(state, 3, 7, 11, 15, 1ULL, 2ULL);
     {
         const uint64_t expected4[16] = {
             0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000103ULL, 0x0000000000000103ULL,
@@ -100,14 +96,14 @@ TEST_CASE("g_mix64 produces expected state after successive calls", "[unittest][
 }
 
 
-TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[unittest][keygen]") {
+void run_blake64_mix_state_test(const MixStateFunc64 mix_state_fn) {
     uint64_t state[16] = {};
 
     uint64_t m[16];
     for (uint64_t i = 0; i < 16; ++i) {
         m[i] = i;
     }
-    mix_into_state64(state, m);
+    mix_state_fn(state, m);
 
     uint64_t expected[16] = {
         0x130E040401080D14ull, 0x191A081607122722ull, 0x1F260C18151C2930ull, 0x0D0200020B06232Eull,
@@ -121,7 +117,7 @@ TEST_CASE("mix_into_state64 starting from zeros + m=0..15", "[unittest][keygen]"
 }
 
 
-TEST_CASE("clean_compute_knc64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAAAAAABBBBBBBB/0xBBBBBBBBAAAAAAAA", "[unittest][keygen]") {
+void run_blake64_compute_knc_test(const KncFunc64 knc_fn) {
     uint64_t key[8];
     uint64_t nonce[8];
     uint64_t out[16];
@@ -130,7 +126,7 @@ TEST_CASE("clean_compute_knc64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xA
         key[i] = 0xAAAAAAAAAAAAAAAAULL;
         nonce[i] = 0xBBBBBBBBBBBBBBBBULL;
     }
-    clean_compute_knc64(key, nonce, out);
+    knc_fn(key, nonce, out);
 
     for (size_t i = 0; i < 8; ++i) {
         REQUIRE(out[2*i]     == 0xAAAAAAAABBBBBBBBULL);
@@ -139,12 +135,12 @@ TEST_CASE("clean_compute_knc64: key=0xAA..AA, nonce=0xBB..BB → alternating 0xA
 }
 
 
-TEST_CASE("clean_digest_context64 produces expected final state", "[unittest][keygen]") {
+void run_blake64_digest_context_test(const DigestFunc64 digest_fn) {
     constexpr uint64_t key[8] = {};
     uint64_t context[8] = {};
     uint64_t state[16] = {};
 
-    clean_digest_context64(state, key, context);
+    digest_fn(state, key, context);
 
     uint64_t expected[16] = {
         0xDC8B3C3143A0D4C1ULL, 0x580998D3DE81A26FULL, 0x0541A07C357EF61DULL, 0x0957A6015FDF7732ULL,

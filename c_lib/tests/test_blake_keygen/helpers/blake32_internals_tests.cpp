@@ -10,24 +10,20 @@
  */
 
 #include <catch2/catch_all.hpp>
-#include "clean_blake32.h"
+#include "blake_types.h"
 
 
-TEST_CASE("permute32: zeros remain zeros", "[unittest][keygen]") {
-    uint32_t m[16] = {0};
-    permute32(m);
+void run_blake32_permutation_test(const PermuteFunc32 permute_fn) {
+    uint32_t m[16] = {};
+    permute_fn(m);
     for (const unsigned int i : m) {
         REQUIRE(i == 0u);
     }
-}
 
-
-TEST_CASE("permute32: identity mapping yields expected schedule", "[unittest][keygen]") {
-    uint32_t m[16];
     for (uint32_t i = 0; i < 16; ++i) {
         m[i] = i;
     }
-    permute32(m);
+    permute_fn(m);
 
     const uint32_t expected[16] = {
         2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8
@@ -38,11 +34,11 @@ TEST_CASE("permute32: identity mapping yields expected schedule", "[unittest][ke
 }
 
 
-TEST_CASE("g_mix32 produces expected state after successive calls", "[unittest][keygen]") {
+void run_blake32_gmix_test(const GmixFunc32 gmix_fn) {
     uint32_t state[16] = {};
 
     // After the first call: g_mix(0,4,8,12, 1,2)
-    g_mix32(state, 0, 4, 8, 12, 1u, 2u);
+    gmix_fn(state, 0, 4, 8, 12, 1u, 2u);
     {
         const uint32_t expected1[16] = {
             0x00000013u, 0x00000000u, 0x00000000u, 0x00000000u,
@@ -56,7 +52,7 @@ TEST_CASE("g_mix32 produces expected state after successive calls", "[unittest][
     }
 
     // After the second call: g_mix(1,5,9,13, 1,2)
-    g_mix32(state, 1, 5, 9, 13, 1u, 2u);
+    gmix_fn(state, 1, 5, 9, 13, 1u, 2u);
     {
         const uint32_t expected2[16] = {
             0x00000013u, 0x00000013u, 0x00000000u, 0x00000000u,
@@ -70,7 +66,7 @@ TEST_CASE("g_mix32 produces expected state after successive calls", "[unittest][
     }
 
     // After the third call: g_mix(2,6,10,14, 1,2)
-    g_mix32(state, 2, 6, 10, 14, 1u, 2u);
+    gmix_fn(state, 2, 6, 10, 14, 1u, 2u);
     {
         const uint32_t expected3[16] = {
             0x00000013u, 0x00000013u, 0x00000013u, 0x00000000u,
@@ -84,7 +80,7 @@ TEST_CASE("g_mix32 produces expected state after successive calls", "[unittest][
     }
 
     // After the fourth call: g_mix(3,7,11,15, 1,2)
-    g_mix32(state, 3, 7, 11, 15, 1u, 2u);
+    gmix_fn(state, 3, 7, 11, 15, 1u, 2u);
     {
         const uint32_t expected4[16] = {
             0x00000013u, 0x00000013u, 0x00000013u, 0x00000013u,
@@ -99,14 +95,14 @@ TEST_CASE("g_mix32 produces expected state after successive calls", "[unittest][
 }
 
 
-TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[unittest][keygen]") {
+void run_blake32_mix_state_test(const MixStateFunc32 mix_state_fn) {
     uint32_t state[16] = {};
 
     uint32_t m[16];
     for (uint32_t i = 0; i < 16; ++i) {
         m[i] = i;
     }
-    mix_into_state32(state, m);
+    mix_state_fn(state, m);
 
     uint32_t expected[16] = {
         0x952AB9C9u, 0x7A41633Au, 0x5E47082Cu, 0xB024987Eu,
@@ -120,7 +116,7 @@ TEST_CASE("mix_into_state32 starting from zeros + m=0..15", "[unittest][keygen]"
 }
 
 
-TEST_CASE("clean_compute_knc32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xAAAABBBB/0xBBBBAAAA", "[unittest][keygen]") {
+void run_blake32_compute_knc_test(const KncFunc32 knc_fn) {
     uint32_t key[8];
     uint32_t nonce[8];
     uint32_t out[16];
@@ -129,7 +125,7 @@ TEST_CASE("clean_compute_knc32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xA
         key[i] = 0xAAAAAAAAu;
         nonce[i] = 0xBBBBBBBBu;
     }
-    clean_compute_knc32(key, nonce, out);
+    knc_fn(key, nonce, out);
 
     for (size_t i = 0; i < 8; ++i) {
         REQUIRE(out[2*i]     == 0xAAAABBBBu);
@@ -138,12 +134,12 @@ TEST_CASE("clean_compute_knc32: key=0xAA..AA, nonce=0xBB..BB → alternating 0xA
 }
 
 
-TEST_CASE("clean_digest_context32 produces expected final state", "[unittest][keygen]") {
+void run_blake32_digest_context_test(const DigestFunc32 digest_fn) {
     constexpr uint32_t key[8] = {};
     uint32_t context[8] = {};
     uint32_t state[16] = {};
 
-    clean_digest_context32(state, key, context);
+    digest_fn(state, key, context);
 
     uint32_t expected[16] = {
         0xC2EB894Fu, 0x3B147EEAu, 0xAE5A1CB8u, 0x904DF606u,

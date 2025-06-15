@@ -11,7 +11,6 @@
 
 #include <catch2/catch_all.hpp>
 #include "blake_shared.h"
-#include "aes_sbox.h"
 
 
 TEST_CASE("rotr32: rotating by 0 returns the original value", "[unittest][keygen]") {
@@ -108,12 +107,12 @@ TEST_CASE("init_state_vector32 produces the expected 16-word state", "[unittest]
     };
 
     for (const auto domain : domains) {
-        const uint32_t d_mask = get_domain_mask32(domain);
+        const uint32_t d_mask = blake32_get_domain_mask(domain);
 
         for (const auto ctr64 : counters) {
             uint32_t state[16] = {};
 
-            init_state_vector32(state, entropy, ctr64, domain);
+            blake32_init_state_vector(state, entropy, ctr64, domain);
 
             const auto ctr_low  = static_cast<uint32_t>(ctr64 & 0xFFFFFFFFu);
             const auto ctr_high = static_cast<uint32_t>(ctr64 >> 32 & 0xFFFFFFFFu);
@@ -163,12 +162,12 @@ TEST_CASE("init_state_vector64 produces the expected 16-word state", "[unittest]
     };
 
     for (const auto domain : domains) {
-        const uint64_t d_mask = get_domain_mask64(domain);
+        const uint64_t d_mask = blake64_get_domain_mask(domain);
 
         for (const auto ctr64 : counters) {
             uint64_t state[16] = {};
 
-            init_state_vector64(state, entropy, ctr64, domain);
+            blake64_init_state_vector(state, entropy, ctr64, domain);
 
             const auto ctr_low32  = static_cast<uint32_t>(ctr64 & 0xFFFFFFFFu);
             const auto ctr_high32 = static_cast<uint32_t>(ctr64 >> 32 & 0xFFFFFFFFu);
