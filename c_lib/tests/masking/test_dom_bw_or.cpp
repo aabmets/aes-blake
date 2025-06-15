@@ -32,14 +32,14 @@ TEST_CASE("Second-order DOM OR 8bit gadget computes correctly", "[unittest][dom]
         dom_mask8(um_x, masked_x);
         dom_mask8(um_y, masked_y);
 
-        REQUIRE((masked_x[0] ^ masked_x[1] ^ masked_x[2]) == um_x);
-        REQUIRE((masked_y[0] ^ masked_y[1] ^ masked_y[2]) == um_y);
+        REQUIRE(dom_unmask8(masked_x) == um_x);
+        REQUIRE(dom_unmask8(masked_y) == um_y);
 
         uint8_t out[N_SHARES];
         dom_bw_or8(masked_x, masked_y, out);
 
         const uint8_t expected_result = um_x | um_y;
-        const uint8_t actual_result = out[0] ^ out[1] ^ out[2];
+        const uint8_t actual_result = dom_unmask8(out);
         REQUIRE(actual_result == expected_result);
     }
 }
@@ -66,14 +66,14 @@ TEST_CASE("Second-order DOM OR 32bit gadget computes correctly", "[unittest][dom
         dom_mask32(um_x, masked_x);
         dom_mask32(um_y, masked_y);
 
-        REQUIRE((masked_x[0] ^ masked_x[1] ^ masked_x[2]) == um_x);
-        REQUIRE((masked_y[0] ^ masked_y[1] ^ masked_y[2]) == um_y);
+        REQUIRE(dom_unmask32(masked_x) == um_x);
+        REQUIRE(dom_unmask32(masked_y) == um_y);
 
         uint32_t out[N_SHARES];
         dom_bw_or32(masked_x, masked_y, out);
 
         const uint32_t expected_result = um_x | um_y;
-        const uint32_t actual_result = out[0] ^ out[1] ^ out[2];
+        const uint32_t actual_result = dom_unmask32(out);
         REQUIRE(actual_result == expected_result);
     }
 }
@@ -100,14 +100,14 @@ TEST_CASE("Second-order DOM OR 64bit gadget computes correctly", "[unittest][dom
         dom_mask64(um_x, masked_x);
         dom_mask64(um_y, masked_y);
 
-        REQUIRE((masked_x[0] ^ masked_x[1] ^ masked_x[2]) == um_x);
-        REQUIRE((masked_y[0] ^ masked_y[1] ^ masked_y[2]) == um_y);
+        REQUIRE(dom_unmask64(masked_x) == um_x);
+        REQUIRE(dom_unmask64(masked_y) == um_y);
 
         uint64_t out[N_SHARES];
         dom_bw_or64(masked_x, masked_y, out);
 
         const uint64_t expected_result = um_x | um_y;
-        const uint64_t actual_result = out[0] ^ out[1] ^ out[2];
+        const uint64_t actual_result = dom_unmask64(out);
         REQUIRE(actual_result == expected_result);
     }
 }
