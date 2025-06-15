@@ -9,14 +9,9 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#include <limits.h>
 #include "masking.h"
 
-
-static const uint8_t BITS_8  = CHAR_BIT * sizeof(uint8_t);
-static const uint8_t BITS_32 = CHAR_BIT * sizeof(uint32_t);
-static const uint8_t BITS_64 = CHAR_BIT * sizeof(uint64_t);
-
+// BITWISE ROTR
 
 void dom_bw_rotr8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n) {
     const uint8_t x0 = x[0], x1 = x[1], x2 = x[2];

@@ -11,6 +11,7 @@
 
 #include "masking.h"
 
+// BITWISE NOT
 
 void dom_bw_not8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES]) {
     out[0] = ~x[0];

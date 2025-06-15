@@ -11,6 +11,7 @@
 
 #include "masking.h"
 
+// BITWISE OR
 
 void dom_bw_or8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]) {
     // Based on the identity: a | b = (a ^ b) ^ (a & b).

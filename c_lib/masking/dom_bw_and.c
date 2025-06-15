@@ -12,6 +12,7 @@
 #include "csprng.h"
 #include "masking.h"
 
+// BITWISE AND
 
 void dom_bw_and8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]) {
     // --- Generate randomness ---
