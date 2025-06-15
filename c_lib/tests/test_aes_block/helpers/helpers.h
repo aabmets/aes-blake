@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <cerrno>
+#include "aes_types.h"
 
 
     inline void noop_callback(
