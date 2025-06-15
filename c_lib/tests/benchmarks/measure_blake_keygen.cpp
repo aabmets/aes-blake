@@ -11,11 +11,8 @@
 
 #include <catch2/catch_all.hpp>
 #include <random>
-#include "../blake_keygen/helpers.h"
-#include "clean_blake32.h"
-#include "clean_blake64.h"
-#include "opt_blake32.h"
-#include "opt_blake64.h"
+#include "blake_types.h"
+#include "blake_keygen.h"
 
 
 /*
@@ -107,27 +104,27 @@ static void benchmark_blake64_1kb(
 TEST_CASE("Benchmark BLAKE key generation (1KB)", "[benchmark][keygen]") {
     if (std::getenv("BENCHMARK")) {
         benchmark_blake32_1kb(
-            clean_compute_knc32,
-            clean_digest_context32,
-            clean_derive_keys32,
+            blake32_clean_compute_knc,
+            blake32_clean_digest_context,
+            blake32_clean_derive_keys,
             "Clean Blake32 Keygen 1KB"
         );
         benchmark_blake64_1kb(
-            clean_compute_knc64,
-            clean_digest_context64,
-            clean_derive_keys64,
+            blake64_clean_compute_knc,
+            blake64_clean_digest_context,
+            blake64_clean_derive_keys,
             "Clean Blake64 Keygen 1KB"
         );
         benchmark_blake32_1kb(
-            opt_compute_knc32,
-            opt_digest_context32,
-            opt_derive_keys32,
+            blake32_optimized_compute_knc,
+            blake32_optimized_digest_context,
+            blake32_optimized_derive_keys,
             "Optimized Blake32 Keygen 1KB"
         );
         benchmark_blake64_1kb(
-            opt_compute_knc64,
-            opt_digest_context64,
-            opt_derive_keys64,
+            blake64_optimized_compute_knc,
+            blake64_optimized_digest_context,
+            blake64_optimized_derive_keys,
             "Optimized Blake64 Keygen 1KB"
         );
     }

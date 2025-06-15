@@ -20,9 +20,7 @@ inline void noop_callback(
     uint8_t key_count,
     uint8_t block_count,
     uint8_t block_index
-) {
-    // no operation
-}
+) { /* no operation */ }
 
 
 static void generate_random_data(uint8_t* data, const size_t size) {
