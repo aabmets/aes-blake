@@ -14,7 +14,7 @@
 #include "csprng.h"
 
 
-TEST_CASE("Second-order DOM AND 8bit gadget computes correctly", "[unittest][dom]") {
+TEST_CASE("Second-order DOM OR 8bit gadget computes correctly", "[unittest][dom]") {
     constexpr unsigned int iterations = 100;
 
     uint8_t unmasked_x[iterations];
@@ -36,16 +36,16 @@ TEST_CASE("Second-order DOM AND 8bit gadget computes correctly", "[unittest][dom
         REQUIRE((masked_y[0] ^ masked_y[1] ^ masked_y[2]) == um_y);
 
         uint8_t out[N_SHARES];
-        dom_bw_and8(masked_x, masked_y, out);
+        dom_bw_or8(masked_x, masked_y, out);
 
-        const uint8_t expected_result = um_x & um_y;
+        const uint8_t expected_result = um_x | um_y;
         const uint8_t actual_result = out[0] ^ out[1] ^ out[2];
         REQUIRE(actual_result == expected_result);
     }
 }
 
 
-TEST_CASE("Second-order DOM AND 32bit gadget computes correctly", "[unittest][dom]") {
+TEST_CASE("Second-order DOM OR 32bit gadget computes correctly", "[unittest][dom]") {
     constexpr unsigned int iterations = 100;
 
     uint32_t unmasked_x[iterations];
@@ -70,16 +70,16 @@ TEST_CASE("Second-order DOM AND 32bit gadget computes correctly", "[unittest][do
         REQUIRE((masked_y[0] ^ masked_y[1] ^ masked_y[2]) == um_y);
 
         uint32_t out[N_SHARES];
-        dom_bw_and32(masked_x, masked_y, out);
+        dom_bw_or32(masked_x, masked_y, out);
 
-        const uint32_t expected_result = um_x & um_y;
+        const uint32_t expected_result = um_x | um_y;
         const uint32_t actual_result = out[0] ^ out[1] ^ out[2];
         REQUIRE(actual_result == expected_result);
     }
 }
 
 
-TEST_CASE("Second-order DOM AND 64bit gadget computes correctly", "[unittest][dom]") {
+TEST_CASE("Second-order DOM OR 64bit gadget computes correctly", "[unittest][dom]") {
     constexpr unsigned int iterations = 100;
 
     uint64_t unmasked_x[iterations];
@@ -104,9 +104,9 @@ TEST_CASE("Second-order DOM AND 64bit gadget computes correctly", "[unittest][do
         REQUIRE((masked_y[0] ^ masked_y[1] ^ masked_y[2]) == um_y);
 
         uint64_t out[N_SHARES];
-        dom_bw_and64(masked_x, masked_y, out);
+        dom_bw_or64(masked_x, masked_y, out);
 
-        const uint64_t expected_result = um_x & um_y;
+        const uint64_t expected_result = um_x | um_y;
         const uint64_t actual_result = out[0] ^ out[1] ^ out[2];
         REQUIRE(actual_result == expected_result);
     }

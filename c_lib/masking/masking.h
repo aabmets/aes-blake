@@ -47,6 +47,12 @@ extern "C" {
         uint8_t out[N_SHARES]
     );
 
+    void dom_bw_or8(
+        const uint8_t x[N_SHARES],
+        const uint8_t y[N_SHARES],
+        uint8_t out[N_SHARES]
+    );
+
     /* --- 32-BIT FUNCTIONS --- */
     inline void dom_mask32(const uint32_t x, uint32_t s[N_SHARES]) {
         csprng_read_array((uint8_t*)&s[1], sizeof(uint32_t));  // 4 bytes → s[1]
@@ -64,6 +70,12 @@ extern "C" {
         uint32_t out[N_SHARES]
     );
 
+    void dom_bw_or32(
+        const uint32_t x[N_SHARES],
+        const uint32_t y[N_SHARES],
+        uint32_t out[N_SHARES]
+    );
+
     /* --- 64-BIT FUNCTIONS --- */
     inline void dom_mask64(const uint64_t x, uint64_t s[N_SHARES]) {
         csprng_read_array((uint8_t*)&s[1], sizeof(uint64_t));  // 8 bytes → s[1]
@@ -76,6 +88,12 @@ extern "C" {
     }
 
     void dom_bw_and64(
+        const uint64_t x[N_SHARES],
+        const uint64_t y[N_SHARES],
+        uint64_t out[N_SHARES]
+    );
+
+    void dom_bw_or64(
         const uint64_t x[N_SHARES],
         const uint64_t y[N_SHARES],
         uint64_t out[N_SHARES]
