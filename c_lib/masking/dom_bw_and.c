@@ -77,7 +77,7 @@ void dom_bw_and64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64
     // --- Generate randomness ---
     uint64_t rand[N_SHARES];
     csprng_read_array((uint8_t*)rand, sizeof(rand));
-    const uint8_t r01 = rand[0], r02 = rand[1], r12 = rand[2];
+    const uint64_t r01 = rand[0], r02 = rand[1], r12 = rand[2];
 
     // --- Load input shares into local variables ---
     const uint64_t x0 = x[0], x1 = x[1], x2 = x[2];
