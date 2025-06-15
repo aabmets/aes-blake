@@ -55,6 +55,7 @@ void dom_ar_add8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t o
         }
     }
 
+    // --- Compiler memory barrier ---
     asm volatile("" ::: "memory");
 }
 
