@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cerrno>
-#include "aes_block.h"
+#include "aes_types.h"
 #include "helpers.h"
 
 

@@ -9,10 +9,8 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef AES_BLOCK_H
-#define AES_BLOCK_H
-
-#include "aes_types.h"
+#ifndef AES_TYPES_H
+#define AES_TYPES_H
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -22,34 +20,15 @@ extern "C" {
 #endif
 
 
-    void aes_encrypt_clean(
+    typedef void (*AES_YieldCallback)(
         uint8_t data[],
         const uint8_t round_keys[][16],
         uint8_t key_count,
         uint8_t block_count,
-        uint8_t block_index,
-        AES_YieldCallback callback
+        uint8_t block_index
     );
 
-    void aes_decrypt_clean(
-        uint8_t data[],
-        const uint8_t round_keys[][16],
-        uint8_t key_count,
-        uint8_t block_count,
-        uint8_t block_index,
-        AES_YieldCallback callback
-    );
-
-    void aes_encrypt_optimized(
-        uint8_t data[],
-        const uint8_t round_keys[][16],
-        uint8_t key_count,
-        uint8_t block_count,
-        uint8_t block_index,
-        AES_YieldCallback callback
-    );
-
-    void aes_decrypt_optimized(
+    typedef void (*AES_Func)(
         uint8_t data[],
         const uint8_t round_keys[][16],
         uint8_t key_count,
@@ -63,4 +42,4 @@ extern "C" {
 }
 #endif
 
-#endif //AES_BLOCK_H
+#endif //AES_TYPES_H

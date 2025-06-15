@@ -19,7 +19,6 @@
 #include <cstdio>
 #include <stdexcept>
 #include <cerrno>
-#include "aes_block.h"
 
 
     inline void noop_callback(
