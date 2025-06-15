@@ -12,7 +12,7 @@
 #include <catch2/catch_all.hpp>
 #include "aes_sbox.h"
 #include "aes_tables.h"
-#include "aes_utils.h"
+#include "helpers/helpers.h"
 
 
 TEST_CASE("Computed AES S-box matches hardcoded array", "[unittest][aes]") {

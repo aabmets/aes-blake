@@ -9,38 +9,13 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <cstdint>
 #include "aes_sbox.h"
-#include "aes_ops.h"
+#include "helpers.h"
 
 
-void transpose_state_matrix(uint8_t state[16]) {
-    uint32_t *ptr = (uint32_t*)state;
-    const uint32_t buf0 = ptr[0];
-    const uint32_t buf1 = ptr[1];
-    const uint32_t buf2 = ptr[2];
-    const uint32_t buf3 = ptr[3];
-
-    ptr[0] = buf0       & 0x000000FF
-           | buf1 <<  8 & 0x0000FF00
-           | buf2 << 16 & 0x00FF0000
-           | buf3 << 24 & 0xFF000000;
-
-    ptr[1] = buf0 >>  8 & 0x000000FF
-           | buf1       & 0x0000FF00
-           | buf2 <<  8 & 0x00FF0000
-           | buf3 << 16 & 0xFF000000;
-
-    ptr[2] = buf0 >> 16 & 0x000000FF
-           | buf1 >>  8 & 0x0000FF00
-           | buf2       & 0x00FF0000
-           | buf3 <<  8 & 0xFF000000;
-
-    ptr[3] = buf0 >> 24 & 0x000000FF
-           | buf1 >> 16 & 0x0000FF00
-           | buf2 >>  8 & 0x00FF0000
-           | buf3       & 0xFF000000;
+uint8_t xtime(const uint8_t x) {
+    return static_cast<uint8_t>(x << 1 ^ (x >> 7) * 0x1B);
 }
 
 
@@ -48,7 +23,7 @@ uint8_t gf_mul(uint8_t x, uint8_t y) {
     uint8_t r = 0;
     for (uint8_t i = 0; i < 8; i++) {
         if (y & 1) r ^= x;
-        x = XTIME(x);
+        x = xtime(x);
         y >>= 1;
     }
     return r;
@@ -91,7 +66,7 @@ void compute_enc_table_words(
         const bool little_endian
 ) {
     const uint8_t s1 = aes_sbox[x];
-    const uint8_t s2 = XTIME(s1);
+    const uint8_t s2 = xtime(s1);
     const uint8_t s3 = s2 ^ s1;
 
     *t0 = s2 << 24 | s1 << 16 | s1 << 8 | s3;
@@ -135,9 +110,9 @@ void compute_imc_table_words(
         uint32_t *t3,
         const bool little_endian
 ) {
-    const uint8_t x2 = XTIME(x);   // 2·x
-    const uint8_t x4 = XTIME(x2);  // 4·x
-    const uint8_t x8 = XTIME(x4);  // 8·x
+    const uint8_t x2 = xtime(x);   // 2·x
+    const uint8_t x4 = xtime(x2);  // 4·x
+    const uint8_t x8 = xtime(x4);  // 8·x
 
     const uint32_t m9  = x8 ^ x;        // 9·x = 8·x ⊕ x
     const uint32_t m11 = x8 ^ x2 ^ x;   // 11·x = 8·x ⊕ 2·x ⊕ x

@@ -12,7 +12,7 @@
 #include <catch2/catch_all.hpp>
 #include <cstring>
 #include "aes_block.h"
-#include "helpers.h"
+#include "helpers/helpers.h"
 
 
 TEST_CASE("Clean AES-128 FIPS-197 Vectors", "[unittest][aes]") {
