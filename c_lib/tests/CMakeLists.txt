@@ -24,6 +24,7 @@ target_link_libraries(tests PRIVATE
 #    aes_blake_lib
     aes_block_lib
     blake_keygen_lib
+    masking_lib
     tools_lib
 )
 

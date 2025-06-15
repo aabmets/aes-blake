@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 
-    void csprng_read_array(uint8_t* buffer, const uint32_t length);
+    void csprng_read_array(uint8_t* buffer, uint32_t length);
 
     uint8_t csprng_read(void);
 
