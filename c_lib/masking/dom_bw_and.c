@@ -15,6 +15,11 @@
 
 // BITWISE AND
 
+
+/*
+ *  Implements the DOM-indep secure multiplication/AND for an 8-bit bit-slice
+ *  described by Gross et al., “Domain-Oriented Masking” (CHES 2016).
+ */
 void dom_bw_and8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]) {
     // --- Generate randomness ---
     uint8_t rand[N_SHARES];
@@ -45,6 +50,10 @@ void dom_bw_and8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t o
 }
 
 
+/*
+ *  Implements the DOM-indep secure multiplication/AND for a 32-bit bit-slice
+ *  described by Gross et al., “Domain-Oriented Masking” (CHES 2016).
+ */
 void dom_bw_and32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]) {
     // --- Generate randomness ---
     uint32_t rand[N_SHARES];
@@ -75,6 +84,10 @@ void dom_bw_and32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32
 }
 
 
+/*
+ *  Implements the DOM-indep secure multiplication/AND for a 64-bit bit-slice
+ *  described by Gross et al., “Domain-Oriented Masking” (CHES 2016).
+ */
 void dom_bw_and64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]) {
     // --- Generate randomness ---
     uint64_t rand[N_SHARES];
