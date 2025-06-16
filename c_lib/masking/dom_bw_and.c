@@ -9,6 +9,7 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include "csprng.h"
 #include "masking.h"
 

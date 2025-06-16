@@ -9,7 +9,7 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#include "csprng.h"
+#include <stdint.h>
 #include "masking.h"
 
 // ARITHMETIC ADDITION

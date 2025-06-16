@@ -55,7 +55,7 @@ extern "C" {
         s[2] ^= r1 ^ r2;
     }
 
-    inline void dom_copy8(uint8_t x[N_SHARES], uint8_t s[N_SHARES]) {
+    inline void dom_copy8(const uint8_t x[N_SHARES], uint8_t s[N_SHARES]) {
         s[0] = x[0]; s[1] = x[1]; s[2] = x[2];
     }
 
@@ -67,7 +67,13 @@ extern "C" {
 
     void dom_bw_not8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES]);
 
+    void dom_bw_shiftr8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n);
+
+    void dom_bw_shiftl8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n);
+
     void dom_bw_rotr8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES],uint8_t n);
+
+    void dom_bw_rotl8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n);
 
     void dom_ar_add8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
 
@@ -92,7 +98,7 @@ extern "C" {
         s[2] ^= r1 ^ r2;
     }
 
-    inline void dom_copy32(uint32_t x[N_SHARES], uint32_t s[N_SHARES]) {
+    inline void dom_copy32(const uint32_t x[N_SHARES], uint32_t s[N_SHARES]) {
         s[0] = x[0]; s[1] = x[1]; s[2] = x[2];
     }
 
@@ -104,7 +110,13 @@ extern "C" {
 
     void dom_bw_not32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES]);
 
+    void dom_bw_shiftr32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
+
+    void dom_bw_shiftl32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
+
     void dom_bw_rotr32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
+
+    void dom_bw_rotl32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
 
     void dom_ar_add32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
 
@@ -129,7 +141,7 @@ extern "C" {
         s[2] ^= r1 ^ r2;
     }
 
-    inline void dom_copy64(uint64_t x[N_SHARES], uint64_t s[N_SHARES]) {
+    inline void dom_copy64(const uint64_t x[N_SHARES], uint64_t s[N_SHARES]) {
         s[0] = x[0]; s[1] = x[1]; s[2] = x[2];
     }
 
@@ -141,7 +153,13 @@ extern "C" {
 
     void dom_bw_not64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES]);
 
+    void dom_bw_shiftr64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
+
+    void dom_bw_shiftl64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
+
     void dom_bw_rotr64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
+
+    void dom_bw_rotl64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
 
     void dom_ar_add64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]);
 
