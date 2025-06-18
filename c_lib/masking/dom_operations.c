@@ -101,6 +101,18 @@ void dom_bool_xor_##FN_SUFFIX(                                                  
                                                                                 \
 void dom_bool_not_##FN_SUFFIX(masked_##TYPE* mv) {                              \
     mv->shares[0] = ~mv->shares[0];                                             \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_shr_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                   \
+    TYPE* s = mv->shares;                                                       \
+    s[0] >>= n; s[1] >>= n; s[2] >>= n;                                         \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_shl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                   \
+    TYPE* s = mv->shares;                                                       \
+    s[0] <<= n; s[1] <<= n; s[2] <<= n;                                         \
 }
 
 #endif //DOM_OPERATION_FUNCTIONS
