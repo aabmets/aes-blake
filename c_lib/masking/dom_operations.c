@@ -96,6 +96,11 @@ void dom_bool_xor_##FN_SUFFIX(                                                  
                                                                                 \
     /* --- Compiler memory barrier --- */                                       \
     asm volatile ("" ::: "memory");                                             \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_not_##FN_SUFFIX(masked_##TYPE* mv) {                              \
+    mv->shares[0] = ~mv->shares[0];                                             \
 }
 
 #endif //DOM_OPERATION_FUNCTIONS
