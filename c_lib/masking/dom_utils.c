@@ -27,7 +27,7 @@
 
 
 /*
- *   We define a parametrized preprocessor macro template for all utility functions.
+ *   Parametrized preprocessor macro template for all utility functions.
  */
 #ifndef DOM_UTILITY_FUNCTIONS
 #define DOM_UTILITY_FUNCTIONS(TYPE, FN_SUFFIX, BIT_LENGTH)                      \
@@ -103,7 +103,7 @@ void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE* mv) {                          
 
 
 /*
- *   We use the macro to create utility functions for all supported types.
+ *   Create utility functions for all supported types.
  */
 DOM_UTILITY_FUNCTIONS(uint8_t, u8, BIT_LENGTH_8)
 DOM_UTILITY_FUNCTIONS(uint32_t, u32, BIT_LENGTH_32)
