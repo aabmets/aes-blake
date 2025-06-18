@@ -12,8 +12,7 @@
 #ifndef MASKING_H
 #define MASKING_H
 
-#include <limits.h>
-#include "csprng.h"
+#include "dom_types.h"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -23,71 +22,65 @@ extern "C" {
 #endif
 
 
-    /*
-     * Security order of the Domain Object Masking.
-     * Changing this value requires reworking DOM masking functions.
-     */
-    #define S_ORDER    2
+    masked_uint8_t dom_mask_u8 (uint8_t value);
+    masked_uint32_t dom_mask_u32 (uint32_t value);
+    masked_uint64_t dom_mask_u64 (uint64_t value);
 
-    #define N_SHARES  (S_ORDER + 1)  // Number of Boolean shares (=3 for 2nd order)
+    uint8_t dom_unmask_u8 (masked_uint8_t ms);
+    uint32_t dom_unmask_u32 (masked_uint32_t ms);
+    uint64_t dom_unmask_u64 (masked_uint64_t ms);
 
-    static const uint8_t BITS_8  = CHAR_BIT * sizeof(uint8_t);
-    static const uint8_t BITS_32 = CHAR_BIT * sizeof(uint32_t);
-    static const uint8_t BITS_64 = CHAR_BIT * sizeof(uint64_t);
+    void dom_copy_u8 (masked_uint8_t mv_src, masked_uint8_t mv_tgt);
+    void dom_copy_u32 (masked_uint32_t mv_src, masked_uint32_t mv_tgt);
+    void dom_copy_u64 (masked_uint64_t mv_src, masked_uint64_t mv_tgt);
 
+    void dom_refresh_mask_u8 (masked_uint8_t ms);
+    void dom_refresh_mask_u32 (masked_uint32_t ms);
+    void dom_refresh_mask_u64 (masked_uint64_t ms);
 
-    /* --- 8-BIT FUNCTIONS --- */
-    void dom_mask8(uint8_t x, uint8_t s[N_SHARES]);
-    uint8_t dom_unmask8(const uint8_t s[3]);
-    void dom_refresh_mask8(uint8_t s[N_SHARES]);
-    void dom_copy8(const uint8_t x[N_SHARES], uint8_t s[N_SHARES]);
-    void dom_conv_btoa8(uint8_t x[N_SHARES]);
+    void dom_conv_btoa_u8 (masked_uint8_t ms);
+    void dom_conv_btoa_u32 (masked_uint32_t ms);
+    void dom_conv_btoa_u64 (masked_uint64_t ms);
 
-    void dom_bw_and8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
-    void dom_bw_or8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
-    void dom_bw_xor8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
-    void dom_bw_not8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES]);
-    void dom_bw_shiftr8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n);
-    void dom_bw_shiftl8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n);
-    void dom_bw_rotr8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES],uint8_t n);
-    void dom_bw_rotl8(const uint8_t x[N_SHARES], uint8_t out[N_SHARES], uint8_t n);
-    void dom_ar_add8(const uint8_t x[N_SHARES], const uint8_t y[N_SHARES], uint8_t out[N_SHARES]);
+    void dom_conv_atob_u8 (masked_uint8_t ms);
+    void dom_conv_atob_u32 (masked_uint32_t ms);
+    void dom_conv_atob_u64 (masked_uint64_t ms);
 
+    void dom_bool_and_u8 (masked_uint8_t ms_a, masked_uint8_t ms_b, masked_uint8_t ms_out);
+    void dom_bool_and_u32 (masked_uint32_t ms_a, masked_uint32_t ms_b, masked_uint32_t ms_out);
+    void dom_bool_and_u64 (masked_uint64_t ms_a, masked_uint64_t ms_b, masked_uint64_t ms_out);
 
-    /* --- 32-BIT FUNCTIONS --- */
-    void dom_mask32(uint32_t x, uint32_t s[N_SHARES]);
-    uint32_t dom_unmask32(const uint32_t s[3]);
-    void dom_refresh_mask32(uint32_t s[N_SHARES]);
-    void dom_copy32(const uint32_t x[N_SHARES], uint32_t s[N_SHARES]);
-    void dom_conv_btoa32(uint32_t x[N_SHARES]);
+    void dom_bool_or_u8 (masked_uint8_t ms_a, masked_uint8_t ms_b, masked_uint8_t ms_out);
+    void dom_bool_or_u32 (masked_uint32_t ms_a, masked_uint32_t ms_b, masked_uint32_t ms_out);
+    void dom_bool_or_u64 (masked_uint64_t ms_a, masked_uint64_t ms_b, masked_uint64_t ms_out);
 
-    void dom_bw_and32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
-    void dom_bw_or32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
-    void dom_bw_xor32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
-    void dom_bw_not32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES]);
-    void dom_bw_shiftr32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
-    void dom_bw_shiftl32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
-    void dom_bw_rotr32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
-    void dom_bw_rotl32(const uint32_t x[N_SHARES], uint32_t out[N_SHARES], uint32_t n);
-    void dom_ar_add32(const uint32_t x[N_SHARES], const uint32_t y[N_SHARES], uint32_t out[N_SHARES]);
+    void dom_bool_xor_u8 (masked_uint8_t ms_a, masked_uint8_t ms_b, masked_uint8_t ms_out);
+    void dom_bool_xor_u32 (masked_uint32_t ms_a, masked_uint32_t ms_b, masked_uint32_t ms_out);
+    void dom_bool_xor_u64 (masked_uint64_t ms_a, masked_uint64_t ms_b, masked_uint64_t ms_out);
 
+    void dom_bool_not_u8 (masked_uint8_t ms);
+    void dom_bool_not_u32 (masked_uint32_t ms);
+    void dom_bool_not_u64 (masked_uint64_t ms);
 
-    /* --- 64-BIT FUNCTIONS --- */
-    void dom_mask64(uint64_t x, uint64_t s[N_SHARES]);
-    uint64_t dom_unmask64(const uint64_t s[3]);
-    void dom_refresh_mask64(uint64_t s[N_SHARES]);
-    void dom_copy64(const uint64_t x[N_SHARES], uint64_t s[N_SHARES]);
-    void dom_conv_btoa64(uint64_t x[N_SHARES]);
+    void dom_bool_shr_u8 (masked_uint8_t ms, uint8_t n);
+    void dom_bool_shr_u32 (masked_uint32_t ms, uint8_t n);
+    void dom_bool_shr_u64 (masked_uint64_t ms, uint8_t n);
 
-    void dom_bw_and64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]);
-    void dom_bw_or64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]);
-    void dom_bw_xor64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]);
-    void dom_bw_not64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES]);
-    void dom_bw_shiftr64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
-    void dom_bw_shiftl64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
-    void dom_bw_rotr64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
-    void dom_bw_rotl64(const uint64_t x[N_SHARES], uint64_t out[N_SHARES], uint64_t n);
-    void dom_ar_add64(const uint64_t x[N_SHARES], const uint64_t y[N_SHARES], uint64_t out[N_SHARES]);
+    void dom_bool_shl_u8 (masked_uint8_t ms, uint8_t n);
+    void dom_bool_shl_u32 (masked_uint32_t ms, uint8_t n);
+    void dom_bool_shl_u64 (masked_uint64_t ms, uint8_t n);
+
+    void dom_bool_rotr_u8 (masked_uint8_t ms, uint8_t n);
+    void dom_bool_rotr_u32 (masked_uint32_t ms, uint8_t n);
+    void dom_bool_rotr_u64 (masked_uint64_t ms, uint8_t n);
+
+    void dom_bool_rotl_u8 (masked_uint8_t ms, uint8_t n);
+    void dom_bool_rotl_u32 (masked_uint32_t ms, uint8_t n);
+    void dom_bool_rotl_u64 (masked_uint64_t ms, uint8_t n);
+
+    void dom_arith_add_u8 (masked_uint8_t ms_a, masked_uint8_t ms_b, masked_uint8_t ms_out);
+    void dom_arith_add_u32 (masked_uint32_t ms_a, masked_uint32_t ms_b, masked_uint32_t ms_out);
+    void dom_arith_add_u64 (masked_uint64_t ms_a, masked_uint64_t ms_b, masked_uint64_t ms_out);
 
 
 #ifdef __cplusplus
