@@ -135,7 +135,25 @@ void dom_bool_rotl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                  
     s[0] = x << n | x >> (bl - n);                                              \
     s[1] = y << n | y >> (bl - n);                                              \
     s[2] = z << n | z >> (bl - n);                                              \
-}
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_arith_add_##FN_SUFFIX(                                                 \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
+) {                                                                             \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
+                                                                                \
+    out[0] = x[0] + y[0];                                                       \
+    out[1] = x[1] + y[1];                                                       \
+    out[2] = x[2] + y[2];                                                       \
+                                                                                \
+    /* --- Compiler memory barrier --- */                                       \
+    asm volatile ("" ::: "memory");                                             \
+}                                                                               \
 
 #endif //DOM_OPERATION_FUNCTIONS
 
