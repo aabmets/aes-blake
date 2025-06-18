@@ -78,6 +78,24 @@ void dom_bool_or_##FN_SUFFIX(                                                   
                                                                                 \
     /* --- Compiler memory barrier --- */                                       \
     asm volatile ("" ::: "memory");                                             \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_xor_##FN_SUFFIX(                                                  \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
+) {                                                                             \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
+                                                                                \
+    out[0] = x[0] ^ y[0];                                                       \
+    out[1] = x[1] ^ y[1];                                                       \
+    out[2] = x[2] ^ y[2];                                                       \
+                                                                                \
+    /* --- Compiler memory barrier --- */                                       \
+    asm volatile ("" ::: "memory");                                             \
 }
 
 #endif //DOM_OPERATION_FUNCTIONS
