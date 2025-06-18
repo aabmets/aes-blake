@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include "csprng.h"
-#include "masking.h"
+#include "dom_types.h"
 
 
 /*
@@ -54,6 +54,27 @@ void dom_bool_and_##FN_SUFFIX(                                                  
     out[0] = x0 & y0 ^ p01_masked ^ p02_masked;                                 \
     out[1] = x1 & y1 ^ p10_masked ^ p12_masked;                                 \
     out[2] = x2 & y2 ^ p20_masked ^ p21_masked;                                 \
+                                                                                \
+    /* --- Compiler memory barrier --- */                                       \
+    asm volatile ("" ::: "memory");                                             \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_or_##FN_SUFFIX(                                                   \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
+) {                                                                             \
+    dom_bool_and_##FN_SUFFIX(mv_a, mv_b, mv_out);                               \
+                                                                                \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
+                                                                                \
+    /*  Based on the identity: a | b = a ^ b ^ (a & b)  */                      \
+    out[0] ^= x[0] ^ y[0];                                                      \
+    out[1] ^= x[1] ^ y[1];                                                      \
+    out[2] ^= x[2] ^ y[2];                                                      \
                                                                                 \
     /* --- Compiler memory barrier --- */                                       \
     asm volatile ("" ::: "memory");                                             \
