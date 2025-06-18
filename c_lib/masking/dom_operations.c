@@ -113,6 +113,28 @@ void dom_bool_shr_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                   
 void dom_bool_shl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                   \
     TYPE* s = mv->shares;                                                       \
     s[0] <<= n; s[1] <<= n; s[2] <<= n;                                         \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_rotr_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                  \
+    TYPE* s = mv->shares;                                                       \
+    const TYPE x = s[0], y = s[1], z = s[2];                                    \
+    bit_length_t bl = mv->bit_length;                                           \
+                                                                                \
+    s[0] = x >> n | x << (bl - n);                                              \
+    s[1] = y >> n | y << (bl - n);                                              \
+    s[2] = z >> n | z << (bl - n);                                              \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_bool_rotl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                  \
+    TYPE* s = mv->shares;                                                       \
+    const TYPE x = s[0], y = s[1], z = s[2];                                    \
+    bit_length_t bl = mv->bit_length;                                           \
+                                                                                \
+    s[0] = x << n | x >> (bl - n);                                              \
+    s[1] = y << n | y >> (bl - n);                                              \
+    s[2] = z << n | z >> (bl - n);                                              \
 }
 
 #endif //DOM_OPERATION_FUNCTIONS
