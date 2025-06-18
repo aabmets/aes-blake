@@ -97,7 +97,7 @@ void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE* mv) {                          
         mv->shares[1] += rval[0];                                               \
         mv->shares[2] += rval[1];                                               \
     }                                                                           \
-}
+}                                                                               \
 
 #endif //DOM_UTILITY_FUNCTIONS
 

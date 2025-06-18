@@ -154,6 +154,46 @@ void dom_arith_add_##FN_SUFFIX(                                                 
     /* --- Compiler memory barrier --- */                                       \
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
+                                                                                \
+                                                                                \
+/*   Implements the DOM-indep secure multiplication/AND   */                    \
+/*   of 2-nd order shares, as described by Gross et al.   */                    \
+/*   in “Domain-Oriented Masking” (CHES 2016).            */                    \
+void dom_arith_mult_##FN_SUFFIX(                                                \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
+) {                                                                             \
+    /* --- Generate fresh randomness --- */                                     \
+    TYPE rand[N_SHARES];                                                        \
+    csprng_read_array((uint8_t*)rand, sizeof(rand));                            \
+    const TYPE r01 = rand[0], r02 = rand[1], r12 = rand[2];                     \
+                                                                                \
+    /* --- Load input shares into locals --- */                                 \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    const TYPE x0 = x[0], x1 = x[1], x2 = x[2];                                 \
+    const TYPE y0 = y[0], y1 = y[1], y2 = y[2];                                 \
+                                                                                \
+    /* --- Resharing phase (second-order DOM-indep) --- */                      \
+    const TYPE p01_masked = x0 * y1 +  r01;                                     \
+    const TYPE p10_masked = x1 * y0 -  r01;                                     \
+                                                                                \
+    const TYPE p02_masked = x0 * y2 +  r02;                                     \
+    const TYPE p20_masked = x2 * y0 -  r02;                                     \
+                                                                                \
+    const TYPE p12_masked = x1 * y2 +  r12;                                     \
+    const TYPE p21_masked = x2 * y1 -  r12;                                     \
+                                                                                \
+    /* --- Integration phase --- */                                             \
+    TYPE* out = mv_out->shares;                                                 \
+    out[0] = x0 * y0 + p01_masked + p02_masked;                                 \
+    out[1] = x1 * y1 + p10_masked + p12_masked;                                 \
+    out[2] = x2 * y2 + p20_masked + p21_masked;                                 \
+                                                                                \
+    /* --- Compiler memory barrier --- */                                       \
+    asm volatile ("" ::: "memory");                                             \
+}                                                                               \
 
 #endif //DOM_OPERATION_FUNCTIONS
 

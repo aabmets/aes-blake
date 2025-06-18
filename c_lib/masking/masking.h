@@ -82,6 +82,10 @@ extern "C" {
     void dom_arith_add_u32 (masked_uint32_t ms_a, masked_uint32_t ms_b, masked_uint32_t ms_out);
     void dom_arith_add_u64 (masked_uint64_t ms_a, masked_uint64_t ms_b, masked_uint64_t ms_out);
 
+    void dom_arith_mult_u8 (masked_uint8_t ms_a, masked_uint8_t ms_b, masked_uint8_t ms_out);
+    void dom_arith_mult_u32 (masked_uint32_t ms_a, masked_uint32_t ms_b, masked_uint32_t ms_out);
+    void dom_arith_mult_u64 (masked_uint64_t ms_a, masked_uint64_t ms_b, masked_uint64_t ms_out);
+
 
 #ifdef __cplusplus
 }

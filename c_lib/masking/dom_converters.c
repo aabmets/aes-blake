@@ -91,7 +91,7 @@ void dom_conv_atob_##FN_SUFFIX(masked_##TYPE* mv) {                             
     /* TODO: replace this naive insecure implementation */                      \
     TYPE unmasked_value = mv->shares[0] - mv->shares[1] - mv->shares[2];        \
     mv->shares[0] = unmasked_value ^ mv->shares[1] ^ mv->shares[2];             \
-}
+}                                                                               \
 
 #endif //DOM_CONVERTER_FUNCTIONS
 
