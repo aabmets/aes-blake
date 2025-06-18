@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.31)
 project(aes_blake C)
 
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 #add_subdirectory(aes_blake)
 add_subdirectory(aes_block)
