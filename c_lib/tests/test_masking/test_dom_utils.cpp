@@ -17,44 +17,26 @@
 template<typename T>
 struct dom_traits;
 
-template<>
-struct dom_traits<uint8_t> {
-    using masked_type = masked_uint8_t;
-    static masked_type* dom_mask(const uint8_t value, const domain_t domain)
-        { return dom_mask_u8(value, domain); }
-    static uint8_t dom_unmask(masked_type* mv)
-        { return dom_unmask_u8(mv); }
-    static void dom_copy(masked_type* mv_src, masked_type* mv_tgt)
-        { dom_copy_u8(mv_src, mv_tgt); }
-    static void dom_refresh_mask(masked_type* ms)
-        { dom_refresh_mask_u8(ms); }
-};
+#define DEFINE_DOM_TRAITS(TYPE, SHORT_TYPE)                                     \
+template<>                                                                      \
+struct dom_traits<TYPE> {                                                       \
+    using mskd_t = masked_##TYPE;                                               \
+    static mskd_t* dom_mask(const TYPE value, const domain_t domain)            \
+        { return dom_mask_##SHORT_TYPE(value, domain); }                        \
+    static TYPE dom_unmask(mskd_t* mv)                                          \
+        { return dom_unmask_##SHORT_TYPE(mv); }                                 \
+    static void dom_copy(mskd_t* mv_src, mskd_t* mv_tgt)                        \
+        { dom_copy_##SHORT_TYPE(mv_src, mv_tgt); }                              \
+    static void dom_refresh_mask(mskd_t* mv)                                    \
+        { dom_refresh_mask_##SHORT_TYPE(mv); }                                  \
+};                                                                              \
 
-template<>
-struct dom_traits<uint32_t> {
-    using masked_type = masked_uint32_t;
-    static masked_type* dom_mask(const uint32_t value, const domain_t domain)
-        { return dom_mask_u32(value, domain); }
-    static uint32_t dom_unmask(masked_type* mv)
-        { return dom_unmask_u32(mv); }
-    static void dom_copy(masked_type* mv_src, masked_type* mv_tgt)
-        { dom_copy_u32(mv_src, mv_tgt); }
-    static void dom_refresh_mask(masked_type* ms)
-        { dom_refresh_mask_u32(ms); }
-};
+DEFINE_DOM_TRAITS(uint8_t, u8)
+DEFINE_DOM_TRAITS(uint32_t, u32)
+DEFINE_DOM_TRAITS(uint64_t, u64)
 
-template<>
-struct dom_traits<uint64_t> {
-    using masked_type = masked_uint64_t;
-    static masked_type* dom_mask(const uint64_t value, const domain_t domain)
-        { return dom_mask_u64(value, domain); }
-    static uint64_t dom_unmask(masked_type* mv)
-        { return dom_unmask_u64(mv); }
-    static void dom_copy(masked_type* mv_src, masked_type* mv_tgt)
-        { dom_copy_u64(mv_src, mv_tgt); }
-    static void dom_refresh_mask(masked_type* ms)
-        { dom_refresh_mask_u64(ms); }
-};
+#undef DEFINE_DOM_TRAITS
+
 
 // Helper to create type-domain pairs
 template<typename T, domain_t Domain>
