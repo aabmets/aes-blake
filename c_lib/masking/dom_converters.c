@@ -84,6 +84,7 @@ void dom_conv_btoa_##FN_SUFFIX(masked_##TYPE* mv) {                             
     mv->shares[0] = z;   /* x + s1 + s2 (mod 2^n) */                            \
     mv->shares[1] = s1;                                                         \
     mv->shares[2] = s2;                                                         \
+    mv->domain = DOMAIN_ARITHMETIC;                                             \
 }                                                                               \
                                                                                 \
                                                                                 \
@@ -91,6 +92,7 @@ void dom_conv_atob_##FN_SUFFIX(masked_##TYPE* mv) {                             
     /* TODO: replace this naive insecure implementation */                      \
     TYPE unmasked_value = mv->shares[0] - mv->shares[1] - mv->shares[2];        \
     mv->shares[0] = unmasked_value ^ mv->shares[1] ^ mv->shares[2];             \
+    mv->domain = DOMAIN_BOOLEAN;                                                \
 }                                                                               \
 
 #endif //DOM_CONVERTER_FUNCTIONS
