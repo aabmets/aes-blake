@@ -48,7 +48,7 @@ masked_##TYPE* dom_mask_##FN_SUFFIX(                                            
     mv->domain = domain;                                                        \
                                                                                 \
     TYPE rval[N_SHARES - 1];                                                    \
-    csprng_read_array((uint8_t*)&rval, sizeof(rval));                           \
+    csprng_read_array((uint8_t*)rval, sizeof(rval));                            \
                                                                                 \
     if (domain == DOMAIN_BOOLEAN) {                                             \
         mv->shares[0] = value ^ rval[0] ^ rval[1];                              \
@@ -86,7 +86,7 @@ void dom_copy_##FN_SUFFIX(                                                      
                                                                                 \
 void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE* mv) {                          \
     TYPE rval[N_SHARES - 1];                                                    \
-    csprng_read_array((uint8_t*)&rval, sizeof(rval));                           \
+    csprng_read_array((uint8_t*)rval, sizeof(rval));                            \
                                                                                 \
     if (mv->domain == DOMAIN_BOOLEAN) {                                         \
         mv->shares[0] ^= rval[0] ^ rval[1];                                     \
