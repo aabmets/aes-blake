@@ -156,9 +156,10 @@ void dom_arith_add_##FN_SUFFIX(                                                 
 }                                                                               \
                                                                                 \
                                                                                 \
-/*   Implements the DOM-indep secure multiplication/AND   */                    \
-/*   of 2-nd order shares, as described by Gross et al.   */                    \
-/*   in “Domain-Oriented Masking” (CHES 2016).            */                    \
+/*   Implements the DOM-indep secure multiplication/AND of 2-nd order    */     \
+/*   shares, as described by Gross et al. in “Domain-Oriented Masking”   */     \
+/*   (CHES 2016). Output calculation has been adjusted, because this     */     \
+/*   library implements additive secret sharing.                         */     \
 void dom_arith_mult_##FN_SUFFIX(                                                \
         const masked_##TYPE* mv_a,                                              \
         const masked_##TYPE* mv_b,                                              \
@@ -176,20 +177,20 @@ void dom_arith_mult_##FN_SUFFIX(                                                
     const TYPE y0 = y[0], y1 = y[1], y2 = y[2];                                 \
                                                                                 \
     /* --- Resharing phase (second-order DOM-indep) --- */                      \
-    const TYPE p01_masked = x0 * y1 +  r01;                                     \
-    const TYPE p10_masked = x1 * y0 -  r01;                                     \
+    const TYPE p01 = x0 * y1 + r01;                                             \
+    const TYPE p10 = x1 * y0 - r01;                                             \
                                                                                 \
-    const TYPE p02_masked = x0 * y2 +  r02;                                     \
-    const TYPE p20_masked = x2 * y0 -  r02;                                     \
+    const TYPE p02 = x0 * y2 + r02;                                             \
+    const TYPE p20 = x2 * y0 - r02;                                             \
                                                                                 \
-    const TYPE p12_masked = x1 * y2 +  r12;                                     \
-    const TYPE p21_masked = x2 * y1 -  r12;                                     \
+    const TYPE p12 = x1 * y2 + r12;                                             \
+    const TYPE p21 = x2 * y1 - r12;                                             \
                                                                                 \
     /* --- Integration phase --- */                                             \
     TYPE* out = mv_out->shares;                                                 \
-    out[0] = x0 * y0 + p01_masked + p02_masked;                                 \
-    out[1] = x1 * y1 + p10_masked + p12_masked;                                 \
-    out[2] = x2 * y2 + p20_masked + p21_masked;                                 \
+    out[0] = x0 * y0 - p01 - p20;                                               \
+    out[1] = -x1 * y1 + p10 - p12;                                              \
+    out[2] = -x2 * y2 + p02 - p21;                                              \
                                                                                 \
     /* --- Compiler memory barrier --- */                                       \
     asm volatile ("" ::: "memory");                                             \
