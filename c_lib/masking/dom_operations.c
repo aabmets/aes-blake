@@ -93,9 +93,6 @@ void dom_bool_xor_##FN_SUFFIX(                                                  
     out[0] = x[0] ^ y[0];                                                       \
     out[1] = x[1] ^ y[1];                                                       \
     out[2] = x[2] ^ y[2];                                                       \
-                                                                                \
-    /* --- Compiler memory barrier --- */                                       \
-    asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
                                                                                 \
