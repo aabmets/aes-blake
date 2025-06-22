@@ -66,9 +66,9 @@ def test_uint8():
     assert (v1 >= v2) is False
     assert (v1 <= v2) is True
 
-    assert (v1 >> 1).value == 0x55  # rotate right by 1 bit
-    assert (v1 << 1).value == 0x55  # rotate left by 1 bit
-    assert (v1 >> 4).value == 0xAA  # switch halves
+    assert v1.rotr(1).value == 0x55  # rotate right by 1 bit
+    assert v1.rotl(1).value == 0x55  # rotate left by 1 bit
+    assert v1.rotr(4).value == 0xAA  # switch halves
 
 
 def test_uint32():
@@ -103,9 +103,9 @@ def test_uint32():
     assert (v1 >= v2) is False
     assert (v1 <= v2) is True
 
-    assert (v1 >> 1).value == 0xD55DE66E  # rotate right by 1 bit
-    assert (v1 << 1).value == 0x557799BB  # rotate left by 1 bit
-    assert (v1 >> 16).value == 0xCCDDAABB  # switch halves
+    assert v1.rotr(1).value == 0xD55DE66E  # rotate right by 1 bit
+    assert v1.rotl(1).value == 0x557799BB  # rotate left by 1 bit
+    assert v1.rotr(16).value == 0xCCDDAABB  # switch halves
 
 
 def test_uint64():
@@ -140,9 +140,9 @@ def test_uint64():
     assert (v1 >= v2) is False
     assert (v1 <= v2) is True
 
-    assert (v1 >> 1).value == 0xD55DE66EF77FD55D  # rotate right by 1 bit
-    assert (v1 << 1).value == 0x557799BBDDFF5577  # rotate left by 1 bit
-    assert (v1 >> 32).value == 0xEEFFAABBAABBCCDD  # switch halves
+    assert v1.rotr(1).value == 0xD55DE66EF77FD55D  # rotate right by 1 bit
+    assert v1.rotl(1).value == 0x557799BBDDFF5577  # rotate left by 1 bit
+    assert v1.rotr(32).value == 0xEEFFAABBAABBCCDD  # switch halves
 
 
 def test_to_bytes():

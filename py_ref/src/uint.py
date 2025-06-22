@@ -98,20 +98,10 @@ class BaseUint(ABC):
         return Uint8(-self.value & self.max_value())
 
     def __rshift__(self, other: int) -> BaseUint:
-        """Rotates bits out from right and back into left"""
-        other = other % self.bit_count()
-        rs = self._value >> other
-        ls = self._value << (self.bit_count() - other)
-        res = (rs | ls) & self.max_value()
-        return self.__class__(res)
+        return self.__class__(self._value >> other)
 
     def __lshift__(self, other: int) -> BaseUint:
-        """Rotates bits out from left and back into right"""
-        other = other % self.bit_count()
-        rs = self._value >> (self.bit_count() - other)
-        ls = self._value << other
-        res = (rs | ls) & self.max_value()
-        return self.__class__(res)
+        return self.__class__(self._value << other)
 
     def __index__(self) -> int:
         return self._value
@@ -121,6 +111,22 @@ class BaseUint(ABC):
 
     def __str__(self) -> str:
         return str(self._value)
+
+    def rotl(self, n: int) -> BaseUint:
+        """Rotates bits out from left and back into right"""
+        distance = n % self.bit_count()
+        rs = self._value >> (self.bit_count() - distance)
+        ls = self._value << distance
+        res = (rs | ls) & self.max_value()
+        return self.__class__(res)
+
+    def rotr(self, n: int) -> BaseUint:
+        """Rotates bits out from right and back into left"""
+        distance = n % self.bit_count()
+        rs = self._value >> distance
+        ls = self._value << (self.bit_count() - distance)
+        res = (rs | ls) & self.max_value()
+        return self.__class__(res)
 
 
 class Uint8(BaseUint):

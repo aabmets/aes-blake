@@ -165,14 +165,14 @@ class BaseBlake(ABC):
         vec, rots = self.state, self.rots()
         # first mixing
         vec[a] = vec[a] + vec[b] + mx
-        vec[d] = (vec[d] ^ vec[a]) >> rots[0]
+        vec[d] = (vec[d] ^ vec[a]).rotr(rots[0])
         vec[c] = vec[c] + vec[d]
-        vec[b] = (vec[b] ^ vec[c]) >> rots[1]
+        vec[b] = (vec[b] ^ vec[c]).rotr(rots[1])
         # second mixing
         vec[a] = vec[a] + vec[b] + my
-        vec[d] = (vec[d] ^ vec[a]) >> rots[2]
+        vec[d] = (vec[d] ^ vec[a]).rotr(rots[2])
         vec[c] = vec[c] + vec[d]
-        vec[b] = (vec[b] ^ vec[c]) >> rots[3]
+        vec[b] = (vec[b] ^ vec[c]).rotr(rots[3])
 
     @staticmethod
     def permute(m: list[BaseUint]) -> list[BaseUint]:

@@ -58,9 +58,9 @@ class AESBlock:
 
     @staticmethod
     def xtime(a: Uint8) -> Uint8:
-        x = (a.value << 1) & 0xFF
-        y = -(a.value >> 7) & 0x1B
-        return Uint8(x ^ y)
+        x = (a << 1) & 0xFF
+        y = -(a >> 7) & 0x1B
+        return x ^ y
 
     def mix_single_column(self, a: int, b: int, c: int, d: int) -> None:
         s = self.state
