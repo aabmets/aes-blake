@@ -103,6 +103,9 @@ class BaseUint(ABC):
     def __lshift__(self, other: int) -> BaseUint:
         return self.__class__(self._value << other)
 
+    def __invert__(self) -> BaseUint:
+        return self.__class__(~self._value & self.max_value())
+
     def __index__(self) -> int:
         return self._value
 
