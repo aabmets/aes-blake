@@ -21,6 +21,11 @@ __all__ = [
     "test_uint32",
     "test_uint64",
     "test_to_bytes",
+    "test_from_bytes",
+    "test_name_auto_allocation_and_uniqueness",
+    "test_name_suffix",
+    "test_name_release",
+    "test_name_exhaustion",
 ]
 
 
@@ -183,3 +188,44 @@ def test_from_bytes():
 
     uint = Uint64.from_bytes(b"\xaa\xbb\xcc\xdd\xee\xff\xaa\xbb", byteorder="little")
     assert uint.value == 0xBBAAFFEEDDCCBBAA
+
+
+def test_name_auto_allocation_and_uniqueness():
+    # Ensure registry is clean
+    BaseUint._used_names.clear()
+    u1 = Uint8()
+    u2 = Uint8()
+    u3 = Uint8()
+    # Names should be uppercase and unique
+    assert u1.name.isupper()
+    assert u2.name.isupper()
+    assert u3.name.isupper()
+    assert len({u1.name, u2.name, u3.name}) == 3
+
+
+def test_name_suffix():
+    BaseUint._used_names.clear()
+    u = Uint32(0, suffix='foo')
+    base = u.name.split('_')[0]
+    assert u.name == f"{base}_foo"
+    assert base in BaseUint._used_names
+
+
+def test_name_release():
+    BaseUint._used_names.clear()
+    u = Uint64()
+    base = u._name_base
+    assert base in BaseUint._used_names
+    u.__del__()
+    assert base not in BaseUint._used_names
+
+
+def test_name_exhaustion(monkeypatch):
+    import string
+    monkeypatch.setattr(string, 'ascii_uppercase', 'AB')
+    BaseUint._used_names.clear()
+    expected = ['A', 'B', 'AA', 'AB', 'BA', 'BB']
+    generated = [BaseUint._generate_name() for _ in expected]
+    assert generated == expected
+    with pytest.raises(RuntimeError):
+        BaseUint._generate_name()

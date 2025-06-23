@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+import string
+import itertools
 import operator as opr
 import typing as t
 from abc import ABC, abstractmethod
@@ -24,6 +26,8 @@ IterNum = t.Union[t.Iterable[t.SupportsIndex], t.SupportsBytes]
 
 
 class BaseUint(ABC):
+    _used_names: set[str] = set()
+
     @staticmethod
     @abstractmethod
     def bit_count() -> int: ...
@@ -36,6 +40,10 @@ class BaseUint(ABC):
     def value(self) -> int:
         return self._value
 
+    @property
+    def name(self) -> str:
+        return self._name
+
     @value.setter
     def value(self, value: int) -> None:
         if isinstance(value, BaseUint):
@@ -44,10 +52,28 @@ class BaseUint(ABC):
             raise TypeError(f"Cannot set {self.__class__.__name__} value from {value}")
         self._value = value & self.max_value()
 
-    def __init__(self, value: int | BaseUint = 0) -> None:
+    def __init__(self, value: int | BaseUint = 0, *, suffix: str = "") -> None:
+        self._name_base = self._name = self._generate_name()
+        if suffix:
+            self._name += '_' + suffix
         if isinstance(value, BaseUint):
             self.value = value.value
-        self.value = value
+        else:
+            self.value = value
+
+    @classmethod
+    def _generate_name(cls) -> str:
+        """Generates a unique variable name for the class."""
+        for letter in string.ascii_uppercase:
+            if letter not in cls._used_names:
+                cls._used_names.add(letter)
+                return letter
+        for combo in itertools.product(string.ascii_uppercase, repeat=2):
+            name = ''.join(combo)
+            if name not in cls._used_names:
+                cls._used_names.add(name)
+                return name
+        raise RuntimeError("Out of names")
 
     @classmethod
     def from_bytes(cls: t.Type[T], data: IterNum, *, byteorder: ByteOrder = "big") -> T:
@@ -117,6 +143,9 @@ class BaseUint(ABC):
 
     def __str__(self) -> str:
         return str(self._value)
+
+    def __del__(self):
+        BaseUint._used_names.discard(self._name_base)
 
     def rotl(self, n: int) -> BaseUint:
         """Rotates bits out from left and back into right"""
