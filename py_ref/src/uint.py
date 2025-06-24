@@ -29,6 +29,7 @@ IterNum = t.Union[t.Iterable[t.SupportsIndex], t.SupportsBytes]
 
 
 class BaseUint(ABC):
+    _exp_node: ExpressionNode | None = None
     _exp_nodes_enabled: bool = False
     _used_names: set[str] = set()
     _name_base = "unnamed"
@@ -60,8 +61,12 @@ class BaseUint(ABC):
 
     def __init__(self, value: int | BaseUint = 0, *, suffix: str = "") -> None:
         self.value = value.value if isinstance(value, BaseUint) else value
-        if self._exp_nodes_enabled:
+        if BaseUint._exp_nodes_enabled:
             self._name_base, self._name = self._generate_unique_name(suffix)
+            if isinstance(value, BaseUint) and hasattr(value, '_exp_node'):
+                self._exp_node = CopyNode(self._name, getattr(value, '_exp_node'))
+            else:
+                self._exp_node = VarNode(self._name, self._value)
 
     @classmethod
     def _generate_unique_name(cls, suffix: str = '') -> t.Tuple[str, str]:
@@ -87,80 +92,112 @@ class BaseUint(ABC):
     def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
         return self.value.to_bytes(self.bit_count() // 8, byteorder)
 
+    def to_dict(self) -> dict:
+        if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
+            return self._exp_node.to_dict()
+        return {"type": "const", "value": self._value}
+
     def _operate(self, operator: t.Callable, other: int | BaseUint, cls: t.Type = None) -> t.Any:
-        if isinstance(other, BaseUint):
-            other = other.value
+        other_val = other.value if isinstance(other, BaseUint) else other
         if cls is None:
             cls = self.__class__
-        value = operator(self._value, other)
-        return cls(value)
-
-    def __add__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.add, other)
-
-    def __sub__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.sub, other)
-
-    def __mul__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.mul, other)
-
-    def __pow__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.pow, other)
-
-    def __mod__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.mod, other)
-
-    def __and__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.and_, other)
-
-    def __or__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.or_, other)
-
-    def __xor__(self, other: int | BaseUint) -> BaseUint:
-        return self._operate(opr.xor, other)
-
-    def __eq__(self, other: int | BaseUint) -> bool:
-        return self._operate(opr.eq, other, bool)
-
-    def __ne__(self, other: int | BaseUint) -> bool:
-        return self._operate(opr.ne, other, bool)
-
-    def __gt__(self, other: int | BaseUint) -> bool:
-        return self._operate(opr.gt, other, bool)
-
-    def __lt__(self, other: int | BaseUint) -> bool:
-        return self._operate(opr.lt, other, bool)
-
-    def __ge__(self, other: int | BaseUint) -> bool:
-        return self._operate(opr.ge, other, bool)
-
-    def __le__(self, other: int | BaseUint) -> bool:
-        return self._operate(opr.le, other, bool)
-
-    def __neg__(self) -> BaseUint:
-        return self.__class__(-self.value & self.max_value())
-
-    def __rshift__(self, other: int) -> BaseUint:
-        return self.__class__(self._value >> other)
-
-    def __lshift__(self, other: int) -> BaseUint:
-        return self.__class__(self._value << other)
-
-    def __invert__(self) -> BaseUint:
-        return self.__class__(~self._value & self.max_value())
+        result_val = operator(self._value, other_val)
+        result = cls(result_val)
+        if BaseUint._exp_nodes_enabled:
+            left_node = getattr(self, '_exp_node', VarNode(self._name, self._value))
+            right_node = (
+                getattr(other, '_exp_node')
+                if isinstance(other, BaseUint)
+                else ConstNode(other_val)
+            )
+            result._exp_node = BinaryOpNode(result._name, operator, left_node, right_node)
+        return result
 
     def __index__(self) -> int:
         return self._value
-
     def __int__(self) -> int:
         return self._value
-
     def __str__(self) -> str:
         return str(self._value)
 
-    def __del__(self):
-        if name_base := getattr(self, "_name_base", False):
-            BaseUint._used_names.discard(name_base)
+    def __add__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.add, other)
+    def __sub__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.sub, other)
+    def __mul__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.mul, other)
+    def __pow__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.pow, other)
+    def __mod__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.mod, other)
+    def __and__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.and_, other)
+    def __or__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.or_, other)
+    def __xor__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.xor, other)
+
+    def __rshift__(self, other: int) -> BaseUint:
+        return self._shift_op_helper(opr.rshift, other)
+    def __lshift__(self, other: int) -> BaseUint:
+        return self._shift_op_helper(opr.lshift, other)
+    def __neg__(self) -> BaseUint:
+        return self._unary_op_helper(opr.neg, '-')
+    def __invert__(self) -> BaseUint:
+        return self._unary_op_helper(opr.invert, '~')
+
+    def __eq__(self, other: int | BaseUint) -> bool:
+        return self._operate(opr.eq, other, bool)
+    def __ne__(self, other: int | BaseUint) -> bool:
+        return self._operate(opr.ne, other, bool)
+    def __gt__(self, other: int | BaseUint) -> bool:
+        return self._operate(opr.gt, other, bool)
+    def __lt__(self, other: int | BaseUint) -> bool:
+        return self._operate(opr.lt, other, bool)
+    def __ge__(self, other: int | BaseUint) -> bool:
+        return self._operate(opr.ge, other, bool)
+    def __le__(self, other: int | BaseUint) -> bool:
+        return self._operate(opr.le, other, bool)
+
+    def _shift_op_helper(self, operator: t.Callable[[int, int], int], distance: int) -> BaseUint:
+        result_val = operator(self._value, distance)
+        result = self.__class__(result_val)
+        if BaseUint._exp_nodes_enabled:
+            exp_node = getattr(self, '_exp_node', ConstNode(self._value))
+            result._exp_node = BinaryOpNode(result._name, operator, exp_node, ConstNode(distance))
+        return result
+
+    def _unary_op_helper(self, operator: t.Callable[[int], int], symbol: str) -> BaseUint:
+        result_val = operator(self._value) & self.max_value()
+        result = self.__class__(result_val)
+        if BaseUint._exp_nodes_enabled:
+            exp_node = getattr(self, '_exp_node', ConstNode(self._value))
+            result._exp_node = UnaryOpNode(result._name, symbol, exp_node)
+        return result
+
+    def evaluate(self) -> int:
+        if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
+            return self._exp_node.evaluate()
+        raise RuntimeError(
+            "Cannot evaluate expression nodes outside "
+            "of equations_logger context manager"
+        )
+
+    def get_equation(self) -> str:
+        if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
+            return self._exp_node.equation_str()
+        raise RuntimeError(
+            "Cannot get algebraic equation outside "
+            "of equations_logger context manager"
+        )
+
+    def get_assignments(self) -> str:
+        if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
+            return self._exp_node.assignments_str()
+        raise RuntimeError(
+            "Cannot get variable assignments outside "
+            "of equations_logger context manager"
+        )
 
     def rotl(self, n: int) -> BaseUint:
         """Rotates bits out from left and back into right"""
@@ -186,6 +223,7 @@ class BaseUint(ABC):
         try:
             yield
         finally:
+            cls._used_names.clear()
             cls._exp_nodes_enabled = old
 
 

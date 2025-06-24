@@ -9,12 +9,13 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
+import re
 import typing as t
 
+import random
 import pytest
 
 from src.uint import BaseUint, Uint8, Uint32, Uint64
-from src.exp_node import *
 
 __all__ = [
     "test_uint_inheritance",
@@ -23,9 +24,10 @@ __all__ = [
     "test_uint64",
     "test_to_bytes",
     "test_from_bytes",
-    "test_name_auto_allocation_and_uniqueness",
+    "test_name_allocation",
     "test_name_suffix",
-    "test_name_release"
+    "test_bitwise_sum_identity",
+    "test_equation_and_assignments"
 ]
 
 
@@ -190,7 +192,7 @@ def test_from_bytes():
     assert uint.value == 0xBBAAFFEEDDCCBBAA
 
 
-def test_name_auto_allocation_and_uniqueness():
+def test_name_allocation():
     with BaseUint.equations_logger():
         BaseUint._used_names.clear()
         u1 = Uint8()
@@ -213,11 +215,62 @@ def test_name_suffix():
             assert base in BaseUint._used_names
 
 
-def test_name_release():
+@pytest.mark.parametrize("cls", [Uint8, Uint32, Uint64])
+def test_bitwise_sum_identity(cls):
+    max_val = cls.max_value()
+
     with BaseUint.equations_logger():
-        BaseUint._used_names.clear()
-        for uint_type in [Uint8, Uint32, Uint64]:
-            u = uint_type()
-            assert u.name in BaseUint._used_names
-            u.__del__()
-            assert u.name not in BaseUint._used_names
+        # edge cases: zero, one, midpoint, max-1, max
+        fixed = [0, 1, max_val // 2, max_val - 1, max_val]
+        for a in fixed:
+            for b in fixed:
+                uint_a = cls(a)
+                uint_b = cls(b)
+                left = (uint_a + uint_b).evaluate()
+                right = ((uint_a ^ uint_b) + ((uint_a & uint_b) << 1)).evaluate()
+                assert left == right, (
+                    f"{cls.__name__} failed for A={a:#x}, B={b:#x}: "
+                    f"(A+B).evaluate()={left:#x} != "
+                    f"((A^B)+((A&B)<<1)).evaluate()={right:#x}"
+                )
+
+        # 100 random pairs
+        random.seed(0)
+        for _ in range(100):
+            a = random.randint(0, max_val)
+            b = random.randint(0, max_val)
+            uint_a = cls(a)
+            uint_b = cls(b)
+            left = (uint_a + uint_b).evaluate()
+            right = ((uint_a ^ uint_b) + ((uint_a & uint_b) << 1)).evaluate()
+            assert left == right, (
+                f"{cls.__name__} failed for A={a:#x}, B={b:#x}: "
+                f"{left:#x} != {right:#x}"
+            )
+
+
+def test_equation_and_assignments():
+    with BaseUint.equations_logger():
+        a = Uint32(123)
+        b = Uint32(456)
+
+        left = a + b
+        right = (a ^ b) + ((a & b) << 1)
+
+        l_as = left.get_assignments()
+        l_eq = left.get_equation()
+
+        pattern = r"[A-Z] = 579, [A-Z] = 123, [A-Z] = 456"
+        assert re.match(pattern, l_as) is not None
+
+        pattern = r"[A-Z] = [A-Z] \+ [A-Z]"
+        assert re.match(pattern, l_eq) is not None
+
+        r_as = right.get_assignments()
+        r_eq = right.get_equation()
+
+        pattern = r"[A-Z] = 579, [A-Z] = 123, [A-Z] = 456"
+        assert re.match(pattern, r_as) is not None
+
+        pattern = r"[A-Z] = \([A-Z] \^ [A-Z]\) \+ \(\([A-Z] & [A-Z]\) << 1\)"
+        assert re.match(pattern, r_eq) is not None

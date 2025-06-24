@@ -256,7 +256,7 @@ def test_assignments_str_var_and_unary():
     a = VarNode(name='A', value=7)
     neg = UnaryOpNode(name='Neg', op='-', operand=a)
     # leaves=A, then name=Neg
-    assert neg.assignments_str() == "A = 7, Neg = -7"
+    assert neg.assignments_str() == f"Neg = {neg.evaluate()}, A = 7"
 
 
 def test_assignments_str_complex_sum():
@@ -269,5 +269,5 @@ def test_assignments_str_complex_sum():
     shl = BinaryOpNode(name='Shl', operator_fn=opr.lshift, left=and_, right=ConstNode(1))
     summ = BinaryOpNode(name='Sum', operator_fn=opr.add, left=xor, right=shl)
 
-    expected = f"A = 123, B = 456, Sum = {summ.evaluate()}"
+    expected = f"Sum = {summ.evaluate()}, A = 123, B = 456"
     assert summ.assignments_str() == expected

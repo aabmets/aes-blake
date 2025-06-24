@@ -60,10 +60,12 @@ class ExpressionNode(ABC):
         return leaves
 
     def assignments_str(self) -> str:
-        leaves = self.get_leaf_assignments()
-        parts = [f"{name} = {value}" for name, value in leaves.items()]
+        parts: list[str] = []
         if hasattr(self, 'name'):
             parts.append(f"{self.name} = {self.evaluate()}")
+        leaves = self.get_leaf_assignments()
+        for name, value in leaves.items():
+            parts.append(f"{name} = {value}")
         return ", ".join(parts)
 
 
