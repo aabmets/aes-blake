@@ -11,11 +11,14 @@
 
 from __future__ import annotations
 
+import secrets
 import string
 import itertools
 import operator as opr
 import typing as t
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from src.exp_node import *
 
 __all__ = ["IterNum", "BaseUint", "Uint8", "Uint32", "Uint64"]
 
@@ -26,7 +29,10 @@ IterNum = t.Union[t.Iterable[t.SupportsIndex], t.SupportsBytes]
 
 
 class BaseUint(ABC):
+    _exp_nodes_enabled: bool = False
     _used_names: set[str] = set()
+    _name_base = "unnamed"
+    _name = "unnamed"
 
     @staticmethod
     @abstractmethod
@@ -53,26 +59,25 @@ class BaseUint(ABC):
         self._value = value & self.max_value()
 
     def __init__(self, value: int | BaseUint = 0, *, suffix: str = "") -> None:
-        self._name_base = self._name = self._generate_name()
-        if suffix:
-            self._name += '_' + suffix
-        if isinstance(value, BaseUint):
-            self.value = value.value
-        else:
-            self.value = value
+        self.value = value.value if isinstance(value, BaseUint) else value
+        if self._exp_nodes_enabled:
+            self._name_base, self._name = self._generate_unique_name(suffix)
 
     @classmethod
-    def _generate_name(cls) -> str:
+    def _generate_unique_name(cls, suffix: str = '') -> t.Tuple[str, str]:
         """Generates a unique variable name for the class."""
-        for letter in string.ascii_uppercase:
-            if letter not in cls._used_names:
-                cls._used_names.add(letter)
-                return letter
-        for combo in itertools.product(string.ascii_uppercase, repeat=2):
-            name = ''.join(combo)
-            if name not in cls._used_names:
-                cls._used_names.add(name)
-                return name
+        chars = string.ascii_uppercase
+        split_point = secrets.randbelow(len(chars))
+        shuffled_chars = chars[split_point:] + chars[:split_point]
+
+        for repeat in range(1, 4):
+            for combo in itertools.product(shuffled_chars, repeat=repeat):
+                name_base = name = ''.join(combo)
+                if name_base not in cls._used_names:
+                    cls._used_names.add(name_base)
+                    if suffix:
+                        name += '_' + suffix
+                    return name_base, name
         raise RuntimeError("Out of names")
 
     @classmethod
@@ -95,6 +100,15 @@ class BaseUint(ABC):
 
     def __sub__(self, other: int | BaseUint) -> BaseUint:
         return self._operate(opr.sub, other)
+
+    def __mul__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.mul, other)
+
+    def __pow__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.pow, other)
+
+    def __mod__(self, other: int | BaseUint) -> BaseUint:
+        return self._operate(opr.mod, other)
 
     def __and__(self, other: int | BaseUint) -> BaseUint:
         return self._operate(opr.and_, other)
@@ -124,7 +138,7 @@ class BaseUint(ABC):
         return self._operate(opr.le, other, bool)
 
     def __neg__(self) -> BaseUint:
-        return Uint8(-self.value & self.max_value())
+        return self.__class__(-self.value & self.max_value())
 
     def __rshift__(self, other: int) -> BaseUint:
         return self.__class__(self._value >> other)
@@ -145,7 +159,8 @@ class BaseUint(ABC):
         return str(self._value)
 
     def __del__(self):
-        BaseUint._used_names.discard(self._name_base)
+        if name_base := getattr(self, "_name_base", False):
+            BaseUint._used_names.discard(name_base)
 
     def rotl(self, n: int) -> BaseUint:
         """Rotates bits out from left and back into right"""
@@ -162,6 +177,16 @@ class BaseUint(ABC):
         ls = self._value << (self.bit_count() - distance)
         res = (rs | ls) & self.max_value()
         return self.__class__(res)
+
+    @classmethod
+    @contextmanager
+    def equations_logger(cls):
+        old = cls._exp_nodes_enabled
+        cls._exp_nodes_enabled = True
+        try:
+            yield
+        finally:
+            cls._exp_nodes_enabled = old
 
 
 class Uint8(BaseUint):

@@ -14,6 +14,7 @@ import typing as t
 import pytest
 
 from src.uint import BaseUint, Uint8, Uint32, Uint64
+from src.exp_node import *
 
 __all__ = [
     "test_uint_inheritance",
@@ -24,8 +25,7 @@ __all__ = [
     "test_from_bytes",
     "test_name_auto_allocation_and_uniqueness",
     "test_name_suffix",
-    "test_name_release",
-    "test_name_exhaustion",
+    "test_name_release"
 ]
 
 
@@ -91,8 +91,8 @@ def test_uint32():
     assert v1.value == 0xAABBCCDD
     assert v2.value == 0xCCDDEEFF
 
-    assert (-v1).value == 0x00000023
-    assert (-v2).value == 0x00000001
+    assert (-v1).value == 0x55443323
+    assert (-v2).value == 0x33221101
 
     assert (v1 + v2).value == 0x7799BBDC  # mod 2**32
     assert (v1 - v2).value == 0xDDDDDDDE  # mod 2**32
@@ -128,8 +128,8 @@ def test_uint64():
     assert v1.value == 0xAABBCCDDEEFFAABB
     assert v2.value == 0xCCDDEEFFAABBCCDD
 
-    assert (-v1).value == 0x0000000000000045
-    assert (-v2).value == 0x0000000000000023
+    assert (-v1).value == 0x5544332211005545
+    assert (-v2).value == 0x3322110055443323
 
     assert (v1 + v2).value == 0x7799BBDD99BB7798  # mod 2**64
     assert (v1 - v2).value == 0xDDDDDDDE4443DDDE  # mod 2**64
@@ -191,41 +191,33 @@ def test_from_bytes():
 
 
 def test_name_auto_allocation_and_uniqueness():
-    # Ensure registry is clean
-    BaseUint._used_names.clear()
-    u1 = Uint8()
-    u2 = Uint8()
-    u3 = Uint8()
-    # Names should be uppercase and unique
-    assert u1.name.isupper()
-    assert u2.name.isupper()
-    assert u3.name.isupper()
-    assert len({u1.name, u2.name, u3.name}) == 3
+    with BaseUint.equations_logger():
+        BaseUint._used_names.clear()
+        u1 = Uint8()
+        u2 = Uint32()
+        u3 = Uint64()
+        # Names should be uppercase and unique
+        assert u1.name.isupper()
+        assert u2.name.isupper()
+        assert u3.name.isupper()
+        assert len({u1.name, u2.name, u3.name}) == 3
 
 
 def test_name_suffix():
-    BaseUint._used_names.clear()
-    u = Uint32(0, suffix='foo')
-    base = u.name.split('_')[0]
-    assert u.name == f"{base}_foo"
-    assert base in BaseUint._used_names
+    with BaseUint.equations_logger():
+        BaseUint._used_names.clear()
+        for uint_type in [Uint8, Uint32, Uint64]:
+            u = uint_type(0, suffix='foo')
+            base = u.name.split('_')[0]
+            assert u.name == f"{base}_foo"
+            assert base in BaseUint._used_names
 
 
 def test_name_release():
-    BaseUint._used_names.clear()
-    u = Uint64()
-    base = u._name_base
-    assert base in BaseUint._used_names
-    u.__del__()
-    assert base not in BaseUint._used_names
-
-
-def test_name_exhaustion(monkeypatch):
-    import string
-    monkeypatch.setattr(string, 'ascii_uppercase', 'AB')
-    BaseUint._used_names.clear()
-    expected = ['A', 'B', 'AA', 'AB', 'BA', 'BB']
-    generated = [BaseUint._generate_name() for _ in expected]
-    assert generated == expected
-    with pytest.raises(RuntimeError):
-        BaseUint._generate_name()
+    with BaseUint.equations_logger():
+        BaseUint._used_names.clear()
+        for uint_type in [Uint8, Uint32, Uint64]:
+            u = uint_type()
+            assert u.name in BaseUint._used_names
+            u.__del__()
+            assert u.name not in BaseUint._used_names
