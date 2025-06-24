@@ -103,7 +103,7 @@ class BaseUint(ABC):
             cls = self.__class__
         result_val = operator(self._value, other_val)
         result = cls(result_val)
-        if BaseUint._exp_nodes_enabled:
+        if BaseUint._exp_nodes_enabled and isinstance(result, BaseUint):
             left_node = getattr(self, '_exp_node', VarNode(self._name, self._value))
             right_node = (
                 getattr(other, '_exp_node')
@@ -137,14 +137,30 @@ class BaseUint(ABC):
     def __xor__(self, other: int | BaseUint) -> BaseUint:
         return self._operate(opr.xor, other)
 
-    def __rshift__(self, other: int) -> BaseUint:
-        return self._shift_op_helper(opr.rshift, other)
-    def __lshift__(self, other: int) -> BaseUint:
-        return self._shift_op_helper(opr.lshift, other)
     def __neg__(self) -> BaseUint:
         return self._unary_op_helper(opr.neg, '-')
     def __invert__(self) -> BaseUint:
         return self._unary_op_helper(opr.invert, '~')
+    def __rshift__(self, other: int) -> BaseUint:
+        return self._shift_op_helper(opr.rshift, other)
+    def __lshift__(self, other: int) -> BaseUint:
+        return self._shift_op_helper(opr.lshift, other)
+
+    def rotl(self, n: int) -> BaseUint:
+        """Rotates bits out from the left and back into the right"""
+        distance = n % self.bit_count()
+        rs = self._value >> (self.bit_count() - distance)
+        ls = self._value << distance
+        res = (rs | ls) & self.max_value()
+        return self.__class__(res)
+
+    def rotr(self, n: int) -> BaseUint:
+        """Rotates bits out from the right and back into the left"""
+        distance = n % self.bit_count()
+        rs = self._value >> distance
+        ls = self._value << (self.bit_count() - distance)
+        res = (rs | ls) & self.max_value()
+        return self.__class__(res)
 
     def __eq__(self, other: int | BaseUint) -> bool:
         return self._operate(opr.eq, other, bool)
@@ -199,21 +215,13 @@ class BaseUint(ABC):
             "of equations_logger context manager"
         )
 
-    def rotl(self, n: int) -> BaseUint:
-        """Rotates bits out from left and back into right"""
-        distance = n % self.bit_count()
-        rs = self._value >> (self.bit_count() - distance)
-        ls = self._value << distance
-        res = (rs | ls) & self.max_value()
-        return self.__class__(res)
-
-    def rotr(self, n: int) -> BaseUint:
-        """Rotates bits out from right and back into left"""
-        distance = n % self.bit_count()
-        rs = self._value >> distance
-        ls = self._value << (self.bit_count() - distance)
-        res = (rs | ls) & self.max_value()
-        return self.__class__(res)
+    def debug_math(self, location: str) -> None:
+        if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
+            print()
+            print('-' * 80)
+            print(f"Location:".ljust(13, ' '), location)
+            print(f"Assignments:".ljust(13, ' '), self.get_assignments())
+            print(f"Equation:".ljust(13, ' '), self.get_equation())
 
     @classmethod
     @contextmanager

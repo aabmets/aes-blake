@@ -17,7 +17,6 @@ from enum import Enum
 from abc import ABC, abstractmethod
 
 from src import utils
-from src.aes_sbox import SBox
 from src.uint import BaseUint, Uint8, Uint32, Uint64
 
 __all__ = ["RoundKeys", "KDFDomain", "BaseBlake", "Blake32", "Blake64"]
