@@ -164,7 +164,7 @@ def test_str_binary_op_node_function():
     right = ConstNode(45)
     node = BinaryOpNode(name='B', operator_fn=opr.xor, left=left, right=right)
     assert str(node) == "(A ^ 45)"
-    assert node.to_str() == "B = A ^ 45"
+    assert node.equation_str() == "B = A ^ 45"
 
 
 def test_str_binary_op_node_string():
@@ -172,7 +172,7 @@ def test_str_binary_op_node_string():
     right = ConstNode(3)
     node = BinaryOpNode(name='Shl', operator_fn=opr.lshift, left=left, right=right)
     assert str(node) == "(2 << 3)"
-    assert node.to_str() == "Shl = 2 << 3"
+    assert node.equation_str() == "Shl = 2 << 3"
 
 
 def test_str_complex_expression():
@@ -183,17 +183,17 @@ def test_str_complex_expression():
     # (A ^ B)
     xor_node = BinaryOpNode(name='Xor', operator_fn=opr.xor, left=a, right=b)
     assert str(xor_node) == "(A ^ B)"
-    assert xor_node.to_str() == "Xor = A ^ B"
+    assert xor_node.equation_str() == "Xor = A ^ B"
 
     # (A & B)
     and_node = BinaryOpNode(name='And', operator_fn=opr.and_, left=a, right=b)
     assert str(and_node) == "(A & B)"
-    assert and_node.to_str() == "And = A & B"
+    assert and_node.equation_str() == "And = A & B"
 
     # ((A & B) << 1)
     shl_node = BinaryOpNode(name='Shl', operator_fn=opr.lshift, left=and_node, right=ConstNode(1))
     assert str(shl_node) == "((A & B) << 1)"
-    assert shl_node.to_str() == "Shl = (A & B) << 1"
+    assert shl_node.equation_str() == "Shl = (A & B) << 1"
 
     # ((A ^ B) + ((A & B) << 1))
     sum_node = BinaryOpNode(
@@ -203,7 +203,7 @@ def test_str_complex_expression():
         right=shl_node
     )
     assert str(sum_node) == "((A ^ B) + ((A & B) << 1))"
-    assert sum_node.to_str() == "Sum = (A ^ B) + ((A & B) << 1)"
+    assert sum_node.equation_str() == "Sum = (A ^ B) + ((A & B) << 1)"
 
 
 def test_get_leaf_assignments_simple():

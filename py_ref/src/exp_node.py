@@ -66,6 +66,15 @@ class ExpressionNode(ABC):
             parts.append(f"{self.name} = {self.evaluate()}")
         return ", ".join(parts)
 
+
+    def equation_str(self) -> str:
+        if hasattr(self, 'name'):
+            exp = str(self)
+            exp = exp[1:] if exp.startswith('(') else exp
+            exp = exp[:-1] if exp.endswith(')') else exp
+            return f"{self.name} = {exp}"
+        return ''
+
     def _collect_assignments(self, mapping: dict[str, int]) -> None:
         raise NotImplementedError
 
@@ -113,7 +122,6 @@ class VarNode(ExpressionNode):
         }
 
     def _collect_assignments(self, mapping: dict[str, int]) -> None:
-        # Leaf variable: record its name and value
         mapping[self.name] = self.value
 
     def __str__(self) -> str:
@@ -136,7 +144,6 @@ class CopyNode(ExpressionNode):
         }
 
     def _collect_assignments(self, mapping: dict[str, int]) -> None:
-        # Collect nested assignments then this copy
         self.node._collect_assignments(mapping)
         mapping[self.name] = self.evaluate()
 
@@ -145,7 +152,9 @@ class CopyNode(ExpressionNode):
 
 
 class UnaryOpNode(ExpressionNode):
-    def __init__(self, name: str, op: t.Literal['~', '-'], operand: ExpressionNode) -> None:
+    # For negation (-) or binary inverse (~)
+
+    def __init__(self, name: str, op: str, operand: ExpressionNode) -> None:
         self.name = name
         self.op = op
         self.operand = operand
@@ -220,10 +229,6 @@ class BinaryOpNode(ExpressionNode):
             "left": self.left.to_dict(),
             "right": self.right.to_dict(),
         }
-
-    def to_str(self) -> str:
-        exp = str(self)[1:-1]  # Strip enclosing parens
-        return f"{self.name} = {exp}"
 
     def _collect_assignments(self, mapping: dict[str, int]) -> None:
         self.left._collect_assignments(mapping)
