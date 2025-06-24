@@ -178,6 +178,9 @@ class BinaryOpNode(ExpressionNode):
     _op_symbols: dict[t.Callable, str] = {
         opr.add: '+',
         opr.sub: '-',
+        opr.mul: '*',
+        opr.pow: '**',
+        opr.mod: '%',
         opr.and_: '&',
         opr.or_: '|',
         opr.xor: '^',
