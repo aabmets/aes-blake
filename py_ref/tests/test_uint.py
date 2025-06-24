@@ -193,7 +193,7 @@ def test_from_bytes():
 
 
 def test_name_allocation():
-    with BaseUint.equations_logger():
+    with BaseUint.math_debugger():
         BaseUint._used_names.clear()
         u1 = Uint8()
         u2 = Uint32()
@@ -206,7 +206,7 @@ def test_name_allocation():
 
 
 def test_name_suffix():
-    with BaseUint.equations_logger():
+    with BaseUint.math_debugger():
         BaseUint._used_names.clear()
         for uint_type in [Uint8, Uint32, Uint64]:
             u = uint_type(0, suffix='foo')
@@ -219,7 +219,7 @@ def test_name_suffix():
 def test_bitwise_sum_identity(cls):
     max_val = cls.max_value()
 
-    with BaseUint.equations_logger():
+    with BaseUint.math_debugger():
         # edge cases: zero, one, midpoint, max-1, max
         fixed = [0, 1, max_val // 2, max_val - 1, max_val]
         for a in fixed:
@@ -250,7 +250,7 @@ def test_bitwise_sum_identity(cls):
 
 
 def test_equation_and_assignments():
-    with BaseUint.equations_logger():
+    with BaseUint.math_debugger():
         a = Uint32(123)
         b = Uint32(456)
 

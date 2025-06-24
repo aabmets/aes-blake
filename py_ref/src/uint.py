@@ -225,7 +225,7 @@ class BaseUint(ABC):
 
     @classmethod
     @contextmanager
-    def equations_logger(cls):
+    def math_debugger(cls):
         old = cls._exp_nodes_enabled
         cls._exp_nodes_enabled = True
         try:
