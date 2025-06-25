@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import secrets
 import string
 import itertools
 import operator as opr
@@ -71,12 +70,8 @@ class BaseUint(ABC):
     @classmethod
     def _generate_unique_name(cls, suffix: str = '') -> t.Tuple[str, str]:
         """Generates a unique variable name for the class."""
-        chars = string.ascii_uppercase
-        split_point = secrets.randbelow(len(chars))
-        shuffled_chars = chars[split_point:] + chars[:split_point]
-
         for repeat in range(1, 4):
-            for combo in itertools.product(shuffled_chars, repeat=repeat):
+            for combo in itertools.product(string.ascii_uppercase, repeat=repeat):
                 name_base = name = ''.join(combo)
                 if name_base not in cls._used_names:
                     cls._used_names.add(name_base)
