@@ -33,6 +33,10 @@ class BaseAESBlake(ABC):
 
     @staticmethod
     @abstractmethod
+    def aes_class() -> t.Type[AESBlock]: ...
+
+    @staticmethod
+    @abstractmethod
     def ex_cols_pattern(inverse: bool = False) -> tuple[list[int], ...]: ...
 
     def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
@@ -103,7 +107,7 @@ class BaseAESBlake(ABC):
 
     def create_aes_blocks(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
         keys = self.keygen.derive_keys(self.key_count, self.block_counter, domain)
-        return [AESBlock(chunk, k) for chunk, k in zip(chunks, keys)]
+        return [self.aes_class()(chunk, k) for chunk, k in zip(chunks, keys)]
 
     def exchange_columns(self, aes_blocks: list[AESBlock], inverse: bool = False) -> None:
         clones = [block.clone() for block in aes_blocks]
@@ -139,6 +143,10 @@ class AESBlake256(BaseAESBlake):
         return Blake32
 
     @staticmethod
+    def aes_class() -> t.Type[AESBlock]:
+        return AESBlock
+
+    @staticmethod
     def ex_cols_pattern(inverse: bool = False) -> tuple[list[int], ...]:
         enc = [0, 1, 0, 1], [1, 0, 1, 0]
         dec = [0, 1, 0, 1], [1, 0, 1, 0]
@@ -149,6 +157,10 @@ class AESBlake512(BaseAESBlake):
     @staticmethod
     def keygen_class() -> t.Type[Blake64]:
         return Blake64
+
+    @staticmethod
+    def aes_class() -> t.Type[AESBlock]:
+        return AESBlock
 
     @staticmethod
     def ex_cols_pattern(inverse: bool = False) -> tuple[list[int], ...]:
