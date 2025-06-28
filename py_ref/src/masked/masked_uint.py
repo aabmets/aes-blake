@@ -144,6 +144,18 @@ class BaseMaskedUint(ABC):
         clone.masks = out[1:]
         return clone
 
+    def __or__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        self.validate_operands(other, Domain.BOOLEAN, "__or__")
+        clone = self & other
+        clone_shares = [clone.masked_value, *clone.masks]
+        other_shares = [other.masked_value, *other.masks]
+        self_shares = [self.masked_value, *self.masks]
+        for i in range(self.share_count):
+            clone_shares[i] ^= other_shares[i] ^ self_shares[i]
+        clone.masked_value = clone_shares[0]
+        clone.masks = clone_shares[1:]
+        return clone
+
 
 class MaskedUint8(BaseMaskedUint):
     @staticmethod
