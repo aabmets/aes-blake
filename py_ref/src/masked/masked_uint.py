@@ -144,11 +144,16 @@ class BaseMaskedUint(ABC):
         if distance and distance < 1:
             raise ValueError("Distance must be greater than or equal to one")
 
-    def __and__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        self.validate_binary_operands(other, Domain.BOOLEAN, "__and__")
+    def _and_mul_gadget(self, other: BaseMaskedUint, operator: t.Callable, domain: Domain) -> BaseMaskedUint:
+        """
+        Performs boolean multiplication/AND logic on two masked shares using the DOM-independent
+        secure gadget as described by Gross et al. in “Domain-Oriented Masking” (CHES 2016).
+        Link: https://eprint.iacr.org/2016/486.pdf
+        """
+        self.validate_binary_operands(other, domain, operator.__name__)
 
         x, y = self.shares, other.shares
-        out = [x[i] & y[i] for i in range(self.share_count)]
+        out = [operator(x[i], y[i]) for i in range(self.share_count)]
 
         pair_count = self.share_count * self.order // 2
         rand_vals = iter(self.get_random_uints(pair_count))
@@ -156,12 +161,20 @@ class BaseMaskedUint(ABC):
         for i in range(self.order):
             for j in range(i + 1, self.share_count):
                 rand = next(rand_vals)
-                p_ij = (x[i] & y[j]) ^ rand
-                p_ji = (x[j] & y[i]) ^ rand
-                out[i] ^= p_ij
-                out[j] ^= p_ji
+                o_ji = operator(x[j], y[i])
+                o_ij = operator(x[i], y[j])
+                p_ji = self.masking_fn(o_ji, rand)
+                p_ij = self.unmasking_fn(o_ij, rand)
+                out[i] = self.unmasking_fn(out[i], p_ij)
+                out[j] = self.unmasking_fn(out[j], p_ji)
 
         return self.create(out)
+
+    def __and__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        return self._and_mul_gadget(other, opr.and_, Domain.BOOLEAN)
+
+    def __mul__(self, other: "BaseMaskedUint") -> "BaseMaskedUint":
+        return self._and_mul_gadget(other, opr.mul, Domain.ARITHMETIC)
 
     def __or__(self, other: BaseMaskedUint) -> BaseMaskedUint:
         self.validate_binary_operands(other, Domain.BOOLEAN, "__or__")

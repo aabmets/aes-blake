@@ -144,8 +144,17 @@ def test_boolean_xor(cls, order):
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_boolean_xor(cls, order):
+def test_arithmetic_addition(cls, order):
     values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
     expected = values[0] - values[1] - values[2]
     result = mvs[0] - mvs[1] - mvs[2]
+    assert expected == result.unmask()
+
+
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_arithmetic_multiplication(cls, order):
+    values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
+    expected = values[0] * values[1] * values[2]
+    result = mvs[0] * mvs[1] * mvs[2]
     assert expected == result.unmask()
