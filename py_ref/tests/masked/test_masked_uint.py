@@ -9,9 +9,11 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import secrets
+import typing as t
+import pytest
 import operator as opr
 from src.masked.masked_uint import *
+from tests.masked.conftest import *
 
 __all__ = [
     "test_masking_unmasking",
@@ -19,54 +21,38 @@ __all__ = [
 ]
 
 
-def test_masking_unmasking():
-    for masked_uint_cls in [MaskedUint8, MaskedUint32, MaskedUint64]:
-        for domain in [Domain.BOOLEAN, Domain.ARITHMETIC]:
-            for order in range(1, 11):
-                bit_count = masked_uint_cls.uint_class().bit_count()
-                value = secrets.randbits(bit_count)
-                mv = masked_uint_cls(value, order, domain)
+@pytest.mark.parametrize("masked_uint_cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("domain", [Domain.BOOLEAN, Domain.ARITHMETIC])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_masking_unmasking(masked_uint_cls, domain, order):
+    value, mv = get_randomly_masked_uint(masked_uint_cls, domain, order)
 
-                assert len(mv.masks) == order
+    def assert_unmasking():
+        assert len(mv.masks) == order
+        unmasking_fn = opr.xor if domain == Domain.BOOLEAN else opr.add
+        unmasked_value = mv.masked_value
+        for mask in mv.masks:
+            unmasked_value = unmasking_fn(unmasked_value, mask)
+        assert value == unmasked_value == mv.unmask()
 
-                mv.refresh_masks()
-
-                unmasked_value = mv.masked_value
-                if domain == Domain.BOOLEAN:
-                    for mask in mv.masks:
-                        unmasked_value ^= mask
-                else:  # Domain.ARITHMETIC
-                    for mask in mv.masks:
-                        unmasked_value += mask
-
-                assert value == unmasked_value == mv.unmask()
+    assert_unmasking()
+    mv.refresh_masks()
+    assert_unmasking()
 
 
-def test_btoa_domain_conversion():
-    for masked_uint_cls in [MaskedUint8, MaskedUint32, MaskedUint64]:
-        for order in range(1, 11):
-            bit_count = masked_uint_cls.uint_class().bit_count()
-            value = secrets.randbits(bit_count)
-            mv = masked_uint_cls(value, order, Domain.BOOLEAN)
+@pytest.mark.parametrize("masked_uint_cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_btoa_domain_conversion(masked_uint_cls, order):
+    value, mv = get_randomly_masked_uint(masked_uint_cls, Domain.BOOLEAN, order)
 
-            assert mv.domain == Domain.BOOLEAN
-            assert mv.masking_fn == opr.xor
-            assert mv.unmasking_fn == opr.xor
+    def assert_unmasking(domain: Domain, unmasking_fn: t.Callable):
+        assert mv.domain == domain
+        assert mv.unmasking_fn == unmasking_fn
+        unmasked_value = mv.masked_value
+        for mask in mv.masks:
+            unmasked_value = unmasking_fn(unmasked_value, mask)
+        assert value == unmasked_value == mv.unmask()
 
-            unmasked_value = mv.masked_value
-            for mask in mv.masks:
-                unmasked_value ^= mask
-
-            assert value == unmasked_value == mv.unmask()
-
-            mv.btoa()
-
-            assert mv.domain == Domain.ARITHMETIC
-            assert mv.masking_fn == opr.sub
-            assert mv.unmasking_fn == opr.add
-
-            unmasked_value = mv.masked_value
-            for mask in mv.masks:
-                unmasked_value += mask
-
-            assert value == unmasked_value == mv.unmask()
+    assert_unmasking(Domain.BOOLEAN, opr.xor)
+    mv.btoa()
+    assert_unmasking(Domain.ARITHMETIC, opr.add)
