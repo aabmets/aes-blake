@@ -14,6 +14,7 @@ from __future__ import annotations
 import secrets
 import typing as t
 import operator as opr
+from copy import deepcopy
 from abc import ABC
 from enum import Enum
 from src.uint import *
@@ -35,8 +36,8 @@ class BaseMaskedUint(ABC):
         assert order > 0, "Order must be greater than zero"
         assert domain in Domain, "Domain must be one of the defined domains"
 
-        self.domain = domain
         self.order = order
+        self.domain = domain
         self.share_count = order + 1
         self.masking_fn = opr.xor if domain == Domain.BOOLEAN else opr.sub
         self.unmasking_fn = opr.xor if domain == Domain.BOOLEAN else opr.add
@@ -109,6 +110,39 @@ class BaseMaskedUint(ABC):
         self.domain = Domain.ARITHMETIC
         self.masking_fn = opr.sub
         self.unmasking_fn = opr.add
+
+    def validate_operands(self, other: BaseMaskedUint, domain: Domain, operation: str) -> None:
+        if not isinstance(other, BaseMaskedUint):
+            raise TypeError("Operands must be instances of BaseMaskedUint")
+        if self.domain != domain or other.domain != domain:
+            raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
+        if self.order != other.order:
+            raise ValueError("Operands must have the same masking order")
+        if self.uint_class() is not other.uint_class():
+            raise TypeError("Operands must use the same uint width")
+
+    def __and__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        self.validate_operands(other, Domain.BOOLEAN, "__and__")
+
+        x = [self.masked_value, *self.masks]
+        y = [other.masked_value, *other.masks]
+        out = [x[i] & y[i] for i in range(self.share_count)]
+
+        pair_count = self.share_count * self.order // 2
+        rand_vals = iter(self.get_random_uints(pair_count))
+
+        for i in range(self.order):
+            for j in range(i + 1, self.share_count):
+                rand = next(rand_vals)
+                p_ij = (x[i] & y[j]) ^ rand
+                p_ji = (x[j] & y[i]) ^ rand
+                out[i] ^= p_ij
+                out[j] ^= p_ji
+
+        clone = deepcopy(self)
+        clone.masked_value = out[0]
+        clone.masks = out[1:]
+        return clone
 
 
 class MaskedUint8(BaseMaskedUint):

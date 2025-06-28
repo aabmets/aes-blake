@@ -21,11 +21,11 @@ __all__ = [
 ]
 
 
-@pytest.mark.parametrize("masked_uint_cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("domain", [Domain.BOOLEAN, Domain.ARITHMETIC])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_masking_unmasking(masked_uint_cls, domain, order):
-    value, mv = get_randomly_masked_uint(masked_uint_cls, domain, order)
+def test_masking_unmasking(cls, domain, order):
+    value, mv = get_randomly_masked_uint(cls, domain, order)
 
     def assert_unmasking():
         assert len(mv.masks) == order
@@ -40,10 +40,10 @@ def test_masking_unmasking(masked_uint_cls, domain, order):
     assert_unmasking()
 
 
-@pytest.mark.parametrize("masked_uint_cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_btoa_domain_conversion(masked_uint_cls, order):
-    value, mv = get_randomly_masked_uint(masked_uint_cls, Domain.BOOLEAN, order)
+def test_btoa_domain_conversion(cls, order):
+    value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
 
     def assert_unmasking(domain: Domain, unmasking_fn: t.Callable):
         assert mv.domain == domain
@@ -56,3 +56,13 @@ def test_btoa_domain_conversion(masked_uint_cls, order):
     assert_unmasking(Domain.BOOLEAN, opr.xor)
     mv.btoa()
     assert_unmasking(Domain.ARITHMETIC, opr.add)
+
+
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_boolean_and(cls, order):
+    values, mvs = get_many_randomly_masked_uints(cls, Domain.BOOLEAN, order)
+
+    expected = values[0] & values[1] & values[2]
+    result = mvs[0] & mvs[1] & mvs[2]
+    assert expected == result.unmask()
