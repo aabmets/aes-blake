@@ -144,9 +144,9 @@ class BaseMaskedUint(ABC):
         if distance and distance < 1:
             raise ValueError("Distance must be greater than or equal to one")
 
-    def _and_mul_gadget(self, other: BaseMaskedUint, operator: t.Callable, domain: Domain) -> BaseMaskedUint:
+    def _and_mul_helper(self, other: BaseMaskedUint, operator: t.Callable, domain: Domain) -> BaseMaskedUint:
         """
-        Performs boolean multiplication/AND logic on two masked shares using the DOM-independent
+        Performs multiplication/AND logic on two masked shares using the DOM-independent
         secure gadget as described by Gross et al. in “Domain-Oriented Masking” (CHES 2016).
         Link: https://eprint.iacr.org/2016/486.pdf
         """
@@ -171,10 +171,10 @@ class BaseMaskedUint(ABC):
         return self.create(out)
 
     def __and__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        return self._and_mul_gadget(other, opr.and_, Domain.BOOLEAN)
+        return self._and_mul_helper(other, opr.and_, Domain.BOOLEAN)
 
     def __mul__(self, other: "BaseMaskedUint") -> "BaseMaskedUint":
-        return self._and_mul_gadget(other, opr.mul, Domain.ARITHMETIC)
+        return self._and_mul_helper(other, opr.mul, Domain.ARITHMETIC)
 
     def __or__(self, other: BaseMaskedUint) -> BaseMaskedUint:
         self.validate_binary_operands(other, Domain.BOOLEAN, "__or__")
@@ -183,33 +183,28 @@ class BaseMaskedUint(ABC):
             out[i] ^= x[i] ^ y[i]
         return self.create(out)
 
-    def __xor__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        self.validate_binary_operands(other, Domain.BOOLEAN, "__xor__")
+    def _xor_add_sub_helper(self, other: BaseMaskedUint, domain: Domain, operator: t.Callable) -> BaseMaskedUint:
+        self.validate_binary_operands(other, domain, operator.__name__)
         x, out = other.shares, deepcopy(self).shares
         for i in range(self.share_count):
-            out[i] ^= x[i]
+            out[i] = operator(out[i], x[i])
         return self.create(out)
+
+    def __xor__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        return self._xor_add_sub_helper(other, Domain.BOOLEAN, opr.xor)
 
     def __add__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        self.validate_binary_operands(other, Domain.ARITHMETIC, "__add__")
-        x, out = other.shares, deepcopy(self).shares
-        for i in range(self.share_count):
-            out[i] += x[i]
-        return self.create(out)
+        return self._xor_add_sub_helper(other, Domain.ARITHMETIC, opr.add)
 
     def __sub__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        self.validate_binary_operands(other, Domain.ARITHMETIC, "__sub__")
-        x, out = other.shares, deepcopy(self).shares
-        for i in range(self.share_count):
-            out[i] -= x[i]
-        return self.create(out)
+        return self._xor_add_sub_helper(other, Domain.ARITHMETIC, opr.sub)
 
     def __invert__(self) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.BOOLEAN, "__invert__")
         self.masked_value = ~self.masked_value
         return self
 
-    def _shift_helper(self, operation: str, distance: int = None) -> BaseMaskedUint:
+    def _shift_rotate_helper(self, operation: str, distance: int = None) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.BOOLEAN, operation, distance)
         self.masked_value = getattr(self.masked_value, operation)(distance)
         for index, mask in enumerate(self.masks):
@@ -217,16 +212,16 @@ class BaseMaskedUint(ABC):
         return self
 
     def __rshift__(self, distance: int) -> BaseMaskedUint:
-        return self._shift_helper("__rshift__", distance)
+        return self._shift_rotate_helper("__rshift__", distance)
 
     def __lshift__(self, distance: int) -> BaseMaskedUint:
-        return self._shift_helper("__lshift__", distance)
+        return self._shift_rotate_helper("__lshift__", distance)
 
     def rotr(self, distance: int) -> BaseMaskedUint:
-        return self._shift_helper("rotr", distance)
+        return self._shift_rotate_helper("rotr", distance)
 
     def rotl(self, distance: int) -> BaseMaskedUint:
-        return self._shift_helper("rotl", distance)
+        return self._shift_rotate_helper("rotl", distance)
 
 
 class MaskedUint8(BaseMaskedUint):
