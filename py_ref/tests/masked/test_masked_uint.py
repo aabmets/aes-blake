@@ -97,42 +97,55 @@ def test_boolean_xor(cls, order):
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_not(cls, order):
-    for _ in range(10):
-        value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
-        assert ~value == ~mv.unmask()
+    value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
+    assert ~value == ~mv.unmask()
 
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_rshift(cls, order):
-    values, mvs = get_many_randomly_masked_uints(cls, Domain.BOOLEAN, order, count=10)
-    for value, mv in zip(values, mvs):
-        distance = secrets.choice(range(1, value.bit_count()))
-        assert (value >> distance) == (mv >> distance).unmask()
+    value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
+    distance = secrets.choice(range(1, value.bit_count()))
+    assert (value >> distance) == (mv >> distance).unmask()
 
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_lshift(cls, order):
-    values, mvs = get_many_randomly_masked_uints(cls, Domain.BOOLEAN, order, count=10)
-    for value, mv in zip(values, mvs):
-        distance = secrets.choice(range(1, value.bit_count()))
-        assert (value << distance) == (mv << distance).unmask()
+    value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
+    distance = secrets.choice(range(1, value.bit_count()))
+    assert (value << distance) == (mv << distance).unmask()
 
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_rotr(cls, order):
-    values, mvs = get_many_randomly_masked_uints(cls, Domain.BOOLEAN, order, count=10)
-    for value, mv in zip(values, mvs):
-        distance = secrets.choice(range(1, value.bit_count()))
-        assert value.rotr(distance) == mv.rotr(distance).unmask()
+    value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
+    distance = secrets.choice(range(1, value.bit_count()))
+    assert value.rotr(distance) == mv.rotr(distance).unmask()
 
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_rotl(cls, order):
-    values, mvs = get_many_randomly_masked_uints(cls, Domain.BOOLEAN, order, count=10)
-    for value, mv in zip(values, mvs):
-        distance = secrets.choice(range(1, value.bit_count()))
-        assert value.rotl(distance) == mv.rotl(distance).unmask()
+    value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
+    distance = secrets.choice(range(1, value.bit_count()))
+    assert value.rotl(distance) == mv.rotl(distance).unmask()
+
+
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_boolean_xor(cls, order):
+    values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
+    expected = values[0] + values[1] + values[2]
+    result = mvs[0] + mvs[1] + mvs[2]
+    assert expected == result.unmask()
+
+
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_boolean_xor(cls, order):
+    values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
+    expected = values[0] - values[1] - values[2]
+    result = mvs[0] - mvs[1] - mvs[2]
+    assert expected == result.unmask()

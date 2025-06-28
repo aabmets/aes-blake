@@ -177,6 +177,20 @@ class BaseMaskedUint(ABC):
             out[i] ^= x[i]
         return self.create(out)
 
+    def __add__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        self.validate_binary_operands(other, Domain.ARITHMETIC, "__add__")
+        x, out = other.shares, deepcopy(self).shares
+        for i in range(self.share_count):
+            out[i] += x[i]
+        return self.create(out)
+
+    def __sub__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        self.validate_binary_operands(other, Domain.ARITHMETIC, "__sub__")
+        x, out = other.shares, deepcopy(self).shares
+        for i in range(self.share_count):
+            out[i] -= x[i]
+        return self.create(out)
+
     def __invert__(self) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.BOOLEAN, "__invert__")
         self.masked_value = ~self.masked_value
