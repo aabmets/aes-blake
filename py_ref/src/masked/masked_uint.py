@@ -182,33 +182,24 @@ class BaseMaskedUint(ABC):
         self.masked_value = ~self.masked_value
         return self
 
-    def __rshift__(self, distance: int) -> BaseMaskedUint:
-        self.validate_unary_operand(Domain.BOOLEAN, "__rshift__", distance)
-        self.masked_value >>= distance
+    def _shift_helper(self, operation: str, distance: int = None) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.BOOLEAN, operation, distance)
+        self.masked_value = getattr(self.masked_value, operation)(distance)
         for index, mask in enumerate(self.masks):
-            self.masks[index] = mask >> distance
+            self.masks[index] = getattr(mask, operation)(distance)
         return self
+
+    def __rshift__(self, distance: int) -> BaseMaskedUint:
+        return self._shift_helper("__rshift__", distance)
 
     def __lshift__(self, distance: int) -> BaseMaskedUint:
-        self.validate_unary_operand(Domain.BOOLEAN, "__lshift__", distance)
-        self.masked_value <<= distance
-        for index, mask in enumerate(self.masks):
-            self.masks[index] = mask << distance
-        return self
+        return self._shift_helper("__lshift__", distance)
 
     def rotr(self, distance: int) -> BaseMaskedUint:
-        self.validate_unary_operand(Domain.BOOLEAN, "rotr", distance)
-        self.masked_value = self.masked_value.rotr(distance)
-        for index, mask in enumerate(self.masks):
-            self.masks[index] = mask.rotr(distance)
-        return self
+        return self._shift_helper("rotr", distance)
 
     def rotl(self, distance: int) -> BaseMaskedUint:
-        self.validate_unary_operand(Domain.BOOLEAN, "rotl", distance)
-        self.masked_value = self.masked_value.rotl(distance)
-        for index, mask in enumerate(self.masks):
-            self.masks[index] = mask.rotl(distance)
-        return self
+        return self._shift_helper("rotl", distance)
 
 
 class MaskedUint8(BaseMaskedUint):
