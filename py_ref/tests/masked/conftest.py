@@ -11,31 +11,32 @@
 
 import typing as t
 import secrets
+from src.uint import BaseUint
 from src.masked.masked_uint import *
 
 __all__ = ["get_randomly_masked_uint", "get_many_randomly_masked_uints"]
 
 
 def get_randomly_masked_uint(
-        masked_uint_cls: t.Type[BaseMaskedUint],
+        cls: t.Type[BaseMaskedUint],
         domain: Domain,
         order: int
-) -> tuple[int, BaseMaskedUint]:
-    bit_count = masked_uint_cls.uint_class().bit_count()
+) -> tuple[BaseUint, BaseMaskedUint]:
+    bit_count = cls.uint_class().bit_count()
     value = secrets.randbits(bit_count)
-    return value, masked_uint_cls(value, order, domain)
+    return cls.uint_class()(value), cls(value, order, domain)
 
 
 def get_many_randomly_masked_uints(
-        masked_uint_cls: t.Type[BaseMaskedUint],
+        cls: t.Type[BaseMaskedUint],
         domain: Domain,
         order: int,
         *,
         count: int = 3
-) -> tuple[list[int], list[BaseMaskedUint]]:
+) -> tuple[list[BaseUint], list[BaseMaskedUint]]:
     values, mvs = [], []
     for _ in range(count):
-        value, mv = get_randomly_masked_uint(masked_uint_cls, domain, order)
+        value, mv = get_randomly_masked_uint(cls, domain, order)
         values.append(value)
         mvs.append(mv)
     return values, mvs

@@ -31,6 +31,19 @@ class BaseMaskedUint(ABC):
     @staticmethod
     def uint_class() -> t.Type[BaseUint]: ...
 
+    @property
+    def shares(self) -> list[BaseUint]:
+        for index, uint in enumerate([self.masked_value, *self.masks]):
+            self._shares[index] = uint
+        return self._shares
+
+    @shares.setter
+    def shares(self, shares: list[BaseUint]) -> None:
+        for index, uint in enumerate(shares):
+            self._shares[index] = uint
+        self.masked_value = shares[0]
+        self.masks = shares[1:]
+
     def __init__(self, value: int | BaseUint, order: int, domain: Domain) -> None:
         assert value >= 0, "Value must be greater than or equal to zero"
         assert order > 0, "Order must be greater than zero"
@@ -43,6 +56,7 @@ class BaseMaskedUint(ABC):
         self.unmasking_fn = opr.xor if domain == Domain.BOOLEAN else opr.add
         self.masks = self.get_random_uints(order)
         self.masked_value: BaseUint = self.uint_class()(value)
+        self._shares: list[BaseUint] = [self.masked_value, *self.masks]
         for mask in self.masks:
             self.masked_value = self.masking_fn(self.masked_value, mask)
 
@@ -62,6 +76,14 @@ class BaseMaskedUint(ABC):
         for mask in self.masks:
             masked_value = self.unmasking_fn(masked_value, mask)
         return masked_value
+
+    def create(self, shares: list[BaseUint], domain: Domain = None, clone: bool = True) -> BaseMaskedUint:
+        mv = deepcopy(self) if clone else self
+        mv.shares = shares
+        mv.domain = domain or mv.domain
+        mv.masking_fn = opr.xor if mv.domain == Domain.BOOLEAN else opr.sub
+        mv.unmasking_fn = opr.xor if mv.domain == Domain.BOOLEAN else opr.add
+        return mv
 
     def btoa(self) -> None:
         """
@@ -104,14 +126,9 @@ class BaseMaskedUint(ABC):
 
         bool_shares = [self.masked_value, *self.masks, uint(0)]
         arith_shares = convert(bool_shares, self.share_count + 1)
+        self.create(arith_shares, Domain.ARITHMETIC, clone=False)
 
-        self.masked_value = arith_shares[0]
-        self.masks = arith_shares[1:]
-        self.domain = Domain.ARITHMETIC
-        self.masking_fn = opr.sub
-        self.unmasking_fn = opr.add
-
-    def validate_operands(self, other: BaseMaskedUint, domain: Domain, operation: str) -> None:
+    def validate_binary_operands(self, other: BaseMaskedUint, domain: Domain, operation: str) -> None:
         if not isinstance(other, BaseMaskedUint):
             raise TypeError("Operands must be instances of BaseMaskedUint")
         if self.domain != domain or other.domain != domain:
@@ -121,11 +138,16 @@ class BaseMaskedUint(ABC):
         if self.uint_class() is not other.uint_class():
             raise TypeError("Operands must use the same uint width")
 
-    def __and__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        self.validate_operands(other, Domain.BOOLEAN, "__and__")
+    def validate_unary_operand(self, domain: Domain, operation: str, distance: int = None) -> None:
+        if self.domain != domain:
+            raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
+        if distance and distance < 1:
+            raise ValueError("Distance must be greater than or equal to one")
 
-        x = [self.masked_value, *self.masks]
-        y = [other.masked_value, *other.masks]
+    def __and__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        self.validate_binary_operands(other, Domain.BOOLEAN, "__and__")
+
+        x, y = self.shares, other.shares
         out = [x[i] & y[i] for i in range(self.share_count)]
 
         pair_count = self.share_count * self.order // 2
@@ -139,22 +161,54 @@ class BaseMaskedUint(ABC):
                 out[i] ^= p_ij
                 out[j] ^= p_ji
 
-        clone = deepcopy(self)
-        clone.masked_value = out[0]
-        clone.masks = out[1:]
-        return clone
+        return self.create(out)
 
     def __or__(self, other: BaseMaskedUint) -> BaseMaskedUint:
-        self.validate_operands(other, Domain.BOOLEAN, "__or__")
-        clone = self & other
-        clone_shares = [clone.masked_value, *clone.masks]
-        other_shares = [other.masked_value, *other.masks]
-        self_shares = [self.masked_value, *self.masks]
+        self.validate_binary_operands(other, Domain.BOOLEAN, "__or__")
+        x, y, out = self.shares, other.shares, (self & other).shares
         for i in range(self.share_count):
-            clone_shares[i] ^= other_shares[i] ^ self_shares[i]
-        clone.masked_value = clone_shares[0]
-        clone.masks = clone_shares[1:]
-        return clone
+            out[i] ^= x[i] ^ y[i]
+        return self.create(out)
+
+    def __xor__(self, other: BaseMaskedUint) -> BaseMaskedUint:
+        self.validate_binary_operands(other, Domain.BOOLEAN, "__xor__")
+        x, out = other.shares, deepcopy(self).shares
+        for i in range(self.share_count):
+            out[i] ^= x[i]
+        return self.create(out)
+
+    def __invert__(self) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.BOOLEAN, "__invert__")
+        self.masked_value = ~self.masked_value
+        return self
+
+    def __rshift__(self, distance: int) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.BOOLEAN, "__rshift__", distance)
+        self.masked_value >>= distance
+        for index, mask in enumerate(self.masks):
+            self.masks[index] = mask >> distance
+        return self
+
+    def __lshift__(self, distance: int) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.BOOLEAN, "__lshift__", distance)
+        self.masked_value <<= distance
+        for index, mask in enumerate(self.masks):
+            self.masks[index] = mask << distance
+        return self
+
+    def rotr(self, distance: int) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.BOOLEAN, "rotr", distance)
+        self.masked_value = self.masked_value.rotr(distance)
+        for index, mask in enumerate(self.masks):
+            self.masks[index] = mask.rotr(distance)
+        return self
+
+    def rotl(self, distance: int) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.BOOLEAN, "rotl", distance)
+        self.masked_value = self.masked_value.rotl(distance)
+        for index, mask in enumerate(self.masks):
+            self.masks[index] = mask.rotl(distance)
+        return self
 
 
 class MaskedUint8(BaseMaskedUint):
