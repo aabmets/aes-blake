@@ -45,13 +45,21 @@ class BaseMaskedUint(ABC):
         self.masked_value = shares[0]
         self.masks = shares[1:]
 
-    def __init__(self, value: int | BaseUint, order: int, domain: Domain) -> None:
+    def __init__(
+            self,
+            value: int | BaseUint,
+            order: int,
+            domain: Domain,
+            *,
+            automatic_domain_conversion: bool = True
+    ) -> None:
         assert value >= 0, "Value must be greater than or equal to zero"
         assert order > 0, "Order must be greater than zero"
         assert domain in Domain, "Domain must be one of the defined domains"
 
         self.order = order
         self.domain = domain
+        self.auto_domain = automatic_domain_conversion
         self.share_count = order + 1
         self.masking_fn = opr.xor if domain == Domain.BOOLEAN else opr.sub
         self.unmasking_fn = opr.xor if domain == Domain.BOOLEAN else opr.add
@@ -173,21 +181,32 @@ class BaseMaskedUint(ABC):
         result = s_ ^ c_ ^ ksa(s_, c_)
         self.create(result.shares, Domain.BOOLEAN, clone=False)
 
+    def ensure_expected_domain(self, expected_domain: Domain) -> None:
+        if self.domain != expected_domain:
+            if self.domain == Domain.BOOLEAN:
+                self.btoa()
+            elif self.domain == Domain.ARITHMETIC:
+                self.atob()
+
     def validate_binary_operands(self, other: BaseMaskedUint, domain: Domain, operation: str) -> None:
         if not isinstance(other, BaseMaskedUint):
             raise TypeError("Operands must be instances of BaseMaskedUint")
-        if self.domain != domain or other.domain != domain:
-            raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
         if self.order != other.order:
             raise ValueError("Operands must have the same masking order")
         if self.uint_class() is not other.uint_class():
             raise TypeError("Operands must use the same uint width")
 
+        for operand in [self, other]:
+            if operand.domain != domain and not operand.auto_domain:
+                raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
+            self.ensure_expected_domain(domain)
+
     def validate_unary_operand(self, domain: Domain, operation: str, distance: int = None) -> None:
-        if self.domain != domain:
-            raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
         if distance and distance < 1:
             raise ValueError("Distance must be greater than or equal to one")
+        if self.domain != domain and not self.auto_domain:
+            raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
+        self.ensure_expected_domain(domain)
 
     def _and_mul_helper(self, other: BaseMaskedUint, operator: t.Callable, domain: Domain) -> BaseMaskedUint:
         """
