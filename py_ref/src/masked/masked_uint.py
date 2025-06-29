@@ -134,8 +134,9 @@ class BaseMaskedUint(ABC):
         """
         if self.domain != Domain.ARITHMETIC:
             return
+        bmu_tuple = tuple[BaseMaskedUint, BaseMaskedUint]
 
-        def csa(x: BaseMaskedUint, y: BaseMaskedUint, z: BaseMaskedUint) -> tuple[BaseMaskedUint, BaseMaskedUint]:
+        def csa(x: BaseMaskedUint, y: BaseMaskedUint, z: BaseMaskedUint) -> bmu_tuple:
             a = x ^ y
             s = a ^ z
             w = x ^ z
@@ -143,7 +144,7 @@ class BaseMaskedUint(ABC):
             c = x ^ v
             return s, c << 1
 
-        def csa_tree(vals: list[BaseMaskedUint]) -> tuple[BaseMaskedUint, BaseMaskedUint]:
+        def csa_tree(vals: list[BaseMaskedUint]) -> bmu_tuple:
             if len(vals) == 3:
                 return csa(vals[0], vals[1], vals[2])
             s, c = csa_tree(vals[:-1])
