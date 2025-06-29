@@ -128,41 +128,49 @@ class BaseMaskedUint(ABC):
     def atob(self) -> None:
         """
         Converts masked shares from arithmetic to Boolean domain using
-        the high-order carry-look-ahead method of Coron et al.,
-        “Conversion from Arithmetic to Boolean Masking with Logarithmic Complexity”
-        Link: https://eprint.iacr.org/2014/891.pdf
+        the high-order recursive carry-save-adder method of Liu et al.,
+        “A Low-Latency High-Order Arithmetic to Boolean Masking Conversion”
+        Link: https://eprint.iacr.org/2024/045.pdf
         """
         if self.domain != Domain.ARITHMETIC:
             return
-        uint = self.uint_class()
-        rounds = [1, 2, 4]
-        if uint in [Uint32, Uint64]:
-            rounds += [8, 16]
-        if uint is Uint64:
-            rounds += [32]
 
-        def carry_network(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
+        def csa(x: BaseMaskedUint, y: BaseMaskedUint, z: BaseMaskedUint) -> tuple[BaseMaskedUint, BaseMaskedUint]:
+            a = x ^ y
+            s = a ^ z
+            w = x ^ z
+            v = a & w
+            c = x ^ v
+            return s, c << 1
+
+        def csa_tree(vals: list[BaseMaskedUint]) -> tuple[BaseMaskedUint, BaseMaskedUint]:
+            if len(vals) == 3:
+                return csa(vals[0], vals[1], vals[2])
+            s, c = csa_tree(vals[:-1])
+            return csa(s, c, vals[-1])
+
+        def ksa(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
             p = a ^ b
             g = a & b
-            for s in rounds:
-                g_shift = deepcopy(g) << s
-                p_shift = deepcopy(p) << s
+            rounds = [1, 2, 4, 8, 16, 32, 64]
+            bit_length = self.uint_class().bit_count()
+            for dist in [n for n in rounds if n < bit_length]:
+                g_shift = deepcopy(g) << dist
+                p_shift = deepcopy(p) << dist
                 g = g ^ (p & g_shift)
                 p = p & p_shift
             return g << 1
 
         cls = partial(self.__class__, order=self.order, domain=Domain.BOOLEAN)
-        running_sum = cls(self.masked_value)
-        combined_carry = cls(0)
+        shares = [cls(v) for v in [self.masked_value, *self.masks]]
 
-        for mask in [cls(m) for m in self.masks]:
-            ci = carry_network(running_sum, mask)
-            combined_carry = combined_carry ^ ci
-            running_sum = running_sum ^ mask ^ ci
+        if self.share_count == 2:
+            s_, c_ = shares[0], shares[1]
+        else:
+            s_, c_ = csa_tree(shares)
 
-        carry_word = combined_carry.unmask()
-        bool_shares = [self.masked_value ^ carry_word, *self.masks]
-        self.create(bool_shares, Domain.BOOLEAN, clone=False)
+        result = s_ ^ c_ ^ ksa(s_, c_)
+        self.create(result.shares, Domain.BOOLEAN, clone=False)
 
     def validate_binary_operands(self, other: BaseMaskedUint, domain: Domain, operation: str) -> None:
         if not isinstance(other, BaseMaskedUint):
