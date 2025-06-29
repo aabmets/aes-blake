@@ -18,7 +18,7 @@ from tests.masked.conftest import *
 
 __all__ = [
     "test_masking_unmasking",
-    "test_btoa_domain_conversion",
+    "test_domain_conversion",
     "test_boolean_and",
     "test_boolean_or",
     "test_boolean_xor",
@@ -26,7 +26,10 @@ __all__ = [
     "test_boolean_rshift",
     "test_boolean_lshift",
     "test_boolean_rotr",
-    "test_boolean_rotl"
+    "test_boolean_rotl",
+    "test_arithmetic_add",
+    "test_arithmetic_sub",
+    "test_arithmetic_mul"
 ]
 
 
@@ -51,7 +54,7 @@ def test_masking_unmasking(cls, domain, order):
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_btoa_domain_conversion(cls, order):
+def test_domain_conversion(cls, order):
     value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
 
     def assert_unmasking(domain: Domain, unmasking_fn: t.Callable):
@@ -65,6 +68,8 @@ def test_btoa_domain_conversion(cls, order):
     assert_unmasking(Domain.BOOLEAN, opr.xor)
     mv.btoa()
     assert_unmasking(Domain.ARITHMETIC, opr.add)
+    mv.atob()
+    assert_unmasking(Domain.BOOLEAN, opr.xor)
 
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
@@ -135,7 +140,7 @@ def test_boolean_rotl(cls, order):
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_boolean_xor(cls, order):
+def test_arithmetic_add(cls, order):
     values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
     expected = values[0] + values[1] + values[2]
     result = mvs[0] + mvs[1] + mvs[2]
@@ -144,7 +149,7 @@ def test_boolean_xor(cls, order):
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_arithmetic_addition(cls, order):
+def test_arithmetic_sub(cls, order):
     values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
     expected = values[0] - values[1] - values[2]
     result = mvs[0] - mvs[1] - mvs[2]
@@ -153,7 +158,7 @@ def test_arithmetic_addition(cls, order):
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
 @pytest.mark.parametrize("order", list(range(1, 11)))
-def test_arithmetic_multiplication(cls, order):
+def test_arithmetic_mul(cls, order):
     values, mvs = get_many_randomly_masked_uints(cls, Domain.ARITHMETIC, order)
     expected = values[0] * values[1] * values[2]
     result = mvs[0] * mvs[1] * mvs[2]

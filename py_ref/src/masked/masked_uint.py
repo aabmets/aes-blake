@@ -14,6 +14,7 @@ from __future__ import annotations
 import secrets
 import typing as t
 import operator as opr
+from functools import partial
 from copy import deepcopy
 from abc import ABC
 from enum import Enum
@@ -88,7 +89,7 @@ class BaseMaskedUint(ABC):
     def btoa(self) -> None:
         """
         Converts masked shares from boolean to arithmetic domain using
-        the algorithm as published by Bettale et al. in their 2018 paper
+        the affine psi recursive decomposition method of Bettale et al.,
         "Improved High-Order Conversion From Boolean to Arithmetic Masking"
         Link: https://eprint.iacr.org/2018/328.pdf
         """
@@ -104,22 +105,18 @@ class BaseMaskedUint(ABC):
             if n == 1:
                 return [x[0] ^ x[1]]
 
-            # --- Refresh masks ---
             new_masks = self.get_random_uints(len(x) - 1)
             for index, mask in enumerate(new_masks, start=1):
                 x[index] ^= mask
                 x[0] ^= mask
 
-            # --- Gadget Ψ ---
             first_term = x[0] if (n - 1) & 1 else uint(0)
             y: list[BaseUint] = [first_term ^ psi(x[0], x[1])]
             y.extend([psi(x[0], x[i + 1]) for i in range(1, n)])
 
-            # --- Recurse on the two halves ---
             first = convert(x[1:], n)
             second = convert(y, n)
 
-            # --- Combine results ---
             out = [first[i] + second[i] for i in range(n - 2)]
             out.extend([first[n - 2], second[n - 2]])
             return out
@@ -127,6 +124,45 @@ class BaseMaskedUint(ABC):
         bool_shares = [self.masked_value, *self.masks, uint(0)]
         arith_shares = convert(bool_shares, self.share_count + 1)
         self.create(arith_shares, Domain.ARITHMETIC, clone=False)
+
+    def atob(self) -> None:
+        """
+        Converts masked shares from arithmetic to Boolean domain using
+        the high-order carry-look-ahead method of Coron et al.,
+        “Conversion from Arithmetic to Boolean Masking with Logarithmic Complexity”
+        Link: https://eprint.iacr.org/2014/891.pdf
+        """
+        if self.domain != Domain.ARITHMETIC:
+            return
+        uint = self.uint_class()
+        rounds = [1, 2, 4]
+        if uint in [Uint32, Uint64]:
+            rounds += [8, 16]
+        if uint is Uint64:
+            rounds += [32]
+
+        def carry_network(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
+            p = a ^ b
+            g = a & b
+            for s in rounds:
+                g_shift = deepcopy(g) << s
+                p_shift = deepcopy(p) << s
+                g = g ^ (p & g_shift)
+                p = p & p_shift
+            return g << 1
+
+        cls = partial(self.__class__, order=self.order, domain=Domain.BOOLEAN)
+        running_sum = cls(self.masked_value)
+        combined_carry = cls(0)
+
+        for mask in [cls(m) for m in self.masks]:
+            ci = carry_network(running_sum, mask)
+            combined_carry = combined_carry ^ ci
+            running_sum = running_sum ^ mask ^ ci
+
+        carry_word = combined_carry.unmask()
+        bool_shares = [self.masked_value ^ carry_word, *self.masks]
+        self.create(bool_shares, Domain.BOOLEAN, clone=False)
 
     def validate_binary_operands(self, other: BaseMaskedUint, domain: Domain, operation: str) -> None:
         if not isinstance(other, BaseMaskedUint):
