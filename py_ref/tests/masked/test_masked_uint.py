@@ -13,6 +13,7 @@ import pytest
 import secrets
 import typing as t
 import operator as opr
+from src.uint import BaseUint
 from src.masked.masked_uint import *
 from tests.masked.conftest import *
 
@@ -163,3 +164,21 @@ def test_arithmetic_mul(cls, order):
     expected = values[0] * values[1] * values[2]
     result = mvs[0] * mvs[1] * mvs[2]
     assert expected == result.unmask()
+
+
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("domain", [Domain.BOOLEAN, Domain.ARITHMETIC])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_cross_domain_behavior(cls, domain, order):
+    values, mvs = get_many_randomly_masked_uints(cls, domain, order)
+    dist = MaskedUint32.uint_class().bit_count() // 2
+
+    either = BaseUint | BaseMaskedUint
+
+    def formula(a: either, b: either, c: either) -> either:
+        return (a + b) ^ (b * (a | c).rotr(dist)) - (c & (a << dist))
+
+    result1 = formula(*values)
+    result2 = formula(*mvs)
+
+    assert result1 == result2.unmask()

@@ -199,7 +199,7 @@ class BaseMaskedUint(ABC):
         for operand in [self, other]:
             if operand.domain != domain and not operand.auto_domain:
                 raise ValueError(f"{operation} is only defined for {domain.name}-masked values")
-            self.ensure_expected_domain(domain)
+            operand.ensure_expected_domain(domain)
 
     def validate_unary_operand(self, domain: Domain, operation: str, distance: int = None) -> None:
         if distance and distance < 1:
