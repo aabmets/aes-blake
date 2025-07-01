@@ -21,12 +21,17 @@ dependencies = [
     "proof-frog>=0.2.0",
     "scipy>=1.16.0",
     "numpy>=2.2.5",
+    "scikit-learn>=1.7.0",
 ]
 
 [tool.pytest.ini_options]
 console_output_style = "count"
 filterwarnings = ["ignore::DeprecationWarning"]
 testpaths = ["tests"]
+markers = [
+    "evalsec_tvla: Run TVLA side-channel security evaluation tests",
+    "evalsec_mia: Run MIA side-channel security evaluation tests",
+]
 addopts = [
     "--cov=src",
     "--cov-report=html",
