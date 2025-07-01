@@ -15,7 +15,7 @@ import typing as t
 import operator as opr
 from src.uint import BaseUint
 from src.masked.masked_uint import *
-from tests.masked.conftest import *
+from tests.masked.helpers import *
 
 __all__ = [
     "test_masking_unmasking",
