@@ -272,6 +272,11 @@ class BaseMaskedUint(ABC):
         self.masked_value = ~self.masked_value
         return self
 
+    def __neg__(self) -> BaseMaskedUint:
+        self.validate_unary_operand(Domain.ARITHMETIC, "__neg__")
+        self.shares = [-s for s in self.shares]
+        return self
+
     def _shift_rotate_helper(self, operation: str, distance: int = None) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.BOOLEAN, operation, distance)
         self.masked_value = getattr(self.masked_value, operation)(distance)

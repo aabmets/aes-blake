@@ -28,6 +28,7 @@ __all__ = [
     "test_boolean_lshift",
     "test_boolean_rotr",
     "test_boolean_rotl",
+    "test_arithmetic_neg",
     "test_arithmetic_add",
     "test_arithmetic_sub",
     "test_arithmetic_mul"
@@ -137,6 +138,13 @@ def test_boolean_rotl(cls, order):
     value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
     distance = secrets.choice(range(1, value.bit_count()))
     assert value.rotl(distance) == mv.rotl(distance).unmask()
+
+
+@pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
+@pytest.mark.parametrize("order", list(range(1, 11)))
+def test_arithmetic_neg(cls, order):
+    value, mv = get_randomly_masked_uint(cls, Domain.ARITHMETIC, order)
+    assert -value == -mv.unmask()
 
 
 @pytest.mark.parametrize("cls", [MaskedUint8, MaskedUint32, MaskedUint64])
