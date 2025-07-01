@@ -50,6 +50,10 @@ class BaseUint(ABC):
     def name(self) -> str:
         return self._name
 
+    @property
+    def hamming_weight(self) -> int:
+        return self._value.bit_count()
+
     @value.setter
     def value(self, value: int) -> None:
         if isinstance(value, BaseUint):

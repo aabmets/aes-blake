@@ -45,6 +45,10 @@ class BaseMaskedUint(ABC):
         self.masked_value = shares[0]
         self.masks = shares[1:]
 
+    @property
+    def hamming_weights(self) -> list[int]:
+        return [s.hamming_weight for s in self.shares]
+
     def __init__(
             self,
             value: int | BaseUint,
@@ -94,7 +98,7 @@ class BaseMaskedUint(ABC):
         mv.unmasking_fn = opr.xor if mv.domain == Domain.BOOLEAN else opr.add
         return mv
 
-    def btoa(self) -> None:
+    def btoa(self) -> BaseMaskedUint:
         """
         Converts masked shares from boolean to arithmetic domain using
         the affine psi recursive decomposition method of Bettale et al.,
@@ -102,7 +106,7 @@ class BaseMaskedUint(ABC):
         Link: https://eprint.iacr.org/2018/328.pdf
         """
         if self.domain != Domain.BOOLEAN:
-            return
+            return self
         uint = self.uint_class()
 
         def psi(masked: BaseUint, mask: BaseUint) -> BaseUint:
@@ -131,9 +135,9 @@ class BaseMaskedUint(ABC):
 
         bool_shares = [self.masked_value, *self.masks, uint(0)]
         arith_shares = convert(bool_shares, self.share_count + 1)
-        self.create(arith_shares, Domain.ARITHMETIC, clone=False)
+        return self.create(arith_shares, Domain.ARITHMETIC, clone=False)
 
-    def atob(self) -> None:
+    def atob(self) -> BaseMaskedUint:
         """
         Converts masked shares from arithmetic to Boolean domain using
         the high-order recursive carry-save-adder method of Liu et al.,
@@ -141,7 +145,7 @@ class BaseMaskedUint(ABC):
         Link: https://eprint.iacr.org/2024/045.pdf
         """
         if self.domain != Domain.ARITHMETIC:
-            return
+            return self
         bmu_tuple = tuple[BaseMaskedUint, BaseMaskedUint]
 
         def csa(x: BaseMaskedUint, y: BaseMaskedUint, z: BaseMaskedUint) -> bmu_tuple:
@@ -179,7 +183,7 @@ class BaseMaskedUint(ABC):
             s_, c_ = csa_tree(shares)
 
         result = s_ ^ c_ ^ ksa(s_, c_)
-        self.create(result.shares, Domain.BOOLEAN, clone=False)
+        return self.create(result.shares, Domain.BOOLEAN, clone=False)
 
     def ensure_expected_domain(self, expected_domain: Domain) -> None:
         if self.domain != expected_domain:
