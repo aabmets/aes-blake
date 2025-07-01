@@ -22,6 +22,7 @@ from scipy import stats
 from functools import partial
 from sklearn.feature_selection import mutual_info_regression
 
+from tests.masked import gcmi
 from src.masked.masked_uint import *
 
 
@@ -86,12 +87,12 @@ def collect_traces(
     return traces, secrets_vec
 
 
-def expand_traces(mat: np.ndarray, order: int):
+def expand_traces(mat: np.ndarray, order: int) -> np.ndarray:
     out = [mat]
     for d in range(2, order + 1):
         for idx in itertools.combinations(range(mat.shape[1]), d):
             out.append(np.prod(mat[:, idx], axis=1, keepdims=True))
-    return np.hstack(out)
+    return np.hstack(out).astype(np.float64)
 
 
 @pytest.mark.evalsec_tvla
@@ -122,19 +123,28 @@ def test_fixed_vs_random_tvla(cls, operator, order):
 @pytest.mark.parametrize("operator", OPERATORS)
 def test_mutual_info_analysis(cls, order, operator):
     traces, secrets_vec = collect_traces(cls, order, operator, fill_secrets_vec=True)
-
     feats = expand_traces(traces, order)
-    mi_vals = []
 
-    for col in range(feats.shape[1]):
-        mi = mutual_info_regression(
+    # Univariate analysis
+    worst = max([
+        mutual_info_regression(
             feats[:, [col]],
             secrets_vec,
             n_neighbors=5,
-            random_state=0
+            random_state=0,
+            discrete_features=True
         )[0]
-        mi_vals.append(mi)
-
-    worst = max(mi_vals)
+        for col in range(feats.shape[1])
+    ])
     threshold_nats = 0.05
-    assert worst < threshold_nats, f"MIA fail: MI={worst:.3f} ≥ {threshold_nats}"
+    assert worst < threshold_nats, \
+        f"Univariate MIA fail: MI={worst:.3f} nats ≥ {threshold_nats}"
+
+    # Multivariate analysis
+    sv = secrets_vec.reshape(1, -1)
+    i_bits = gcmi.gcmi_cc(feats.T, sv)
+    worst = float(i_bits * np.log(2.0))  # convert from bits to nats
+
+    threshold_nats = 0.10
+    assert worst < threshold_nats, \
+        f"Multivariate MIA fail: MI={worst:.3f} nats ≥ {threshold_nats}"
