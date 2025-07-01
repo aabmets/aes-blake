@@ -17,9 +17,9 @@ import operator as opr
 import typing as t
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from src.exp_node import *
+from src.integers.expression_node import *
 
-__all__ = ["IterNum", "BaseUint", "Uint8", "Uint32", "Uint64"]
+__all__ = ["IterNum", "BaseUint"]
 
 
 T = t.TypeVar("T", bound="BaseUint")
@@ -232,33 +232,3 @@ class BaseUint(ABC):
         finally:
             cls._used_names.clear()
             cls._exp_nodes_enabled = old
-
-
-class Uint8(BaseUint):
-    @staticmethod
-    def bit_count() -> int:
-        return 8
-
-    @staticmethod
-    def max_value() -> int:
-        return 0xFF
-
-
-class Uint32(BaseUint):
-    @staticmethod
-    def bit_count() -> int:
-        return 32
-
-    @staticmethod
-    def max_value() -> int:
-        return 0xFFFFFFFF
-
-
-class Uint64(BaseUint):
-    @staticmethod
-    def bit_count() -> int:
-        return 64
-
-    @staticmethod
-    def max_value() -> int:
-        return 0xFFFFFFFFFFFFFFFF

@@ -10,13 +10,7 @@
 #
 
 import operator as opr
-from src.exp_node import (
-    VarNode,
-    CopyNode,
-    ConstNode,
-    UnaryOpNode,
-    BinaryOpNode,
-)
+from src.integers.expression_node import *
 
 __all__ = [
     "test_var_node_to_dict",

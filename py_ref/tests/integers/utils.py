@@ -11,8 +11,7 @@
 
 import typing as t
 import secrets
-from src.uint import BaseUint
-from src.masked.masked_uint import *
+from src.integers import *
 
 __all__ = ["get_randomly_masked_uint", "get_many_randomly_masked_uints"]
 

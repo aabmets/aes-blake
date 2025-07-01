@@ -13,9 +13,9 @@ import pytest
 import secrets
 import typing as t
 import operator as opr
-from src.uint import BaseUint
-from src.masked.masked_uint import *
-from tests.masked.helpers import *
+
+from src.integers import *
+from tests.integers.utils import *
 
 __all__ = [
     "test_masking_unmasking",

@@ -22,8 +22,8 @@ from scipy import stats
 from functools import partial
 from sklearn.feature_selection import mutual_info_regression
 
-from tests.masked import gcmi
-from src.masked.masked_uint import *
+from src.integers import *
+from tests.integers import gcmi
 
 
 def compute_security_orders() :
@@ -42,7 +42,7 @@ CLASSES = [MaskedUint8, MaskedUint32, MaskedUint64]
 ROUNDS = int(os.environ.get("EVALSEC_SAMPLES", 5000))
 ORDERS = compute_security_orders()
 ARITH_OPERATORS = ["atob", "__add__", "__sub__", "__mul__"]
-UNARY_OPERATORS = ["__invert__", "btoa", "atob"]
+UNARY_OPERATORS = ["__invert__", "__neg__", "btoa", "atob"]
 BINARY_OPERATORS = ["__and__", "__or__", "__xor__", "__add__", "__sub__", "__mul__"]
 DIST_OPERATORS = ["__rshift__", "__lshift__", "rotr", "rotl"]
 OPERATORS = UNARY_OPERATORS + BINARY_OPERATORS + DIST_OPERATORS

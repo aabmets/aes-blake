@@ -18,9 +18,9 @@ from functools import partial
 from copy import deepcopy
 from abc import ABC
 from enum import Enum
-from src.uint import *
+from src.integers.base_uint import BaseUint
 
-__all__ = ["Domain", "BaseMaskedUint", "MaskedUint8", "MaskedUint32", "MaskedUint64"]
+__all__ = ["Domain", "BaseMaskedUint"]
 
 
 class Domain(Enum):
@@ -295,21 +295,3 @@ class BaseMaskedUint(ABC):
 
     def rotl(self, distance: int) -> BaseMaskedUint:
         return self._shift_rotate_helper("rotl", distance)
-
-
-class MaskedUint8(BaseMaskedUint):
-    @staticmethod
-    def uint_class() -> t.Type[BaseUint]:
-        return Uint8
-
-
-class MaskedUint32(BaseMaskedUint):
-    @staticmethod
-    def uint_class() -> t.Type[BaseUint]:
-        return Uint32
-
-
-class MaskedUint64(BaseMaskedUint):
-    @staticmethod
-    def uint_class() -> t.Type[BaseUint]:
-        return Uint64
