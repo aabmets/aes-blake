@@ -81,7 +81,7 @@ def collect_traces(
         if fill_secrets_vec:
             secrets_vec.append(secret)
 
-    traces = np.asarray(traces, dtype=np.int16)
+    traces = np.asarray(traces, dtype=np.int32)
     secrets_vec = np.asarray(secrets_vec)
     return traces, secrets_vec
 
