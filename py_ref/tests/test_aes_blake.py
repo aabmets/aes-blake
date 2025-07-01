@@ -10,29 +10,14 @@
 #
 
 import pytest
-import typing as t
 
 from src.blake_keygen import KDFDomain
-from src.aes_blake import AESBlake256, AESBlake512, BaseAESBlake
+from src.aes_blake import AESBlake256, AESBlake512
 
 __all__ = [
     "fixture_aes_block_data",
-    "normal_usage_tester",
-    "bad_data_tester",
-    "test_aesblake256_normal_usage",
-    "test_aesblake512_normal_usage",
-    "test_aesblake256_bad_key",
-    "test_aesblake512_bad_key",
-    "test_aesblake256_bad_nonce",
-    "test_aesblake512_bad_nonce",
-    "test_aesblake256_bad_context",
-    "test_aesblake512_bad_context",
-    "test_aesblake256_bad_ciphertext",
-    "test_aesblake512_bad_ciphertext",
-    "test_aesblake256_bad_header",
-    "test_aesblake512_bad_header",
-    "test_aesblake256_bad_auth_tag",
-    "test_aesblake512_bad_auth_tag",
+    "test_aesblake_normal_usage",
+    "test_aesblake_bad_data",
     "test_aesblake256_ex_cols",
     "test_aesblake512_ex_cols",
     "test_aesblake256_reference_inputs",
@@ -49,7 +34,8 @@ def fixture_aes_block_data() -> tuple[bytes, ...]:
     return chunk1, chunk2, chunk3, chunk4
 
 
-def normal_usage_tester(cls: t.Type[BaseAESBlake]):
+@pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
+def test_aesblake_normal_usage(cls):
     data_len = cls.keygen_class().uint().bit_count()  # interpret as byte count
     plaintext = header = bytes(range(data_len))
     cipher = cls(b"", b"", b"")
@@ -62,7 +48,9 @@ def normal_usage_tester(cls: t.Type[BaseAESBlake]):
     assert _plaintext == plaintext
 
 
-def bad_data_tester(cls: t.Type[BaseAESBlake], corrupt_field: str):
+@pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
+@pytest.mark.parametrize("corrupt_field", ["key", "nonce", "context", "ciphertext", "header", "auth_tag"])
+def test_aesblake_bad_data(cls, corrupt_field):
     data_len = cls.keygen_class().uint().bit_count()
     key = nonce = context = header = plaintext = bytes(range(data_len))
 
@@ -85,62 +73,6 @@ def bad_data_tester(cls: t.Type[BaseAESBlake], corrupt_field: str):
     cipher = cls(key, nonce, context)
     with pytest.raises(ValueError, match="Failed to verify auth tag"):
         cipher.decrypt(ciphertext, header, auth_tag)
-
-
-def test_aesblake256_normal_usage():
-    normal_usage_tester(AESBlake256)
-
-
-def test_aesblake512_normal_usage():
-    normal_usage_tester(AESBlake512)
-
-
-def test_aesblake256_bad_key():
-    bad_data_tester(AESBlake256, "key")
-
-
-def test_aesblake512_bad_key():
-    bad_data_tester(AESBlake512, "key")
-
-
-def test_aesblake256_bad_nonce():
-    bad_data_tester(AESBlake256, "nonce")
-
-
-def test_aesblake512_bad_nonce():
-    bad_data_tester(AESBlake512, "nonce")
-
-
-def test_aesblake256_bad_context():
-    bad_data_tester(AESBlake256, "context")
-
-
-def test_aesblake512_bad_context():
-    bad_data_tester(AESBlake512, "context")
-
-
-def test_aesblake256_bad_ciphertext():
-    bad_data_tester(AESBlake256, "ciphertext")
-
-
-def test_aesblake512_bad_ciphertext():
-    bad_data_tester(AESBlake512, "ciphertext")
-
-
-def test_aesblake256_bad_header():
-    bad_data_tester(AESBlake256, "header")
-
-
-def test_aesblake512_bad_header():
-    bad_data_tester(AESBlake512, "header")
-
-
-def test_aesblake256_bad_auth_tag():
-    bad_data_tester(AESBlake256, "auth_tag")
-
-
-def test_aesblake512_bad_auth_tag():
-    bad_data_tester(AESBlake512, "auth_tag")
 
 
 def test_aesblake256_ex_cols(aes_block_data):
