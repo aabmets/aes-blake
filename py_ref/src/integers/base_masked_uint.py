@@ -16,9 +16,9 @@ import typing as t
 import operator as opr
 from functools import partial
 from copy import deepcopy
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
-from src.integers.base_uint import BaseUint
+from src.integers.base_uint import *
 
 __all__ = ["Domain", "BaseMaskedUint"]
 
@@ -30,7 +30,16 @@ class Domain(Enum):
 
 class BaseMaskedUint(ABC):
     @staticmethod
+    @abstractmethod
     def uint_class() -> t.Type[BaseUint]: ...
+
+    @staticmethod
+    @abstractmethod
+    def bit_length() -> int: ...
+
+    @staticmethod
+    @abstractmethod
+    def max_value() -> int: ...
 
     @property
     def shares(self) -> list[BaseUint]:
@@ -75,7 +84,7 @@ class BaseMaskedUint(ABC):
 
     def get_random_uints(self, count: int):
         cls = self.uint_class()
-        randbits = lambda: secrets.randbits(cls.bit_count())
+        randbits = lambda: secrets.randbits(cls.bit_length())
         return [cls(randbits()) for _ in range(count)]
 
     def refresh_masks(self) -> None:
@@ -166,7 +175,7 @@ class BaseMaskedUint(ABC):
             p = a ^ b
             g = a & b
             rounds = [1, 2, 4, 8, 16, 32, 64]
-            bit_length = self.uint_class().bit_count()
+            bit_length = self.uint_class().bit_length()
             for dist in [n for n in rounds if n < bit_length]:
                 g_shift = deepcopy(g) << dist
                 p_shift = deepcopy(p) << dist
@@ -295,3 +304,17 @@ class BaseMaskedUint(ABC):
 
     def rotl(self, distance: int) -> BaseMaskedUint:
         return self._shift_rotate_helper("rotl", distance)
+
+    # for pytest only
+    def __eq__(self, other: BaseUint | int) -> bool:
+        return self.unmask() == other
+    def __ne__(self, other: BaseUint | int) -> bool:
+        return self.unmask() != other
+    def __gt__(self, other: BaseUint | int) -> bool:
+        return self.unmask() > other
+    def __lt__(self, other: BaseUint | int) -> bool:
+        return self.unmask() < other
+    def __ge__(self, other: BaseUint | int) -> bool:
+        return self.unmask() >= other
+    def __le__(self, other: BaseUint | int) -> bool:
+        return self.unmask() <= other

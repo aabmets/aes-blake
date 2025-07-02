@@ -112,7 +112,7 @@ def test_boolean_not(cls, order):
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_rshift(cls, order):
     value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
-    distance = secrets.choice(range(1, value.bit_count()))
+    distance = secrets.choice(range(1, value.bit_length()))
     assert (value >> distance) == (mv >> distance).unmask()
 
 
@@ -120,7 +120,7 @@ def test_boolean_rshift(cls, order):
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_lshift(cls, order):
     value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
-    distance = secrets.choice(range(1, value.bit_count()))
+    distance = secrets.choice(range(1, value.bit_length()))
     assert (value << distance) == (mv << distance).unmask()
 
 
@@ -128,7 +128,7 @@ def test_boolean_lshift(cls, order):
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_rotr(cls, order):
     value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
-    distance = secrets.choice(range(1, value.bit_count()))
+    distance = secrets.choice(range(1, value.bit_length()))
     assert value.rotr(distance) == mv.rotr(distance).unmask()
 
 
@@ -136,7 +136,7 @@ def test_boolean_rotr(cls, order):
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_boolean_rotl(cls, order):
     value, mv = get_randomly_masked_uint(cls, Domain.BOOLEAN, order)
-    distance = secrets.choice(range(1, value.bit_count()))
+    distance = secrets.choice(range(1, value.bit_length()))
     assert value.rotl(distance) == mv.rotl(distance).unmask()
 
 
@@ -179,7 +179,7 @@ def test_arithmetic_mul(cls, order):
 @pytest.mark.parametrize("order", list(range(1, 11)))
 def test_cross_domain_behavior(cls, domain, order):
     values, mvs = get_many_randomly_masked_uints(cls, domain, order)
-    dist = MaskedUint32.uint_class().bit_count() // 2
+    dist = MaskedUint32.uint_class().bit_length() // 2
 
     either = BaseUint | BaseMaskedUint
 

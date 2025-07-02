@@ -35,8 +35,8 @@ def test_uint_inheritance():
     for uint_type in [Uint8, Uint32, Uint64]:
         uint = uint_type()
         assert isinstance(uint, BaseUint)
-        assert hasattr(uint, "bit_count")
-        assert isinstance(uint.bit_count(), int)
+        assert hasattr(uint, "bit_length")
+        assert isinstance(uint.bit_length(), int)
         assert hasattr(uint, "max_value")
         assert isinstance(uint.max_value(), int)
 
@@ -49,7 +49,7 @@ def test_uint8():
     v1 = Uint8(0xAA)
     v2 = Uint8(0xCC)
 
-    assert v0.bit_count() == 8
+    assert v0.bit_length() == 8
     assert v0.max_value() == 0xFF
 
     assert v0.value == 0
@@ -86,7 +86,7 @@ def test_uint32():
     v1 = Uint32(0xAABBCCDD)
     v2 = Uint32(0xCCDDEEFF)
 
-    assert v0.bit_count() == 32
+    assert v0.bit_length() == 32
     assert v0.max_value() == 0xFFFFFFFF
 
     assert v0.value == 0
@@ -123,7 +123,7 @@ def test_uint64():
     v1 = Uint64(0xAABBCCDDEEFFAABB)
     v2 = Uint64(0xCCDDEEFFAABBCCDD)
 
-    assert v0.bit_count() == 64
+    assert v0.bit_length() == 64
     assert v0.max_value() == 0xFFFFFFFFFFFFFFFF
 
     assert v0.value == 0

@@ -58,7 +58,7 @@ def collect_traces(
 ) -> tuple[np.ndarray, np.ndarray]:
     domain = Domain.ARITHMETIC if operator in ARITH_OPERATORS else Domain.BOOLEAN
     create_masked_uint = partial(cls, order=order, domain=domain)
-    bit_length  = cls.uint_class().bit_count()
+    bit_length  = cls.uint_class().bit_length()
 
     fixed_secret = None
     if use_fixed_secret:

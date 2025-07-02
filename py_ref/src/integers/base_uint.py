@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from src.integers.expression_node import *
 
-__all__ = ["IterNum", "BaseUint"]
+__all__ = ["IterNum", "ByteOrder", "BaseUint"]
 
 
 T = t.TypeVar("T", bound="BaseUint")
@@ -36,7 +36,7 @@ class BaseUint(ABC):
 
     @staticmethod
     @abstractmethod
-    def bit_count() -> int: ...
+    def bit_length() -> int: ...
 
     @staticmethod
     @abstractmethod
@@ -89,7 +89,7 @@ class BaseUint(ABC):
         return cls(int.from_bytes(data, byteorder, signed=False))
 
     def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
-        return self.value.to_bytes(self.bit_count() // 8, byteorder)
+        return self.value.to_bytes(self.bit_length() // 8, byteorder)
 
     def to_dict(self) -> dict:
         if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
@@ -147,17 +147,17 @@ class BaseUint(ABC):
 
     def rotl(self, n: int) -> BaseUint:
         """Rotates bits out from the left and back into the right"""
-        distance = n % self.bit_count()
-        rs = self._value >> (self.bit_count() - distance)
+        distance = n % self.bit_length()
+        rs = self._value >> (self.bit_length() - distance)
         ls = self._value << distance
         res = (rs | ls) & self.max_value()
         return self.__class__(res)
 
     def rotr(self, n: int) -> BaseUint:
         """Rotates bits out from the right and back into the left"""
-        distance = n % self.bit_count()
+        distance = n % self.bit_length()
         rs = self._value >> distance
-        ls = self._value << (self.bit_count() - distance)
+        ls = self._value << (self.bit_length() - distance)
         res = (rs | ls) & self.max_value()
         return self.__class__(res)
 
