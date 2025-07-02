@@ -84,6 +84,10 @@ class BaseUint(ABC):
                     return name_base, name
         raise RuntimeError("Out of names")
 
+    @classmethod
+    def from_bytes(cls: t.Type[T], data: IterNum, *, byteorder: ByteOrder = "big") -> T:
+        return cls(int.from_bytes(data, byteorder, signed=False))
+
     def to_bytes(self, *, byteorder: ByteOrder = "big") -> bytes:
         return self.value.to_bytes(self.bit_length() // 8, byteorder)
 

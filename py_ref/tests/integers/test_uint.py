@@ -23,6 +23,7 @@ __all__ = [
     "test_uint32",
     "test_uint64",
     "test_to_bytes",
+    "test_from_bytes",
     "test_name_allocation",
     "test_name_suffix",
     "test_bitwise_sum_identity",
@@ -169,6 +170,26 @@ def test_to_bytes():
 
     byte_str = Uint64(0xAABBCCDDEEFFAABB).to_bytes(byteorder="little")
     assert byte_str == b"\xbb\xaa\xff\xee\xdd\xcc\xbb\xaa"
+
+
+def test_from_bytes():
+    uint = Uint8.from_bytes(b"\xaa", byteorder="big")
+    assert uint.value == 0xAA
+
+    uint = Uint8.from_bytes(b"\xaa", byteorder="little")
+    assert uint.value == 0xAA
+
+    uint = Uint32.from_bytes(b"\xaa\xbb\xcc\xdd", byteorder="big")
+    assert uint.value == 0xAABBCCDD
+
+    uint = Uint32.from_bytes(b"\xaa\xbb\xcc\xdd", byteorder="little")
+    assert uint.value == 0xDDCCBBAA
+
+    uint = Uint64.from_bytes(b"\xaa\xbb\xcc\xdd\xee\xff\xaa\xbb", byteorder="big")
+    assert uint.value == 0xAABBCCDDEEFFAABB
+
+    uint = Uint64.from_bytes(b"\xaa\xbb\xcc\xdd\xee\xff\xaa\xbb", byteorder="little")
+    assert uint.value == 0xBBAAFFEEDDCCBBAA
 
 
 def test_name_allocation():
