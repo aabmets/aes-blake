@@ -9,14 +9,15 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
+import pytest
 import typing as t
 from copy import deepcopy
 
-from src import utils
-from src.blake_keygen import Blake32, Blake64, KDFDomain
-from src.uint import Uint32, Uint64
+from src.blake_keygen import *
+from src.integers import *
 
 __all__ = [
+    "test_bytes_to_uint_vector",
     "test_compute_key_nonce_composite",
     "test_init_state_vector",
     "test_blake32_mix_into_state",
@@ -28,9 +29,37 @@ __all__ = [
 ]
 
 
+@pytest.mark.parametrize("cls", [Blake32, Blake64])
+def test_bytes_to_uint_vector(cls):
+    byte_count = cls.bit_length() // 8
+
+    data = bytes()
+    vector = cls.bytes_to_uint_vector(data, vec_len=16)
+    assert len(vector) == 16
+    for v in vector:
+        assert v == 0
+
+    data = bytes(range(byte_count * 2))
+    vector = cls.bytes_to_uint_vector(data, vec_len=32)
+    assert len(vector) == 32
+    assert vector[0] == int.from_bytes(data[:byte_count], byteorder="big")
+    assert vector[1] == int.from_bytes(data[byte_count:], byteorder="big")
+    for i in range(2, len(vector)):
+        assert vector[i] == 0
+
+    data = bytes(range(32))
+    vector = cls.bytes_to_uint_vector(data, vec_len=8)
+    assert len(vector) == 8
+    for i, v in enumerate(vector):
+        start = i * byte_count
+        end = start + byte_count
+        subset = data[start:end]
+        assert v == int.from_bytes(subset, byteorder="big")
+
+
 def test_compute_key_nonce_composite():
-    key = b"\xAA" * Uint32.bit_count()
-    nonce = b"\xBB" * Uint32.bit_count()
+    key = b"\xAA" * Uint32.bit_length()
+    nonce = b"\xBB" * Uint32.bit_length()
     blake = Blake32(key, nonce, context=b"")
     assert blake.knc == [
         0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
@@ -40,42 +69,42 @@ def test_compute_key_nonce_composite():
     ]
 
 
-def test_init_state_vector():
-    for cls in [Blake32, Blake64]:
-        uint, ivs = cls.uint(), cls.ivs()
-        v_bits = uint.bit_count()
-        v_max = uint.max_value()
-        v_bytes = v_bits // 8
-        domains = [
-            t.cast(KDFDomain, d) for d in
-            KDFDomain._member_map_.values()
-        ]
-        nonce = bytes(range(v_bits))
-        n_vector = utils.bytes_to_uint_vector(nonce, uint, v_size=8)
+@pytest.mark.parametrize("cls", [Blake32, Blake64])
+def test_init_state_vector(cls):
+    uint, ivs = cls.uint_class(), cls.ivs()
+    v_bits = uint.bit_length()
+    v_max = uint.max_value()
+    v_bytes = v_bits // 8
+    domains = [
+        t.cast(KDFDomain, d) for d in
+        KDFDomain._member_map_.values()
+    ]
+    nonce = bytes(range(v_bits))
+    n_vector = cls.bytes_to_uint_vector(nonce, vec_len=8)
 
-        blake = cls(key=b'', nonce=b'', context=b'')
+    blake = cls(key=b'', nonce=b'', context=b'')
 
-        for domain in domains:
-            for counter in [0, v_max // 2, v_max // 3, v_max]:
-                nv_copy = deepcopy(n_vector)
-                blake.init_state_vector(nv_copy, counter, domain)
-                d_mask = blake.domain_mask(domain)
-                ctr = Uint64(counter).to_bytes()
+    for domain in domains:
+        for counter in [0, v_max // 2, v_max // 3, v_max]:
+            nv_copy = deepcopy(n_vector)
+            blake.init_state_vector(nv_copy, counter, domain)
+            d_mask = blake.domain_mask(domain)
+            ctr = Uint64(counter).to_bytes()
 
-                for i, j in enumerate([0, 1, 2, 3, 12, 13, 14, 15]):
-                    if j >= 12:
-                        blake.state[j] ^= d_mask
-                    assert blake.state[j] == ivs[i]
+            for i, j in enumerate([0, 1, 2, 3, 12, 13, 14, 15]):
+                if j >= 12:
+                    blake.state[j] ^= d_mask
+                assert blake.state[j] == ivs[i]
 
-                for i, j in enumerate(range(4, 12)):
-                    start = i * v_bytes
-                    end = start + v_bytes
-                    n_slice = nonce[start:end]
-                    uint_2 = uint.from_bytes(n_slice)
+            for i, j in enumerate(range(4, 12)):
+                start = i * v_bytes
+                end = start + v_bytes
+                n_slice = nonce[start:end]
+                uint_2 = uint.from_bytes(n_slice)
 
-                    _ctr = ctr[4:] if j < 8 else ctr[:4]
-                    blake.state[j] -= Uint32.from_bytes(_ctr)
-                    assert blake.state[j] == uint_2
+                _ctr = ctr[4:] if j < 8 else ctr[:4]
+                blake.state[j] -= Uint32.from_bytes(_ctr)
+                assert blake.state[j] == uint_2
 
 
 def test_blake32_mix_into_state():
@@ -178,19 +207,18 @@ def test_blake64_g_mix():
     ]
 
 
-def test_permute():
-    for cls in [Blake32, Blake64]:
-        uint = cls.uint()
-        blake = cls(key=b'', nonce=b'', context=b'')
-        message = [uint(c) for c in b"ABCDEFGHIJKLMNOP"]
+@pytest.mark.parametrize("cls", [Blake32, Blake64])
+def test_permute(cls):
+    blake = cls(key=b'', nonce=b'', context=b'')
+    message = [cls.create_uint(c) for c in b"ABCDEFGHIJKLMNOP"]
 
-        expected = [uint(c) for c in b"CGDKHAENBLMFJOPI"]
-        message = blake.permute(message)
-        assert message == expected
+    expected = [cls.create_uint(c) for c in b"CGDKHAENBLMFJOPI"]
+    message = blake.permute(message)
+    assert message == expected
 
-        expected = [uint(c) for c in b"DEKMNCHOGFJALPIB"]
-        message = blake.permute(message)
-        assert message == expected
+    expected = [cls.create_uint(c) for c in b"DEKMNCHOGFJALPIB"]
+    message = blake.permute(message)
+    assert message == expected
 
 
 def test_digest_context():
