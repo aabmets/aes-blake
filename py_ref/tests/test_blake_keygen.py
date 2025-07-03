@@ -156,12 +156,15 @@ def test_blake64_mix_into_state(cls):
     ]
 
 
-def test_blake32_g_mix():
-    blake = Blake32(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_32)
+def test_blake32_g_mix(cls):
+    uint = cls.uint_class()
+    uint_one, uint_two = uint(1), uint(2)
+    blake = cls(key=b'', nonce=b'', context=b'')
     for uint in blake.state:
         assert uint == 0
 
-    blake.g_mix(0, 4, 8, 12, Uint32(1), Uint32(2))
+    blake.g_mix(0, 4, 8, 12, uint_one, uint_two)
     assert blake.state == [
         0x00000013, 0x00000000, 0x00000000, 0x00000000,
         0x20260202, 0x00000000, 0x00000000, 0x00000000,
@@ -169,7 +172,7 @@ def test_blake32_g_mix():
         0x13000100, 0x00000000, 0x00000000, 0x00000000,
     ]
 
-    blake.g_mix(1, 5, 9, 13, Uint32(1), Uint32(2))
+    blake.g_mix(1, 5, 9, 13, uint_one, uint_two)
     assert blake.state ==  [
         0x00000013, 0x00000013, 0x00000000, 0x00000000,
         0x20260202, 0x20260202, 0x00000000, 0x00000000,
@@ -177,7 +180,7 @@ def test_blake32_g_mix():
         0x13000100, 0x13000100, 0x00000000, 0x00000000,
     ]
 
-    blake.g_mix(2, 6, 10, 14, Uint32(1), Uint32(2))
+    blake.g_mix(2, 6, 10, 14, uint_one, uint_two)
     assert blake.state == [
         0x00000013, 0x00000013, 0x00000013, 0x00000000,
         0x20260202, 0x20260202, 0x20260202, 0x00000000,
@@ -185,7 +188,7 @@ def test_blake32_g_mix():
         0x13000100, 0x13000100, 0x13000100, 0x00000000,
     ]
 
-    blake.g_mix(3, 7, 11, 15, Uint32(1), Uint32(2))
+    blake.g_mix(3, 7, 11, 15, uint_one, uint_two)
     assert blake.state ==  [
         0x00000013, 0x00000013, 0x00000013, 0x00000013,
         0x20260202, 0x20260202, 0x20260202, 0x20260202,
@@ -194,12 +197,15 @@ def test_blake32_g_mix():
     ]
 
 
-def test_blake64_g_mix():
-    blake = Blake64(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_64)
+def test_blake64_g_mix(cls):
+    uint = cls.uint_class()
+    uint_one, uint_two = uint(1), uint(2)
+    blake = cls(key=b'', nonce=b'', context=b'')
     for uint in blake.state:
         assert uint == 0
 
-    blake.g_mix(0, 4, 8, 12, Uint64(1), Uint64(2))
+    blake.g_mix(0, 4, 8, 12, uint_one, uint_two)
     assert blake.state ==  [
         0x0000000000000103, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
         0x0206000200020200, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
@@ -207,7 +213,7 @@ def test_blake64_g_mix():
         0x0103000000010000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     ]
 
-    blake.g_mix(1, 5, 9, 13, Uint64(1), Uint64(2))
+    blake.g_mix(1, 5, 9, 13, uint_one, uint_two)
     assert blake.state == [
         0x0000000000000103, 0x0000000000000103, 0x0000000000000000, 0x0000000000000000,
         0x0206000200020200, 0x0206000200020200, 0x0000000000000000, 0x0000000000000000,
@@ -215,7 +221,7 @@ def test_blake64_g_mix():
         0x0103000000010000, 0x0103000000010000, 0x0000000000000000, 0x0000000000000000,
     ]
 
-    blake.g_mix(2, 6, 10, 14, Uint64(1), Uint64(2))
+    blake.g_mix(2, 6, 10, 14, uint_one, uint_two)
     assert blake.state ==  [
         0x0000000000000103, 0x0000000000000103, 0x0000000000000103, 0x0000000000000000,
         0x0206000200020200, 0x0206000200020200, 0x0206000200020200, 0x0000000000000000,
@@ -223,7 +229,7 @@ def test_blake64_g_mix():
         0x0103000000010000, 0x0103000000010000, 0x0103000000010000, 0x0000000000000000,
     ]
 
-    blake.g_mix(3, 7, 11, 15, Uint64(1), Uint64(2))
+    blake.g_mix(3, 7, 11, 15, uint_one, uint_two)
     assert blake.state == [
         0x0000000000000103, 0x0000000000000103, 0x0000000000000103, 0x0000000000000103,
         0x0206000200020200, 0x0206000200020200, 0x0206000200020200, 0x0206000200020200,
