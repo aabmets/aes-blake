@@ -22,11 +22,11 @@ __all__ = ["Blake32", "Blake64"]
 
 class Blake32(BaseBlake):
     @staticmethod
-    def uint_class() -> t.Type[BaseUint] | t.Type[BaseMaskedUint]:
+    def uint_class() -> t.Type[BaseUint]:
         return Uint32
 
     @staticmethod
-    def create_uint(value: int) -> BaseUint | BaseMaskedUint:
+    def create_uint(value: int) -> BaseUint:
         return Uint32(value)
 
     @staticmethod
@@ -102,11 +102,11 @@ class Blake32(BaseBlake):
 
 class Blake64(BaseBlake):
     @staticmethod
-    def uint_class() -> t.Type[BaseUint] | t.Type[BaseMaskedUint]:
+    def uint_class() -> t.Type[BaseUint]:
         return Uint64
 
     @staticmethod
-    def create_uint(value: int) -> BaseUint | BaseMaskedUint:
+    def create_uint(value: int) -> BaseUint:
         return Uint64(value)
 
     @staticmethod

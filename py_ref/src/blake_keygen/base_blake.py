@@ -80,18 +80,20 @@ class BaseBlake(ABC):
             output.append(cls.create_uint(value))
         return output
 
-    def compute_key_nonce_composite(self) -> list[BaseUint]:
+    def compute_key_nonce_composite(self) -> AnyUintList:
         """
         Splices together 8-element key and nonce vectors by exchanging the bits
         of a pair of elements from each vector according to predefined bit-masks.
 
         Returns:
-            list[BaseUint]: 16-element vector of combined elements.
+            AnyUintList: 16-element vector of combined elements.
         """
         half = self.bit_length() // 2
         mask1 = (1 << half) - 1  # Selects half of the lower bits
         mask2 = mask1 << half  # Selects half of the upper bits
-        out: list[BaseUint] = []
+        mask1 = self.create_uint(mask1)
+        mask2 = self.create_uint(mask2)
+        out: AnyUintList = []
         for i in range(8):
             a = (self.key[i] & mask2) | (self.nonce[i] & mask1)
             b = (self.nonce[i] & mask2) | (self.key[i] & mask1)

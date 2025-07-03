@@ -29,7 +29,10 @@ __all__ = [
 ]
 
 
-@pytest.mark.parametrize("cls", [Blake32, Blake64])
+CLASSES = [Blake32, Blake64, MaskedBlake32, MaskedBlake64]
+
+
+@pytest.mark.parametrize("cls", CLASSES)
 def test_bytes_to_uint_vector(cls):
     byte_count = cls.bit_length() // 8
 
@@ -57,16 +60,17 @@ def test_bytes_to_uint_vector(cls):
         assert v == int.from_bytes(subset, byteorder="big")
 
 
-def test_compute_key_nonce_composite():
-    key = b"\xAA" * Uint32.bit_length()
-    nonce = b"\xBB" * Uint32.bit_length()
-    blake = Blake32(key, nonce, context=b"")
-    assert blake.knc == [
-        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
-        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
-        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
-        0xAAAABBBB, 0xBBBBAAAA, 0xAAAABBBB, 0xBBBBAAAA,
-    ]
+@pytest.mark.parametrize("cls", CLASSES)
+def test_compute_key_nonce_composite(cls):
+    key = b"\xAA" * cls.bit_length()
+    nonce = b"\xBB" * cls.bit_length()
+    blake = cls(key, nonce, context=b"")
+    words = [0xAAAABBBB, 0xBBBBAAAA]
+    if cls.bit_length() == 64:
+        words = [0xAAAAAAAABBBBBBBBB, 0xBBBBBBBBAAAAAAAA]
+    for i in range(len(blake.knc), 2):
+        assert blake.knc[i] == words[0]
+        assert blake.knc[i+1] == words[1]
 
 
 @pytest.mark.parametrize("cls", [Blake32, Blake64])
