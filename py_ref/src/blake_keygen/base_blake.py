@@ -56,11 +56,6 @@ class BaseBlake(ABC):
     @abstractmethod
     def domain_mask(domain: KDFDomain) -> int: ...
 
-    @abstractmethod
-    def derive_keys(
-            self, key_count: int, block_counter: int, domain: KDFDomain
-    ) -> list[RoundKeys]: ...
-
     def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
         self.key = self.bytes_to_uint_vector(key, vec_len=8)
         self.nonce = self.bytes_to_uint_vector(nonce, vec_len=8)
