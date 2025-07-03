@@ -100,7 +100,7 @@ class BaseBlake(ABC):
             out.extend([a, b])
         return out
 
-    def init_state_vector(self, entropy: list[BaseUint], counter: int, domain: KDFDomain) -> None:
+    def init_state_vector(self, entropy: AnyUintList, counter: int, domain: KDFDomain) -> None:
         """
         Initialize the 16-word internal state vector for the compression function.
 
@@ -125,15 +125,16 @@ class BaseBlake(ABC):
         self.state.extend(self.create_uint(iv) for iv in ivs[:4])
         self.state.extend(entropy)
         self.state.extend(self.create_uint(iv) for iv in ivs[4:])
-        mask = Uint32.max_value()
-        ctr_low = Uint32(counter & mask)
-        ctr_high = Uint32((counter >> 32) & mask)
+        ctr_low = self.create_uint(counter)
+        ctr_high = self.create_uint(counter >> 32)
+        uint32_clamp = self.create_uint(0xFFFF_FFFF)
         for i in range(4, 8):
-            self.state[i] += ctr_low
-            self.state[i + 4] += ctr_high
-        d_mask = self.domain_mask(domain)
+            self.state[i] += (ctr_low & uint32_clamp)
+            self.state[i + 4] += (ctr_high & uint32_clamp)
+        d_mask_int = self.domain_mask(domain)
+        d_mask_uint = self.create_uint(d_mask_int)
         for i in range(12, 16):
-            self.state[i] ^= d_mask
+            self.state[i] ^= d_mask_uint
 
     def mix_into_state(self, m: list[BaseUint]) -> None:
         """

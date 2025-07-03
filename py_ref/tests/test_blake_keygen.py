@@ -11,6 +11,7 @@
 
 import pytest
 import typing as t
+from functools import cache
 from copy import deepcopy
 
 from src.blake_keygen import *
@@ -73,9 +74,9 @@ def test_compute_key_nonce_composite(cls):
         assert blake.knc[i+1] == words[1]
 
 
-@pytest.mark.parametrize("cls", [Blake32, Blake64])
+@pytest.mark.parametrize("cls", CLASSES)
 def test_init_state_vector(cls):
-    uint, ivs = cls.uint_class(), cls.ivs()
+    uint = cls.uint_class()
     v_bits = uint.bit_length()
     v_max = uint.max_value()
     v_bytes = v_bits // 8
@@ -87,13 +88,26 @@ def test_init_state_vector(cls):
     n_vector = cls.bytes_to_uint_vector(nonce, vec_len=8)
 
     blake = cls(key=b'', nonce=b'', context=b'')
+    uint32_clamp = cls.create_uint(0xFFFF_FFFF)
+    ivs = [blake.create_uint(iv) for iv in cls.ivs()]
+
+    @cache
+    def compute_ctr_uints(counter_: int):
+        ctr_ = Uint64(counter_).to_bytes()
+        ctr_high_ = int.from_bytes(ctr_[4:], byteorder="big", signed=False)
+        ctr_low_ = int.from_bytes(ctr_[:4], byteorder="big", signed=False)
+        ctr_high_uint_ = cls.create_uint(ctr_high_) & uint32_clamp
+        ctr_low_uint_ = cls.create_uint(ctr_low_) & uint32_clamp
+        return ctr_high_uint_, ctr_low_uint_
 
     for domain in domains:
+        d_mask = blake.domain_mask(domain)
+        d_mask = blake.create_uint(d_mask)
+
         for counter in [0, v_max // 2, v_max // 3, v_max]:
             nv_copy = deepcopy(n_vector)
             blake.init_state_vector(nv_copy, counter, domain)
-            d_mask = blake.domain_mask(domain)
-            ctr = Uint64(counter).to_bytes()
+            ctr_high_uint, ctr_low_uint = compute_ctr_uints(counter)
 
             for i, j in enumerate([0, 1, 2, 3, 12, 13, 14, 15]):
                 if j >= 12:
@@ -104,10 +118,11 @@ def test_init_state_vector(cls):
                 start = i * v_bytes
                 end = start + v_bytes
                 n_slice = nonce[start:end]
-                uint_2 = uint.from_bytes(n_slice)
+                int_2 = int.from_bytes(n_slice, byteorder="big", signed=False)
+                uint_2 = cls.create_uint(int_2)
 
-                _ctr = ctr[4:] if j < 8 else ctr[:4]
-                blake.state[j] -= Uint32.from_bytes(_ctr)
+                _ctr = ctr_high_uint if j < 8 else ctr_low_uint
+                blake.state[j] -= _ctr
                 assert blake.state[j] == uint_2
 
 
