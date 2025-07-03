@@ -238,7 +238,7 @@ def test_blake64_g_mix(cls):
     ]
 
 
-@pytest.mark.parametrize("cls", [Blake32, Blake64])
+@pytest.mark.parametrize("cls", CLASSES)
 def test_permute(cls):
     blake = cls(key=b'', nonce=b'', context=b'')
     message = [cls.create_uint(c) for c in b"ABCDEFGHIJKLMNOP"]
@@ -252,8 +252,9 @@ def test_permute(cls):
     assert message == expected
 
 
-def test_digest_context():
-    blake = Blake32(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_32)
+def test_blake32_digest_context(cls):
+    blake = cls(key=b'', nonce=b'', context=b'')
     blake.digest_context()
     assert blake.state == [
         0xC2EB894F, 0x3B147EEA, 0xAE5A1CB8, 0x904DF606,
@@ -262,7 +263,9 @@ def test_digest_context():
         0xBD35DCD2, 0x4969FFC6, 0xE03984FA, 0xE4133986,
     ]
 
-    blake = Blake64(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_64)
+def test_blake64_digest_context(cls):
+    blake = cls(key=b'', nonce=b'', context=b'')
     blake.digest_context()
     assert blake.state == [
         0xDC8B3C3143A0D4C1, 0x580998D3DE81A26F, 0x0541A07C357EF61D, 0x0957A6015FDF7732,
