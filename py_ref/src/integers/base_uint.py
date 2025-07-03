@@ -63,7 +63,8 @@ class BaseUint(ABC):
         self._value = value & self.max_value()
 
     def __init__(self, value: int | BaseUint = 0, *, suffix: str = "") -> None:
-        self.value = value.value if isinstance(value, BaseUint) else value
+        value = value if isinstance(value, int) else value.value
+        self.value = value & self.max_value()  # clamp value to bit length
         if BaseUint._exp_nodes_enabled:
             self._name_base, self._name = self._generate_unique_name(suffix)
             if isinstance(value, BaseUint) and hasattr(value, '_exp_node'):

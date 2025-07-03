@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import os
 import secrets
 import typing as t
 import operator as opr
@@ -61,8 +62,8 @@ class BaseMaskedUint(ABC):
     def __init__(
             self,
             value: int | BaseUint,
-            order: int,
-            domain: Domain,
+            domain: Domain = Domain.BOOLEAN,
+            order: int = int(os.getenv("MASKING_ORDER", 3)),
             *,
             automatic_domain_conversion: bool = True
     ) -> None:

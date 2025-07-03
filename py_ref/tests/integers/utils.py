@@ -21,9 +21,11 @@ def get_randomly_masked_uint(
         domain: Domain,
         order: int
 ) -> tuple[BaseUint, BaseMaskedUint]:
-    bit_count = cls.uint_class().bit_length()
-    value = secrets.randbits(bit_count)
-    return cls.uint_class()(value), cls(value, order, domain)
+    uint_cls = cls.uint_class()
+    bit_length = uint_cls.bit_length()
+    value = secrets.randbits(bit_length)
+    masked_uint = cls(value, domain, order)
+    return uint_cls(value), masked_uint
 
 
 def get_many_randomly_masked_uints(
