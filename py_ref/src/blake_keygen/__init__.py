@@ -12,6 +12,7 @@
 from src.blake_keygen.base_blake import *
 from src.blake_keygen.clean_blake import *
 from src.blake_keygen.masked_blake import *
+from src.blake_keygen.with_derive_keys import *
 
 __all__ = [
     "AnyUintList",
@@ -20,6 +21,8 @@ __all__ = [
     "BaseBlake",
     "Blake32",
     "Blake64",
+    "WithDeriveKeys32",
+    "WithDeriveKeys64",
     "MaskedBlake32",
     "MaskedBlake64"
 ]
