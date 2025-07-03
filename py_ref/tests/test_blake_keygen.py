@@ -31,6 +31,8 @@ __all__ = [
 
 
 CLASSES = [Blake32, Blake64, MaskedBlake32, MaskedBlake64]
+CLASSES_32 = [Blake32, MaskedBlake32]
+CLASSES_64 = [Blake64, MaskedBlake64]
 
 
 @pytest.mark.parametrize("cls", CLASSES)
@@ -126,9 +128,11 @@ def test_init_state_vector(cls):
                 assert blake.state[j] == uint_2
 
 
-def test_blake32_mix_into_state():
-    msg = [Uint32(n) for n in range(0, 16)]
-    blake = Blake32(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_32)
+def test_blake32_mix_into_state(cls):
+    uint = cls.uint_class()
+    msg = [uint(n) for n in range(0, 16)]
+    blake = cls(key=b'', nonce=b'', context=b'')
     blake.mix_into_state(msg)
     assert blake.state == [
         0x952AB9C9, 0x7A41633A, 0x5E47082C, 0xB024987E,
@@ -138,9 +142,11 @@ def test_blake32_mix_into_state():
     ]
 
 
-def test_blake64_mix_into_state():
-    msg = [Uint64(n) for n in range(0, 16)]
-    blake = Blake64(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_64)
+def test_blake64_mix_into_state(cls):
+    uint = cls.uint_class()
+    msg = [uint(n) for n in range(0, 16)]
+    blake = cls(key=b'', nonce=b'', context=b'')
     blake.mix_into_state(msg)
     assert blake.state == [
         0x130E040401080D14, 0x191A081607122722, 0x1F260C18151C2930, 0x0D0200020B06232E,
