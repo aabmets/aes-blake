@@ -20,8 +20,8 @@ from src.integers import *
 __all__ = ["AnyUintList", "RoundKeys", "KDFDomain", "BaseBlake"]
 
 
-AnyUintList = list[BaseUint] | list[BaseMaskedUint]
-RoundKeys = list[list[Uint8]]
+AnyUintList = t.Union[list[BaseUint], list[BaseMaskedUint]]
+RoundKeys = t.Union[list[list[Uint8]], list[list[MaskedUint8]]]
 
 
 class KDFDomain(Enum):

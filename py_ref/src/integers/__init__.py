@@ -22,6 +22,7 @@ __all__ = [
     "Uint8",
     "Uint32",
     "Uint64",
+    "BaseMaskedWideUint",
     "MaskedUint8",
     "MaskedUint32",
     "MaskedUint64"

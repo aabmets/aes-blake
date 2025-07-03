@@ -9,14 +9,18 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
+from __future__ import annotations
+
 import typing as t
+from abc import ABC
 from src.integers.base_uint import BaseUint
-from src.integers.base_masked_uint import BaseMaskedUint
+from src.integers.base_masked_uint import Domain, BaseMaskedUint
 
 __all__ = [
     "Uint8",
     "Uint32",
     "Uint64",
+    "BaseMaskedWideUint",
     "MaskedUint8",
     "MaskedUint32",
     "MaskedUint64"
@@ -53,6 +57,19 @@ class Uint64(BaseUint):
         return 0x_FF_FF_FF_FF_FF_FF_FF_FF
 
 
+class BaseMaskedWideUint(BaseMaskedUint, ABC):
+    def to_masked_uint8_list(self) -> list[MaskedUint8]:
+        out: list[MaskedUint8] = []
+        self.atob()
+        share_bytes = [v.to_bytes() for v in self.shares]
+        template = MaskedUint8(0, domain=Domain.BOOLEAN, order=self.order)
+        for i in range(self.bit_length() // 8):
+            shares = [Uint8(share_bytes[n][i]) for n in range(self.share_count)]
+            clone = template.create(shares, clone=True)
+            out.append(clone)
+        return out
+
+
 class MaskedUint8(BaseMaskedUint):
     @staticmethod
     def uint_class() -> t.Type[BaseUint]:
@@ -67,7 +84,7 @@ class MaskedUint8(BaseMaskedUint):
         return Uint8.max_value()
 
 
-class MaskedUint32(BaseMaskedUint):
+class MaskedUint32(BaseMaskedWideUint):
     @staticmethod
     def uint_class() -> t.Type[BaseUint]:
         return Uint32
@@ -81,7 +98,7 @@ class MaskedUint32(BaseMaskedUint):
         return Uint32.max_value()
 
 
-class MaskedUint64(BaseMaskedUint):
+class MaskedUint64(BaseMaskedWideUint):
     @staticmethod
     def uint_class() -> t.Type[BaseUint]:
         return Uint64

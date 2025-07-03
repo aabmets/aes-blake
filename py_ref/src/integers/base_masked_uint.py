@@ -63,7 +63,7 @@ class BaseMaskedUint(ABC):
             self,
             value: int | BaseUint,
             domain: Domain = Domain.BOOLEAN,
-            order: int = int(os.getenv("MASKING_ORDER", 3)),
+            order: int = int(os.getenv("MASKING_ORDER", 1)),
             *,
             automatic_domain_conversion: bool = True
     ) -> None:
