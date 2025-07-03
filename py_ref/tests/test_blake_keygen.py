@@ -275,8 +275,9 @@ def test_blake64_digest_context(cls):
     ]
 
 
-def test_blake32_derive_keys():
-    blake = Blake32(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_32)
+def test_blake32_derive_keys(cls):
+    blake = cls(key=b'', nonce=b'', context=b'')
     blake.digest_context()
     key_count, block_counter = 10, 0
 
@@ -328,8 +329,9 @@ def test_blake32_derive_keys():
     ]
 
 
-def test_blake64_derive_keys():
-    blake = Blake64(key=b'', nonce=b'', context=b'')
+@pytest.mark.parametrize("cls", CLASSES_64)
+def test_blake64_derive_keys(cls):
+    blake = cls(key=b'', nonce=b'', context=b'')
     blake.digest_context()
     key_count, block_counter = 10, 0
 
