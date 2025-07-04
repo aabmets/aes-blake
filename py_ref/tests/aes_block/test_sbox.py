@@ -11,7 +11,7 @@
 
 import pytest
 
-from src.aes_sbox import SBox
+from src.aes_block import SBox
 
 __all__ = ["fixture_sbox", "test_sbox", "test_inv_sbox"]
 
