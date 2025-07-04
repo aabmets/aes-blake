@@ -9,16 +9,18 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.checksum import CheckSum
-from src.uint import Uint8
+import pytest
+from src.checksum import *
 
 __all__ = ["test_checksum"]
 
 
-def test_checksum():
-    chk = CheckSum(state_size=16)
+@pytest.mark.parametrize("cls", [CheckSum, MaskedCheckSum])
+def test_checksum(cls):
+    chk = cls(state_size=16)
+    uint = cls.uint_class()
     for obj in chk.state:
-        assert isinstance(obj, Uint8)
+        assert isinstance(obj, uint)
 
     data1 = b"\x27" * 16
     data2 = b"\xeb" * 16
@@ -43,8 +45,8 @@ def test_checksum():
 
     assert chk.to_bytes() == b"\x0a" * 16
 
-    chk = CheckSum.create_many(4)
+    chk = cls.create_many(4)
     assert isinstance(chk, list)
     assert len(chk) == 4
     for obj in chk:
-        assert isinstance(obj, CheckSum)
+        assert isinstance(obj, cls)
