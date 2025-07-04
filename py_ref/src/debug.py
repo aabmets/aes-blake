@@ -14,7 +14,7 @@ import typing as t
 
 from rich.console import Console
 
-from src.uint import BaseUint
+from src.integers import *
 
 __all__ = [
     "to_binary_bytes",
@@ -30,16 +30,22 @@ __all__ = [
 _console = Console()
 
 
-def to_binary_bytes(uint: BaseUint) -> list[str]:
-    bit_str = format(uint.value, f"0{uint.bit_count()}b")
+def to_binary_bytes(uint: BaseUint | BaseMaskedUint) -> list[str]:
+    uint = uint.unmask() if isinstance(uint, BaseMaskedUint) else uint
+    bit_str = format(uint.value, f"0{uint.bit_length()}b")
     return [bit_str[i : i + 8] for i in range(0, len(bit_str), 8)]
 
 
-def to_binary_string(uint: BaseUint, sep=" ") -> str:
+def to_binary_string(uint: BaseUint | BaseMaskedUint, sep=" ") -> str:
     return sep.join(to_binary_bytes(uint))
 
 
-def pretty_print_binary(uint: BaseUint, color_0="blue", color_1="red", end="\n") -> None:
+def pretty_print_binary(
+        uint: BaseUint,
+        color_0="blue",
+        color_1="red",
+        end="\n"
+) -> None:
     bb_list = []
     for bb_str in to_binary_bytes(uint):
         first_color = color_0 if bb_str.startswith("0") else color_1
@@ -63,7 +69,11 @@ def to_hex_string(uint: BaseUint, sep=" ") -> str:
 
 
 def pretty_print_hex(
-    uint: BaseUint, color="green", end="\n", hex_prefix=False, comma=False
+        uint: BaseUint,
+        color="green",
+        end="\n",
+        hex_prefix=False,
+        comma=False
 ) -> None:
     sep = "" if hex_prefix else " "
     prefix = "0x" if hex_prefix else ""
@@ -73,7 +83,11 @@ def pretty_print_hex(
     _console.print(hex_str, end=end)
 
 
-def pretty_print_vector(vector: t.Iterable[BaseUint], color="yellow", py_var=True) -> None:
+def pretty_print_vector(
+        vector: t.Iterable[BaseUint],
+        color="yellow",
+        py_var=True
+) -> None:
     if py_var:
         print(f"\nexpected = [")
     for i, uint in enumerate(vector):
