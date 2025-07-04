@@ -14,7 +14,7 @@ from __future__ import annotations
 import typing as t
 from copy import deepcopy
 
-from src.aes_block.base_aes import BaseAESBlock
+from src.aes_block.base_aes_block import BaseAESBlock
 from src.aes_block.sbox import SBox
 from src.integers import *
 

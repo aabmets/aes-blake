@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.aes_block.base_aes import *
+from src.aes_block.base_aes_block import *
 from src.aes_block.sbox import *
 from src.aes_block.subclasses import *
 
