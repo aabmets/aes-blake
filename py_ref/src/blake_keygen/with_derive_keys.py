@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from src.blake_keygen.base_blake import *
+from src.blake_keygen.base_blake_keygen import *
 
 __all__ = ["WithDeriveKeys32", "WithDeriveKeys64"]
 

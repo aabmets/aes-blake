@@ -9,9 +9,9 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.blake_keygen.base_blake import *
-from src.blake_keygen.clean_blake import *
-from src.blake_keygen.masked_blake import *
+from src.blake_keygen.base_blake_keygen import *
+from src.blake_keygen.clean_blake_keygen import *
+from src.blake_keygen.masked_blake_keygen import *
 from src.blake_keygen.with_derive_keys import *
 
 __all__ = [

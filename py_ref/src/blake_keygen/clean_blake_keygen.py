@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import typing as t
 
-from src.blake_keygen.base_blake import *
+from src.blake_keygen.base_blake_keygen import *
 from src.blake_keygen.with_derive_keys import *
 from src.integers import *
 

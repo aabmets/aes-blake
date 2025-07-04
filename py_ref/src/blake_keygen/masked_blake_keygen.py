@@ -14,8 +14,8 @@ from __future__ import annotations
 import os
 import typing as t
 
-from src.blake_keygen.base_blake import *
-from src.blake_keygen.clean_blake import *
+from src.blake_keygen.base_blake_keygen import *
+from src.blake_keygen.clean_blake_keygen import *
 from src.integers import *
 
 __all__ = ["MaskedBlake32", "MaskedBlake64"]
