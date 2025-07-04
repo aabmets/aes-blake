@@ -16,6 +16,9 @@ from src.aes_blake import AESBlake256, AESBlake512
 
 __all__ = [
     "fixture_aes_block_data",
+    "test_split_bytes",
+    "test_group_by_valid",
+    "test_group_by_invalid",
     "test_aesblake_normal_usage",
     "test_aesblake_bad_data",
     "test_aesblake256_ex_cols",
@@ -35,8 +38,41 @@ def fixture_aes_block_data() -> tuple[bytes, ...]:
 
 
 @pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
+def test_split_bytes(cls):
+    data = b"Word1Word2Word3Word4Word5"
+    chunks = cls.split_bytes(data, chunk_size=5)
+    assert chunks == [b'Word1', b'Word2', b'Word3', b'Word4', b'Word5']
+    chunks = cls.split_bytes(data, chunk_size=6)
+    assert chunks == [b'Word1W', b'ord2Wo', b'rd3Wor', b'd4Word', b'5']
+
+
+@pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
+def test_group_by_valid(cls):
+    cases = [
+        (['abc', 'def', 'ghi', 'jkl'], 2, [('abc', 'def'), ('ghi', 'jkl')]),
+        (['abc', 'def', 'ghi'], 3, [('abc', 'def', 'ghi')]),
+        (['abc', 'def'], 1, [('abc',), ('def',)])
+    ]
+    for data, size, expected in cases:
+        assert cls.group_by(data, size) == expected
+
+
+@pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
+def test_group_by_invalid(cls):
+    cases = [
+        ([], 1),
+        (['abc', 'def'], 0),
+        (['abc', 'def'], -1),
+        (['abc', 'def', 'ghi'], 2),
+    ]
+    for data, size in cases:
+        with pytest.raises(ValueError):
+            cls.group_by(data, size)
+
+
+@pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
 def test_aesblake_normal_usage(cls):
-    data_len = cls.keygen_class().uint().bit_count()  # interpret as byte count
+    data_len = cls.keygen_class().bit_length()  # interpret as byte count
     plaintext = header = bytes(range(data_len))
     cipher = cls(b"", b"", b"")
     ciphertext, auth_tag = cipher.encrypt(plaintext, header)
@@ -51,7 +87,7 @@ def test_aesblake_normal_usage(cls):
 @pytest.mark.parametrize("cls", [AESBlake256, AESBlake512])
 @pytest.mark.parametrize("corrupt_field", ["key", "nonce", "context", "ciphertext", "header", "auth_tag"])
 def test_aesblake_bad_data(cls, corrupt_field):
-    data_len = cls.keygen_class().uint().bit_count()
+    data_len = cls.keygen_class().bit_length()
     key = nonce = context = header = plaintext = bytes(range(data_len))
 
     cipher = cls(key, nonce, context)
