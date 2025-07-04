@@ -279,20 +279,17 @@ class BaseMaskedUint(ABC):
 
     def __invert__(self) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.BOOLEAN, "__invert__")
-        self.masked_value = ~self.masked_value
-        return self
+        return self.create([~self.masked_value, *self.masks])
 
     def __neg__(self) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.ARITHMETIC, "__neg__")
-        self.shares = [-s for s in self.shares]
-        return self
+        return self.create([-s for s in self.shares])
 
     def _shift_rotate_helper(self, operation: str, distance: int = None) -> BaseMaskedUint:
         self.validate_unary_operand(Domain.BOOLEAN, operation, distance)
-        self.masked_value = getattr(self.masked_value, operation)(distance)
-        for index, mask in enumerate(self.masks):
-            self.masks[index] = getattr(mask, operation)(distance)
-        return self
+        new_mv = getattr(self.masked_value, operation)(distance)
+        new_masks = [getattr(m, operation)(distance) for m in self.masks]
+        return self.create([new_mv, *new_masks])
 
     def __rshift__(self, distance: int) -> BaseMaskedUint:
         return self._shift_rotate_helper("__rshift__", distance)
