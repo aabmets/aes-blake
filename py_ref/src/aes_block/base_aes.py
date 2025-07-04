@@ -11,22 +11,35 @@
 
 from __future__ import annotations
 
+import typing as t
+from abc import ABC, abstractmethod
 from collections.abc import Generator
 from copy import deepcopy
 
-from src.aes_sbox import SBox
-from src.uint import IterNum, Uint8
+from src.integers import *
+from src.blake_keygen import RoundKeys
 
-__all__ = ["AESBlock"]
+__all__ = ["BaseAESBlock"]
 
 
-class AESBlock:
+class BaseAESBlock(ABC):
+    @staticmethod
+    @abstractmethod
+    def uint_class() -> t.Type[BaseUint] | t.Type[BaseMaskedUint]: ...
+
     @property
-    def output(self) -> bytes:
-        return bytes(self.state)
+    @abstractmethod
+    def output(self) -> bytes: ...
 
-    def __init__(self, data: IterNum, round_keys: list[list[Uint8]]) -> None:
-        self.state = [Uint8(b) for b in data]
+    @abstractmethod
+    def sub_bytes(self) -> None: ...
+
+    @abstractmethod
+    def inv_sub_bytes(self) -> None: ...
+
+    def __init__(self, data: IterNum, round_keys: RoundKeys) -> None:
+        uint = self.uint_class()
+        self.state = [uint(b) for b in data]
         self.n_rounds = len(round_keys) - 1
         self.round_keys = round_keys
 
@@ -34,11 +47,11 @@ class AESBlock:
         self.add_round_key(0)
         for i in range(1, self.n_rounds):
             yield True  # exchange columns
-            self.sub_bytes(SBox.ENC)
+            self.sub_bytes()
             self.shift_rows()
             self.mix_columns()
             self.add_round_key(i)
-        self.sub_bytes(SBox.ENC)
+        self.sub_bytes()
         self.shift_rows()
         self.add_round_key(self.n_rounds)
         yield False  # end encryption
@@ -46,26 +59,27 @@ class AESBlock:
     def decrypt(self) -> Generator[bool, None, None]:
         self.add_round_key(self.n_rounds)
         self.inv_shift_rows()
-        self.sub_bytes(SBox.DEC)
+        self.inv_sub_bytes()
         for i in range(self.n_rounds - 1, 0, -1):
             self.add_round_key(i)
             self.inv_mix_columns()
             self.inv_shift_rows()
-            self.sub_bytes(SBox.DEC)
+            self.inv_sub_bytes()
             yield True  # inverse exchange columns
         self.add_round_key(0)
         yield False  # end decryption
 
-    @staticmethod
-    def xtime(a: Uint8) -> Uint8:
-        x = (a << 1) & 0xFF
-        y = -(a >> 7) & 0x1B
+    @classmethod
+    def xtime(cls, a: Uint8 | MaskedUint8) -> Uint8 | MaskedUint8:
+        uint = cls.uint_class()
+        x = (a << 1) & uint(0xFF)
+        y = -(a >> 7) & uint(0x1B)
         return x ^ y
 
     def mix_single_column(self, a: int, b: int, c: int, d: int) -> None:
         s = self.state
         x = s[a] ^ s[b] ^ s[c] ^ s[d]
-        y = s[a].value
+        y = s[a]
         s[a] ^= x ^ self.xtime(s[a] ^ s[b])
         s[b] ^= x ^ self.xtime(s[b] ^ s[c])
         s[c] ^= x ^ self.xtime(s[c] ^ s[d])
@@ -104,9 +118,5 @@ class AESBlock:
         for i, uint8 in enumerate(self.round_keys[index]):
             self.state[i] ^= uint8
 
-    def sub_bytes(self, sbox: SBox) -> None:
-        for uint8 in self.state:
-            uint8.value = sbox.value[uint8.value]
-
-    def clone(self) -> AESBlock:
+    def clone(self) -> BaseAESBlock:
         return deepcopy(self)
