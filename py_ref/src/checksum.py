@@ -27,8 +27,9 @@ class BaseCheckSum(ABC):
         self.state = [self.uint_class()(0) for _ in range(state_size)]
 
     def xor_with(self, data: IterNum) -> None:
+        uint = self.uint_class()
         for i, b in enumerate(data):
-            self.state[i] ^= self.uint_class()(b)
+            self.state[i] ^= (uint(b) if isinstance(b, int) else b)
 
     @classmethod
     def create_many(cls, count: int, state_size: int = 16) -> list[BaseCheckSum]:
