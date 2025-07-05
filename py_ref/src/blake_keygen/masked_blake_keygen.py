@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import os
 import typing as t
 
 from src.blake_keygen.base_blake_keygen import *
@@ -28,8 +27,7 @@ class MaskedBlake32(Blake32):
 
     @staticmethod
     def create_uint(value: int) -> BaseMaskedUint:
-        order = int(os.getenv("MASKING_ORDER", 1))
-        return MaskedUint32(value, Domain.ARITHMETIC, order)
+        return MaskedUint32(value, Domain.ARITHMETIC)
 
     @staticmethod
     def bit_length() -> int:
@@ -51,8 +49,7 @@ class MaskedBlake64(Blake64):
 
     @staticmethod
     def create_uint(value: int) -> BaseMaskedUint:
-        order = int(os.getenv("MASKING_ORDER", 1))
-        return MaskedUint64(value, Domain.ARITHMETIC, order)
+        return MaskedUint64(value, Domain.ARITHMETIC)
 
     @staticmethod
     def bit_length() -> int:
