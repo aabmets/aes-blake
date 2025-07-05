@@ -303,6 +303,9 @@ class BaseMaskedUint(ABC):
     def rotl(self, distance: int) -> BaseMaskedUint:
         return self._shift_rotate_helper("rotl", distance)
 
+    def __index__(self):
+        return self.unmask().value
+
     # for pytest only
     def __eq__(self, other: BaseUint | int) -> bool:
         return self.unmask() == other
