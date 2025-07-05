@@ -13,16 +13,17 @@ from __future__ import annotations
 
 import typing as t
 
+from src.aes_blake.parallel_aes_blake import *
 from src.aes_block import *
 from src.blake_keygen import *
-from src.aes_blake.clean_aes_blake import *
+from src.aes_blake import *
 
 __all__ = ["MaskedAESBlake256", "MaskedAESBlake512"]
 
 from src.checksum import MaskedCheckSum
 
 
-class MaskedAESBlake256(AESBlake256):
+class MaskedAESBlake256(ParallelAESBlakeMixin, AESBlake256):
     @staticmethod
     def keygen_class() -> t.Type[MaskedBlake32]:
         return MaskedBlake32
@@ -36,7 +37,7 @@ class MaskedAESBlake256(AESBlake256):
         return MaskedCheckSum
 
 
-class MaskedAESBlake512(AESBlake512):
+class MaskedAESBlake512(ParallelAESBlakeMixin, AESBlake512):
     @staticmethod
     def keygen_class() -> t.Type[MaskedBlake64]:
         return MaskedBlake64
