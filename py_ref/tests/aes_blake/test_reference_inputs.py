@@ -11,7 +11,7 @@
 
 import pytest
 
-from src.aes_blake import AESBlake256, AESBlake512
+from tests.aes_blake.test_core_methods import CLASSES_256, CLASSES_512
 
 __all__ = [
     "test_aesblake256_reference_inputs",
@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-@pytest.mark.parametrize("cls", [AESBlake256])
+@pytest.mark.parametrize("cls", CLASSES_256)
 def test_aesblake256_reference_inputs(cls):
     key = bytes.fromhex(
         "3ACCABE8 119ECD4F BF8550CC C48B67FD"
@@ -82,7 +82,7 @@ def test_aesblake256_reference_inputs(cls):
     assert _plaintext == plaintext
 
 
-@pytest.mark.parametrize("cls", [AESBlake512])
+@pytest.mark.parametrize("cls", CLASSES_512)
 def test_aesblake512_reference_inputs(cls):
     key = bytes.fromhex(
         "F1483309 CDB94036 B2782F5F CD48428C"
