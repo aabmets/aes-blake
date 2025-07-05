@@ -43,13 +43,15 @@ class MockedMaskingMethods(BaseMaskedUint, ABC):
         if self.domain != Domain.BOOLEAN:
             return self
         value = self.unmask()
-        return self.__class__(value, Domain.ARITHMETIC)
+        self.__init__(value, Domain.ARITHMETIC)
+        return self
 
     def atob(self) -> MockedMaskingMethods:
         if self.domain != Domain.ARITHMETIC:
             return self
         value = self.unmask()
-        return self.__class__(value, Domain.BOOLEAN)
+        self.__init__(value, Domain.BOOLEAN)
+        return self
 
 
 class PartiallyMockedMaskedUint8(MaskedUint8, MockedMaskingMethods):
