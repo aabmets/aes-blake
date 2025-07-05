@@ -37,9 +37,14 @@ class BaseAESBlock(ABC):
     @abstractmethod
     def inv_sub_bytes(self) -> None: ...
 
-    def __init__(self, data: IterNum, round_keys: RoundKeys) -> None:
+    def __init__(self, data: bytes | t.Iterable[BaseUint], round_keys: RoundKeys) -> None:
+        if len(data) != 16:
+            raise IndexError(
+                "AES block must receive a data block of "
+                f"length 16 instead of length {len(data)}"
+            )
         uint = self.uint_class()
-        self.state = [uint(b) for b in data]
+        self.state = [uint(s) if isinstance(s, int) else s for s in data]
         self.n_rounds = len(round_keys) - 1
         self.round_keys = round_keys
 
