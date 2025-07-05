@@ -11,5 +11,12 @@
 
 from src.aes_blake.base_aes_blake import *
 from src.aes_blake.clean_aes_blake import *
+from src.aes_blake.masked_aes_blake import *
 
-__all__ = ["BaseAESBlake", "AESBlake256", "AESBlake512"]
+__all__ = [
+    "BaseAESBlake",
+    "AESBlake256",
+    "AESBlake512",
+    "MaskedAESBlake256",
+    "MaskedAESBlake512"
+]

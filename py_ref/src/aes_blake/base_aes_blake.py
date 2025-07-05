@@ -11,7 +11,9 @@
 
 from __future__ import annotations
 
+import os
 import typing as t
+from warnings import warn
 from abc import ABC, abstractmethod
 
 from src.integers import *
@@ -23,39 +25,43 @@ __all__ = ["BaseAESBlake"]
 
 
 Inputs = tuple[list[bytes], list[bytes]]
-Chunks = t.Iterable[bytes | Uint8]
+Chunks = t.Iterable[bytes] | t.Iterable[Uint8] | t.Iterable[MaskedUint8]
 
 
 class BaseAESBlake(ABC):
     @staticmethod
     @abstractmethod
-    def keygen_class() -> t.Type[Blake32 | Blake64]: ...
+    def keygen_class() -> t.Type[BaseBlake]: ...
 
     @staticmethod
     @abstractmethod
-    def aes_class() -> t.Type[AESBlock]: ...
+    def aes_class() -> t.Type[BaseAESBlock]: ...
 
     @staticmethod
     @abstractmethod
-    def checksum_class() -> t.Type[CheckSum]: ...
+    def checksum_class() -> t.Type[BaseCheckSum]: ...
 
     @staticmethod
     @abstractmethod
     def ex_cols_pattern(inverse: bool = False) -> tuple[list[int], ...]: ...
 
     def __init__(self, key: bytes, nonce: bytes, context: bytes) -> None:
-        self.keygen: Blake32 | Blake64 = self.keygen_class()(key, nonce, context)
+        self.keygen = self.keygen_class()(key, nonce, context)
         self.keygen.digest_context()
         self.aes_block_bytes = 16
         self.aes_blocks_count = self.keygen.bit_length() // 16
         self.aes_total_bytes = self.aes_blocks_count * self.aes_block_bytes
         self.block_counter = 0
-        self.key_count = 11
+        self.key_count = int(os.getenv("AES_BLAKE_ROUNDS", 11))
+        if self.key_count != 11:
+            msg = "Invalid AES key count (AESBlake rounds):"
+            msg = f"\n\n!!! {msg} {self.key_count} !!!\n"
+            warn(msg)
 
     def encrypt(self, plaintext: bytes, header: bytes) -> tuple[bytes, bytes]:
         plaintext_chunks, header_chunks = self.validate_convert_inputs(plaintext, header)
         plaintext_checksums = self.checksum_class().create_many(self.aes_blocks_count)
-        ciphertext: list[Uint8] = []
+        ciphertext: list[BaseUint] = []
         for chunk_group in self.group_by(plaintext_chunks, self.aes_blocks_count):
             aes_blocks = self.run_encryption_rounds(chunk_group, KDFDomain.MSG)
             for block in aes_blocks:
@@ -69,7 +75,7 @@ class BaseAESBlake(ABC):
     def decrypt(self, ciphertext: bytes, header: bytes, auth_tag: bytes) -> bytes:
         ciphertext_chunks, header_chunks = self.validate_convert_inputs(ciphertext, header)
         plaintext_checksums = self.checksum_class().create_many(self.aes_blocks_count)
-        plaintext: list[Uint8] = []
+        plaintext: list[BaseUint] = []
         for chunk_group in self.group_by(ciphertext_chunks, self.aes_blocks_count):
             aes_blocks = self.run_decryption_rounds(chunk_group, KDFDomain.MSG)
             for chk, block in zip(plaintext_checksums, aes_blocks):
@@ -89,7 +95,7 @@ class BaseAESBlake(ABC):
         b = self.split_bytes(header, chunk_size=self.aes_block_bytes)
         return a, b
 
-    def run_encryption_rounds(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
+    def run_encryption_rounds(self, chunks: Chunks, domain: KDFDomain) -> list[BaseAESBlock]:
         aes_blocks = self.create_aes_blocks(chunks, domain)
         generators = [ab.encrypt() for ab in aes_blocks]
         keep_running = True
@@ -99,7 +105,7 @@ class BaseAESBlake(ABC):
             self.exchange_columns(aes_blocks)
         return aes_blocks
 
-    def run_decryption_rounds(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
+    def run_decryption_rounds(self, chunks: Chunks, domain: KDFDomain) -> list[BaseAESBlock]:
         aes_blocks = self.create_aes_blocks(chunks, domain)
         generators = [ab.decrypt() for ab in aes_blocks]
         keep_running = True
@@ -109,11 +115,11 @@ class BaseAESBlake(ABC):
                 keep_running = next(gen, False)
         return aes_blocks
 
-    def create_aes_blocks(self, chunks: Chunks, domain: KDFDomain) -> list[AESBlock]:
+    def create_aes_blocks(self, chunks: Chunks, domain: KDFDomain) -> list[BaseAESBlock]:
         keys = self.keygen.derive_keys(self.key_count, self.block_counter, domain)
         return [self.aes_class()(chunk, k) for chunk, k in zip(chunks, keys)]
 
-    def exchange_columns(self, aes_blocks: list[AESBlock], inverse: bool = False) -> None:
+    def exchange_columns(self, aes_blocks: list[BaseAESBlock], inverse: bool = False) -> None:
         clones = [block.clone() for block in aes_blocks]
         pattern = self.ex_cols_pattern(inverse)
         for i, indices in enumerate(pattern):
@@ -133,7 +139,7 @@ class BaseAESBlake(ABC):
             self.block_counter += 1
         chk_states = [chk.state for chk in plaintext_checksums]
         aes_blocks = self.run_encryption_rounds(chk_states, KDFDomain.CHK)
-        final_checksum: list[Uint8] = []
+        final_checksum: list[BaseUint] = []
         for aes_block, chk in zip(aes_blocks, header_checksums):
             for uint1, uint2 in zip(aes_block.state, chk.state):
                 final_checksum.append(uint1 ^ uint2)
