@@ -29,8 +29,9 @@ console_output_style = "count"
 filterwarnings = ["ignore::DeprecationWarning"]
 testpaths = ["tests"]
 markers = [
-    "evalsec_tvla: Run TVLA side-channel security evaluation tests",
-    "evalsec_mia: Run MIA side-channel security evaluation tests",
+    "eval_sec_tvla: Run TVLA side-channel security evaluation tests",
+    "eval_sec_mia: Run MIA side-channel security evaluation tests",
+    "with_slow_dom: Run slow domain-object masking unittests"
 ]
 addopts = [
     "--cov=src",

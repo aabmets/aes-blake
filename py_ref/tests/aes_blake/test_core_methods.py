@@ -16,27 +16,24 @@ from tests.aes_blake.overrides import *
 from src.aes_blake import *
 
 __all__ = [
-    "CLASSES_256",
-    "CLASSES_512",
-    "CLASSES",
+    "CLEAN_CLASSES",
+    "MASKED_CLASSES",
+    "ALL_CLASSES",
     "fixture_aes_block_data",
     "test_split_bytes",
     "test_group_by_valid",
     "test_group_by_invalid",
-    "test_aesblake_normal_usage",
-    "test_aesblake_bad_data",
+    "test_clean_aesblake_normal_usage",
+    "test_masked_aesblake_normal_usage",
+    "test_clean_aesblake_bad_data",
+    "test_masked_aesblake_bad_data",
     "test_aesblake256_ex_cols",
     "test_aesblake512_ex_cols"
 ]
 
-CLASSES_256 = [AESBlake256, PartiallyMockedMaskedAESBlake256]
-CLASSES_512 = [AESBlake512, PartiallyMockedMaskedAESBlake512]
-CLASSES = [
-    AESBlake256,
-    AESBlake512,
-    PartiallyMockedMaskedAESBlake256,
-    PartiallyMockedMaskedAESBlake512
-]
+CLEAN_CLASSES = [AESBlake256, AESBlake512]
+MASKED_CLASSES = [PartiallyMockedMaskedAESBlake256, PartiallyMockedMaskedAESBlake512]
+ALL_CLASSES = CLEAN_CLASSES + MASKED_CLASSES
 
 
 @pytest.fixture(name="aes_block_data", scope="function")
@@ -48,7 +45,7 @@ def fixture_aes_block_data() -> tuple[bytes, ...]:
     return chunk1, chunk2, chunk3, chunk4
 
 
-@pytest.mark.parametrize("cls", CLASSES)
+@pytest.mark.parametrize("cls", ALL_CLASSES)
 def test_split_bytes(cls):
     data = b"Word1Word2Word3Word4Word5"
     chunks = cls.split_bytes(data, chunk_size=5)
@@ -57,7 +54,7 @@ def test_split_bytes(cls):
     assert chunks == [b'Word1W', b'ord2Wo', b'rd3Wor', b'd4Word', b'5']
 
 
-@pytest.mark.parametrize("cls", CLASSES)
+@pytest.mark.parametrize("cls", ALL_CLASSES)
 def test_group_by_valid(cls):
     cases = [
         (['abc', 'def', 'ghi', 'jkl'], 2, [('abc', 'def'), ('ghi', 'jkl')]),
@@ -68,7 +65,7 @@ def test_group_by_valid(cls):
         assert cls.group_by(data, size) == expected
 
 
-@pytest.mark.parametrize("cls", CLASSES)
+@pytest.mark.parametrize("cls", ALL_CLASSES)
 def test_group_by_invalid(cls):
     cases = [
         ([], 1),
@@ -81,8 +78,8 @@ def test_group_by_invalid(cls):
             cls.group_by(data, size)
 
 
-@pytest.mark.parametrize("cls", CLASSES)
-def test_aesblake_normal_usage(cls):
+@pytest.mark.parametrize("cls", CLEAN_CLASSES)
+def test_clean_aesblake_normal_usage(cls):
     data_len = cls.keygen_class().bit_length()  # interpret as byte count
     plaintext = header = bytes(range(data_len))
     cipher = cls(b"", b"", b"")
@@ -95,9 +92,15 @@ def test_aesblake_normal_usage(cls):
     assert _plaintext == plaintext
 
 
-@pytest.mark.parametrize("cls", CLASSES)
+@pytest.mark.with_slow_dom
+@pytest.mark.parametrize("cls", MASKED_CLASSES)
+def test_masked_aesblake_normal_usage(cls):
+    test_clean_aesblake_normal_usage(cls)
+
+
+@pytest.mark.parametrize("cls", CLEAN_CLASSES)
 @pytest.mark.parametrize("corrupt_field", ["key", "nonce", "context", "ciphertext", "header", "auth_tag"])
-def test_aesblake_bad_data(cls, corrupt_field):
+def test_clean_aesblake_bad_data(cls, corrupt_field):
     data_len = cls.keygen_class().bit_length()
     key = nonce = context = header = plaintext = bytes(range(data_len))
 
@@ -122,7 +125,13 @@ def test_aesblake_bad_data(cls, corrupt_field):
         cipher.decrypt(ciphertext, header, auth_tag)
 
 
-@pytest.mark.parametrize("cls", CLASSES_256)
+@pytest.mark.with_slow_dom
+@pytest.mark.parametrize("cls", MASKED_CLASSES)
+def test_masked_aesblake_bad_data(cls):
+    test_clean_aesblake_bad_data(cls)
+
+
+@pytest.mark.parametrize("cls", [AESBlake256, PartiallyMockedMaskedAESBlake256])
 def test_aesblake256_ex_cols(cls, aes_block_data):
     cipher = cls(b'', b'', b'')
     chunks = aes_block_data[:2]
@@ -147,7 +156,7 @@ def test_aesblake256_ex_cols(cls, aes_block_data):
     assert bytes(aes_blocks[1].state) == chunks[1]
 
 
-@pytest.mark.parametrize("cls", CLASSES_512)
+@pytest.mark.parametrize("cls", [AESBlake512, PartiallyMockedMaskedAESBlake512])
 def test_aesblake512_ex_cols(cls, aes_block_data):
     cipher = cls(b'', b'', b'')
     chunks = aes_block_data

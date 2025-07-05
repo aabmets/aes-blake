@@ -11,16 +11,19 @@
 
 import pytest
 
-from tests.aes_blake.test_core_methods import CLASSES_256, CLASSES_512
+from src.aes_blake import *
+from tests.aes_blake.overrides import *
 
 __all__ = [
-    "test_aesblake256_reference_inputs",
-    "test_aesblake512_reference_inputs"
+    "test_clean_aesblake256_reference_inputs",
+    "test_masked_aesblake256_reference_inputs",
+    "test_clean_aesblake512_reference_inputs",
+    "test_masked_aesblake512_reference_inputs",
 ]
 
 
-@pytest.mark.parametrize("cls", CLASSES_256)
-def test_aesblake256_reference_inputs(cls):
+@pytest.mark.parametrize("cls", [AESBlake256])
+def test_clean_aesblake256_reference_inputs(cls):
     key = bytes.fromhex(
         "3ACCABE8 119ECD4F BF8550CC C48B67FD"
         "43B36240 C924B4CC B2AC2376 47AC4A8E"
@@ -82,8 +85,14 @@ def test_aesblake256_reference_inputs(cls):
     assert _plaintext == plaintext
 
 
-@pytest.mark.parametrize("cls", CLASSES_512)
-def test_aesblake512_reference_inputs(cls):
+@pytest.mark.with_slow_dom
+@pytest.mark.parametrize("cls", [PartiallyMockedMaskedAESBlake256])
+def test_masked_aesblake256_reference_inputs(cls):
+    test_clean_aesblake256_reference_inputs(cls)
+
+
+@pytest.mark.parametrize("cls", [AESBlake512])
+def test_clean_aesblake512_reference_inputs(cls):
     key = bytes.fromhex(
         "F1483309 CDB94036 B2782F5F CD48428C"
         "CBBBF8B0 085544AE 411086E3 778BD9F6"
@@ -153,3 +162,9 @@ def test_aesblake512_reference_inputs(cls):
 
     _plaintext = cipher.decrypt(ciphertext, header, auth_tag)
     assert _plaintext == plaintext
+
+
+@pytest.mark.with_slow_dom
+@pytest.mark.parametrize("cls", [PartiallyMockedMaskedAESBlake512])
+def test_masked_aesblake512_reference_inputs(cls):
+    test_clean_aesblake512_reference_inputs(cls)

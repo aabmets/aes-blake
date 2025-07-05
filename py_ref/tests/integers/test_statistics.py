@@ -28,18 +28,18 @@ from tests.integers import gcmi
 
 def compute_security_orders() :
     orders = [1, 2, 3]
-    if order := int(os.environ.get("EVALSEC_ORDER", 0)):
+    if order := int(os.environ.get("EVAL_SEC_ORDER", 0)):
         clamped_order = max(min(order, 10), 1)
         if not (1 <= order <= 10):
-            warnings.warn(f"EVALSEC_ORDER {order} is out of range, clamped to {clamped_order}")
+            warnings.warn(f"EVAL_SEC_ORDER {order} is out of range, clamped to {clamped_order}")
         if clamped_order > 3:
-            warnings.warn(f"Security evaluation can take a very long time due to EVALSEC_ORDER {order}")
+            warnings.warn(f"Security evaluation can take a very long time due to EVAL_SEC_ORDER {order}")
         orders = [clamped_order]
     return orders
 
 
 CLASSES = [MaskedUint8, MaskedUint32, MaskedUint64]
-ROUNDS = int(os.environ.get("EVALSEC_SAMPLES", 5000))
+ROUNDS = int(os.environ.get("EVAL_SEC_SAMPLES", 5000))
 ORDERS = compute_security_orders()
 ARITH_OPERATORS = ["atob", "__add__", "__sub__", "__mul__"]
 UNARY_OPERATORS = ["__invert__", "__neg__", "btoa", "atob"]
@@ -95,7 +95,7 @@ def expand_traces(mat: np.ndarray, order: int) -> np.ndarray:
     return np.hstack(out).astype(np.float64)
 
 
-@pytest.mark.evalsec_tvla
+@pytest.mark.eval_sec_tvla
 @pytest.mark.parametrize("cls", CLASSES)
 @pytest.mark.parametrize("order", ORDERS)
 @pytest.mark.parametrize("operator", OPERATORS)
@@ -117,7 +117,7 @@ def test_fixed_vs_random_tvla(cls, operator, order):
     assert worst < threshold, f"TVLA fail: |t|={worst:.2f} ≥ {threshold}"
 
 
-@pytest.mark.evalsec_mia
+@pytest.mark.eval_sec_mia
 @pytest.mark.parametrize("cls", CLASSES)
 @pytest.mark.parametrize("order", ORDERS)
 @pytest.mark.parametrize("operator", OPERATORS)
