@@ -23,6 +23,7 @@ dependencies = [
     "numpy>=2.2.5",
     "scikit-learn>=1.7.0",
     "dill>=0.4.0",
+    "scipy-stubs>=1.16.0.2",
 ]
 
 [tool.pytest.ini_options]
