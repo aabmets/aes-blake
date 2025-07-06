@@ -16,8 +16,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Generator
 from copy import deepcopy
 
-from src.integers import *
 from src.blake_keygen import RoundKeys
+from src.integers import *
 
 __all__ = ["BaseAESBlock"]
 

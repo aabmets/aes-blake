@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import typing as t
 from abc import ABC, abstractmethod
+
 from src.integers import *
 
 __all__ = ["BaseCheckSum", "CheckSum", "MaskedCheckSum"]

@@ -11,12 +11,13 @@
 
 from __future__ import annotations
 
-import string
 import itertools
 import operator as opr
+import string
 import typing as t
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+
 from src.integers.expression_node import *
 
 __all__ = ["IterNum", "ByteOrder", "BaseUint"]

@@ -9,10 +9,11 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import pytest
 import typing as t
-from multiprocessing import Lock
 from functools import cache
+from multiprocessing import Lock
+
+import pytest
 
 from src.blake_keygen import *
 

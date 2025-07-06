@@ -2,9 +2,10 @@
 Gaussian copula mutual information estimation
 """
 
+import warnings
+
 import numpy as np
 import scipy as sp
-import warnings
 
 __version__ = '0.3'
 

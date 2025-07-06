@@ -11,14 +11,15 @@
 
 from __future__ import annotations
 
+import operator as opr
 import os
 import secrets
 import typing as t
-import operator as opr
-from functools import partial
-from copy import deepcopy
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from enum import Enum
+from functools import partial
+
 from src.integers.base_uint import *
 
 __all__ = ["Domain", "BaseMaskedUint"]

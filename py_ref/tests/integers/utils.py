@@ -9,8 +9,9 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import typing as t
 import secrets
+import typing as t
+
 from src.integers import *
 
 __all__ = ["get_randomly_masked_uint", "get_many_randomly_masked_uints"]

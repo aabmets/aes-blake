@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import typing as t
 from abc import ABC
+
+from src.integers.base_masked_uint import BaseMaskedUint, Domain
 from src.integers.base_uint import BaseUint
-from src.integers.base_masked_uint import Domain, BaseMaskedUint
 
 __all__ = [
     "Uint8",

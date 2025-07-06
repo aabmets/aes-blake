@@ -13,11 +13,12 @@ from __future__ import annotations
 
 import typing as t
 from abc import ABC
-from src.integers import *
+
 from src.aes_blake import *
 from src.aes_block import *
 from src.blake_keygen import *
 from src.checksum import *
+from src.integers import *
 
 __all__ = [
     "MockedMaskingMethods",

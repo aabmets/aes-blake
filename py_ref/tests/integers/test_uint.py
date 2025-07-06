@@ -9,10 +9,10 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
+import random
 import re
 import typing as t
 
-import random
 import pytest
 
 from src.integers import *

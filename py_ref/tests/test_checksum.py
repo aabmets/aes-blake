@@ -10,6 +10,7 @@
 #
 
 import pytest
+
 from src.checksum import *
 
 __all__ = ["test_checksum"]

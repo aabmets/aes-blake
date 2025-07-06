@@ -10,6 +10,7 @@
 #
 
 import operator as opr
+
 from src.integers.expression_node import *
 
 __all__ = [

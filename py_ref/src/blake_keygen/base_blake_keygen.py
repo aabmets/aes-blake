@@ -12,8 +12,8 @@
 from __future__ import annotations
 
 import typing as t
-from enum import Enum
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from src.integers import *
 

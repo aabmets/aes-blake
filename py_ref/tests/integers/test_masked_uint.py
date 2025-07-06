@@ -9,10 +9,11 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import pytest
+import operator as opr
 import secrets
 import typing as t
-import operator as opr
+
+import pytest
 
 from src.integers import *
 from tests.integers.utils import *

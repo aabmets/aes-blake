@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import typing as t
 
+from src.aes_blake.base_aes_blake import BaseAESBlake
 from src.aes_block import *
 from src.blake_keygen import *
-from src.aes_blake.base_aes_blake import BaseAESBlake
 
 __all__ = ["AESBlake256", "AESBlake512"]
 

@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import os
 import typing as t
-import dill as pickle
 from abc import ABC
 from concurrent.futures import ProcessPoolExecutor
 
-from src.blake_keygen import *
+import dill as pickle
+
 from src.aes_blake import *
+from src.blake_keygen import *
 from src.checksum import *
 
 __all__ = ["ParallelAESBlakeMixin"]

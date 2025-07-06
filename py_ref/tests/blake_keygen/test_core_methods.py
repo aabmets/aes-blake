@@ -9,9 +9,10 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import pytest
-from functools import cache
 from copy import deepcopy
+from functools import cache
+
+import pytest
 
 from src.blake_keygen import *
 from src.integers import *

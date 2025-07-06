@@ -11,15 +11,16 @@
 
 from __future__ import annotations
 
-import typing as t
-import os
-import pytest
-import secrets
-import warnings
 import itertools
-import numpy as np
-from scipy import stats
+import os
+import secrets
+import typing as t
+import warnings
 from functools import partial
+
+import numpy as np
+import pytest
+from scipy import stats
 from sklearn.feature_selection import mutual_info_regression
 
 from src.integers import *

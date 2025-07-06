@@ -11,9 +11,9 @@
 
 import pytest
 
+from src.aes_blake import *
 from src.blake_keygen import KDFDomain
 from tests.aes_blake.overrides import *
-from src.aes_blake import *
 
 __all__ = [
     "CLEAN_CLASSES",

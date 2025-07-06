@@ -10,10 +10,9 @@
 #
 
 import copy
-import typing as t
 import operator as opr
+import typing as t
 from abc import ABC, abstractmethod
-
 
 __all__ = [
     "ExpressionNode",

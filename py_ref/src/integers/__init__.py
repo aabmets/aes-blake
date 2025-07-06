@@ -9,8 +9,8 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.integers.base_uint import *
 from src.integers.base_masked_uint import *
+from src.integers.base_uint import *
 from src.integers.subclasses import *
 
 __all__ = [

@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import typing as t
 
+from src.aes_blake import *
 from src.aes_blake.parallel_aes_blake import *
 from src.aes_block import *
 from src.blake_keygen import *
-from src.aes_blake import *
 
 __all__ = ["MaskedAESBlake256", "MaskedAESBlake512"]
 

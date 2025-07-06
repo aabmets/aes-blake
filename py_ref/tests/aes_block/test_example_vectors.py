@@ -9,16 +9,17 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import pytest
 import secrets
 import typing as t
-from functools import cache
 from copy import deepcopy
+from functools import cache
 from multiprocessing import Lock
 
-from src.integers import *
+import pytest
+
 from src.aes_block import *
 from src.blake_keygen import RoundKeys
+from src.integers import *
 
 __all__ = [
     "generate_original_aes128_round_keys",
