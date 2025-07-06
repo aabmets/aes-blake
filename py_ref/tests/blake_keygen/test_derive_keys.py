@@ -15,7 +15,9 @@ from multiprocessing import Lock
 
 import pytest
 
-from src.blake_keygen import *
+from src.blake_keygen import (Blake32, Blake64, KDFDomain, MaskedBlake32,
+                              MaskedBlake64, WithDeriveKeys32,
+                              WithDeriveKeys64)
 
 __all__ = [
     "test_blake32_derive_keys_msg_ctr_0",

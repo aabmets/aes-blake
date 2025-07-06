@@ -14,7 +14,7 @@ import typing as t
 
 from rich.console import Console
 
-from src.integers import *
+from src.integers import BaseMaskedUint, BaseUint
 
 __all__ = [
     "to_binary_bytes",
@@ -89,7 +89,7 @@ def pretty_print_vector(
         py_var=True
 ) -> None:
     if py_var:
-        print(f"\nexpected = [")
+        print("\nexpected = [")
     for i, uint in enumerate(vector):
         if i % 4 == 0 and i != 0:
             print()

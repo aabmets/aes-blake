@@ -20,7 +20,7 @@ from copy import deepcopy
 from enum import Enum
 from functools import partial
 
-from src.integers.base_uint import *
+from src.integers.base_uint import BaseUint
 
 __all__ = ["Domain", "BaseMaskedUint"]
 
@@ -86,7 +86,8 @@ class BaseMaskedUint(ABC):
 
     def get_random_uints(self, count: int):
         cls = self.uint_class()
-        randbits = lambda: secrets.randbits(cls.bit_length())
+        def randbits():
+            return secrets.randbits(cls.bit_length())
         return [cls(randbits()) for _ in range(count)]
 
     def refresh_masks(self) -> None:

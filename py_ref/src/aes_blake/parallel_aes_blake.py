@@ -18,9 +18,9 @@ from concurrent.futures import ProcessPoolExecutor
 
 import dill as pickle
 
-from src.aes_blake import *
-from src.blake_keygen import *
-from src.checksum import *
+from src.aes_blake import BaseAESBlake
+from src.blake_keygen import KDFDomain
+from src.checksum import BaseCheckSum
 
 __all__ = ["ParallelAESBlakeMixin"]
 
@@ -39,7 +39,7 @@ def _enc_worker(blob: bytes, index: int, group: Group) -> WorkerReturn:
 
     chk_cls = cipher.checksum_class()
     checksums = chk_cls.create_many(cipher.aes_blocks_count)
-    for chk, chunk in zip(checksums, group):
+    for chk, chunk in zip(checksums, group, strict=True):
         chk.xor_with(chunk)
 
     return index, ciphertext, checksums
@@ -54,7 +54,7 @@ def _dec_worker(blob: bytes, index: int, group: Group) -> WorkerReturn:
 
     chk_cls = cipher.checksum_class()
     checksums = chk_cls.create_many(cipher.aes_blocks_count)
-    for chk, block in zip(checksums, aes_blocks):
+    for chk, block in zip(checksums, aes_blocks, strict=True):
         chk.xor_with(block.state)
 
     return index, plaintext, checksums
@@ -68,7 +68,7 @@ def _hdr_worker(blob: bytes, index: int, group: Group) -> WorkerReturn:
 
     chk_cls = cipher.checksum_class()
     checksums = chk_cls.create_many(cipher.aes_blocks_count)
-    for chk, block in zip(checksums, aes_blocks):
+    for chk, block in zip(checksums, aes_blocks, strict=True):
         chk.xor_with(block.state)
 
     return index, b"", checksums
@@ -97,7 +97,7 @@ class ParallelAESBlakeMixin(BaseAESBlake, ABC):
             for fut in futures:
                 index, text, checksums = fut.result()
                 bytes_out[index] = text
-                for parent, child in zip(text_checksums, checksums):
+                for parent, child in zip(text_checksums, checksums, strict=True):
                     parent.xor_with(child.state)
 
         self.block_counter += len(chunk_groups)
@@ -130,7 +130,7 @@ class ParallelAESBlakeMixin(BaseAESBlake, ABC):
                     for i, grp in enumerate(header_groups)]
             for fut in futures:
                 _, _, chk_lst = fut.result()
-                for parent, child in zip(header_checksums, chk_lst):
+                for parent, child in zip(header_checksums, chk_lst, strict=True):
                     parent.xor_with(child.state)
 
         self.block_counter += len(header_groups)
@@ -138,8 +138,8 @@ class ParallelAESBlakeMixin(BaseAESBlake, ABC):
         aes_blocks = self.run_encryption_rounds(chk_states, KDFDomain.CHK)
 
         final_checksum = []
-        for aes_block, chk in zip(aes_blocks, header_checksums):
-            for u1, u2 in zip(aes_block.state, chk.state):
+        for aes_block, chk in zip(aes_blocks, header_checksums, strict=True):
+            for u1, u2 in zip(aes_block.state, chk.state, strict=True):
                 final_checksum.append(u1 ^ u2)
 
         self.block_counter = 0

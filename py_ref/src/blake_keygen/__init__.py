@@ -9,10 +9,12 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.blake_keygen.base_blake_keygen import *
-from src.blake_keygen.clean_blake_keygen import *
-from src.blake_keygen.masked_blake_keygen import *
-from src.blake_keygen.with_derive_keys import *
+from src.blake_keygen.base_blake_keygen import (AnyUintList, BaseBlake,
+                                                KDFDomain, RoundKeys)
+from src.blake_keygen.clean_blake_keygen import Blake32, Blake64
+from src.blake_keygen.masked_blake_keygen import MaskedBlake32, MaskedBlake64
+from src.blake_keygen.with_derive_keys import (WithDeriveKeys32,
+                                               WithDeriveKeys64)
 
 __all__ = [
     "AnyUintList",

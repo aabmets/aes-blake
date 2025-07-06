@@ -9,8 +9,8 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.aes_block.base_aes_block import *
-from src.aes_block.sbox import *
-from src.aes_block.subclasses import *
+from src.aes_block.base_aes_block import BaseAESBlock
+from src.aes_block.sbox import SBox
+from src.aes_block.subclasses import AESBlock, MaskedAESBlock
 
 __all__ = ["BaseAESBlock", "SBox", "AESBlock", "MaskedAESBlock"]

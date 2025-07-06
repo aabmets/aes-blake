@@ -23,7 +23,8 @@ import pytest
 from scipy import stats
 from sklearn.feature_selection import mutual_info_regression
 
-from src.integers import *
+from src.integers import (BaseMaskedUint, Domain, MaskedUint8, MaskedUint32,
+                          MaskedUint64)
 from tests.integers import gcmi
 
 
@@ -32,9 +33,11 @@ def compute_security_orders() :
     if order := int(os.environ.get("EVAL_SEC_ORDER", 0)):
         clamped_order = max(min(order, 10), 1)
         if not (1 <= order <= 10):
-            warnings.warn(f"EVAL_SEC_ORDER {order} is out of range, clamped to {clamped_order}")
+            msg = f"EVAL_SEC_ORDER {order} is out of range, clamped to {clamped_order}"
+            warnings.warn(msg, stacklevel=1)
         if clamped_order > 3:
-            warnings.warn(f"Security evaluation can take a very long time due to EVAL_SEC_ORDER {order}")
+            msg = f"Security evaluation can take a very long time due to EVAL_SEC_ORDER {order}"
+            warnings.warn(msg, stacklevel=1)
         orders = [clamped_order]
     return orders
 

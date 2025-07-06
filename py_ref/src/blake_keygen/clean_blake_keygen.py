@@ -13,9 +13,10 @@ from __future__ import annotations
 
 import typing as t
 
-from src.blake_keygen.base_blake_keygen import *
-from src.blake_keygen.with_derive_keys import *
-from src.integers import *
+from src.blake_keygen.base_blake_keygen import BaseBlake, KDFDomain, RoundKeys
+from src.blake_keygen.with_derive_keys import (WithDeriveKeys32,
+                                               WithDeriveKeys64)
+from src.integers import BaseUint, Uint8, Uint32, Uint64
 
 __all__ = ["Blake32", "Blake64"]
 

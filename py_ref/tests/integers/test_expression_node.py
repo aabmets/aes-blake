@@ -11,7 +11,8 @@
 
 import operator as opr
 
-from src.integers.expression_node import *
+from src.integers.expression_node import (BinaryOpNode, ConstNode, CopyNode,
+                                          UnaryOpNode, VarNode)
 
 __all__ = [
     "test_var_node_to_dict",
@@ -149,9 +150,9 @@ def test_str_const_var_copy_nodes():
 def test_str_unary_op_node():
     operand = ConstNode(5)
     node = UnaryOpNode(name="U", op='-', operand=operand)
-    assert str(node) == f"-5"
+    assert str(node) == "-5"
     node = UnaryOpNode(name="U", op='~', operand=operand)
-    assert str(node) == f"~5"
+    assert str(node) == "~5"
 
 
 def test_str_binary_op_node_function():

@@ -11,7 +11,7 @@
 
 import pytest
 
-from src.checksum import *
+from src.checksum import CheckSum, MaskedCheckSum
 
 __all__ = ["test_checksum"]
 

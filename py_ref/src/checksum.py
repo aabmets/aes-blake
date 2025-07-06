@@ -14,7 +14,7 @@ from __future__ import annotations
 import typing as t
 from abc import ABC, abstractmethod
 
-from src.integers import *
+from src.integers import BaseMaskedUint, BaseUint, IterNum, MaskedUint8, Uint8
 
 __all__ = ["BaseCheckSum", "CheckSum", "MaskedCheckSum"]
 

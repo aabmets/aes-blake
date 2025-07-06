@@ -18,7 +18,8 @@ import typing as t
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
-from src.integers.expression_node import *
+from src.integers.expression_node import (BinaryOpNode, ConstNode, CopyNode,
+                                          ExpressionNode, UnaryOpNode, VarNode)
 
 __all__ = ["IterNum", "ByteOrder", "BaseUint"]
 
@@ -74,7 +75,7 @@ class BaseUint(ABC):
         if BaseUint._exp_nodes_enabled:
             self._name_base, self._name = self._generate_unique_name(suffix)
             if isinstance(value, BaseUint) and hasattr(value, '_exp_node'):
-                self._exp_node = CopyNode(self._name, getattr(value, '_exp_node'))
+                self._exp_node = CopyNode(self._name, value._exp_node)
             else:
                 self._exp_node = VarNode(self._name, self._value)
 
@@ -112,7 +113,7 @@ class BaseUint(ABC):
         if BaseUint._exp_nodes_enabled and isinstance(result, BaseUint):
             left_node = getattr(self, '_exp_node', VarNode(self._name, self._value))
             right_node = (
-                getattr(other, '_exp_node')
+                other._exp_node
                 if isinstance(other, BaseUint)
                 else ConstNode(other_val)
             )
@@ -225,9 +226,9 @@ class BaseUint(ABC):
         if BaseUint._exp_nodes_enabled and hasattr(self, '_exp_node'):
             print()
             print('-' * 80)
-            print(f"Location:".ljust(13, ' '), location)
-            print(f"Assignments:".ljust(13, ' '), self.get_assignments())
-            print(f"Equation:".ljust(13, ' '), self.get_equation())
+            print("Location:".ljust(13, ' '), location)
+            print("Assignments:".ljust(13, ' '), self.get_assignments())
+            print("Equation:".ljust(13, ' '), self.get_equation())
 
     @classmethod
     @contextmanager

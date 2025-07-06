@@ -15,7 +15,7 @@ import typing as t
 
 import pytest
 
-from src.integers import *
+from src.integers import BaseUint, Uint8, Uint32, Uint64
 
 __all__ = [
     "test_uint_inheritance",

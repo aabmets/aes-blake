@@ -14,8 +14,9 @@ from functools import cache
 
 import pytest
 
-from src.blake_keygen import *
-from src.integers import *
+from src.blake_keygen import (Blake32, Blake64, KDFDomain, MaskedBlake32,
+                              MaskedBlake64)
+from src.integers import Uint64
 
 __all__ = [
     "test_bytes_to_uint_vector",

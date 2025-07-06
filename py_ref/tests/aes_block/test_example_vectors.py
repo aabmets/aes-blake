@@ -17,9 +17,9 @@ from multiprocessing import Lock
 
 import pytest
 
-from src.aes_block import *
+from src.aes_block import AESBlock, MaskedAESBlock, SBox
 from src.blake_keygen import RoundKeys
-from src.integers import *
+from src.integers import MaskedUint8, Uint8
 
 __all__ = [
     "generate_original_aes128_round_keys",

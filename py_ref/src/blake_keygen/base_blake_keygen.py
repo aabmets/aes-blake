@@ -15,7 +15,7 @@ import typing as t
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from src.integers import *
+from src.integers import BaseMaskedUint, BaseUint, MaskedUint8, Uint8
 
 __all__ = ["AnyUintList", "RoundKeys", "KDFDomain", "BaseBlake"]
 

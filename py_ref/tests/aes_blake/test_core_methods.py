@@ -11,9 +11,10 @@
 
 import pytest
 
-from src.aes_blake import *
+from src.aes_blake import AESBlake256, AESBlake512
 from src.blake_keygen import KDFDomain
-from tests.aes_blake.overrides import *
+from tests.aes_blake.overrides import (PartiallyMockedMaskedAESBlake256,
+                                       PartiallyMockedMaskedAESBlake512)
 
 __all__ = [
     "CLEAN_CLASSES",

@@ -12,7 +12,7 @@
 import secrets
 import typing as t
 
-from src.integers import *
+from src.integers import BaseMaskedUint, BaseUint, Domain
 
 __all__ = ["get_randomly_masked_uint", "get_many_randomly_masked_uints"]
 

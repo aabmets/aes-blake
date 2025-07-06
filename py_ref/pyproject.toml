@@ -72,7 +72,10 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["src/aes_sbox.py"]
+extend-exclude = [
+    "src/aes_sbox.py",
+    "tests/integers/gcmi.py"
+]
 
 [tool.ruff.lint]
 extend-select = ["B", "SIM"]

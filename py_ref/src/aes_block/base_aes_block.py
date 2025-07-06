@@ -17,7 +17,7 @@ from collections.abc import Generator
 from copy import deepcopy
 
 from src.blake_keygen import RoundKeys
-from src.integers import *
+from src.integers import BaseMaskedUint, BaseUint, MaskedUint8, Uint8
 
 __all__ = ["BaseAESBlock"]
 

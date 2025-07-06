@@ -16,7 +16,7 @@ from copy import deepcopy
 
 from src.aes_block.base_aes_block import BaseAESBlock
 from src.aes_block.sbox import SBox
-from src.integers import *
+from src.integers import BaseMaskedUint, BaseUint, MaskedUint8, Uint8
 
 __all__ = ["AESBlock", "MaskedAESBlock"]
 

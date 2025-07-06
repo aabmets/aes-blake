@@ -11,8 +11,9 @@
 
 import pytest
 
-from src.aes_blake import *
-from tests.aes_blake.overrides import *
+from src.aes_blake import AESBlake256, AESBlake512
+from tests.aes_blake.overrides import (PartiallyMockedMaskedAESBlake256,
+                                       PartiallyMockedMaskedAESBlake512)
 
 __all__ = [
     "test_clean_aesblake256_reference_inputs",

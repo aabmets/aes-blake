@@ -9,9 +9,11 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.integers.base_masked_uint import *
-from src.integers.base_uint import *
-from src.integers.subclasses import *
+from src.integers.base_masked_uint import BaseMaskedUint, Domain
+from src.integers.base_uint import BaseUint, ByteOrder, IterNum
+from src.integers.subclasses import (BaseMaskedWideUint, MaskedUint8,
+                                     MaskedUint32, MaskedUint64, Uint8, Uint32,
+                                     Uint64)
 
 __all__ = [
     "IterNum",

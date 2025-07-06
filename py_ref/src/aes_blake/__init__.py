@@ -9,9 +9,9 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-from src.aes_blake.base_aes_blake import *
-from src.aes_blake.clean_aes_blake import *
-from src.aes_blake.masked_aes_blake import *
+from src.aes_blake.base_aes_blake import BaseAESBlake
+from src.aes_blake.clean_aes_blake import AESBlake256, AESBlake512
+from src.aes_blake.masked_aes_blake import MaskedAESBlake256, MaskedAESBlake512
 
 __all__ = [
     "BaseAESBlake",

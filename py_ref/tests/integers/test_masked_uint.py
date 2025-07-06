@@ -15,8 +15,10 @@ import typing as t
 
 import pytest
 
-from src.integers import *
-from tests.integers.utils import *
+from src.integers import (BaseMaskedUint, BaseUint, Domain, MaskedUint8,
+                          MaskedUint32, MaskedUint64)
+from tests.integers.utils import (get_many_randomly_masked_uints,
+                                  get_randomly_masked_uint)
 
 __all__ = [
     "test_masking_unmasking",
