@@ -79,7 +79,7 @@ def test_compute_key_nonce_composite(cls):
 
 
 @pytest.mark.parametrize("cls", CLASSES)
-@pytest.mark.parametrize("domain", [d for d in KDFDomain])
+@pytest.mark.parametrize("domain", list(KDFDomain))
 def test_init_state_vector(cls, domain):
     uint = cls.uint_class()
     v_bits = uint.bit_length()

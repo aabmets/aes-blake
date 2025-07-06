@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: Apache-2.0
 #
 
-import random
+import secrets
 import re
 import typing as t
 
@@ -235,10 +235,9 @@ def test_bitwise_sum_identity(cls):
                 )
 
         # 100 random pairs
-        random.seed(0)
         for _ in range(100):
-            a = random.randint(0, max_val)
-            b = random.randint(0, max_val)
+            a = secrets.randbelow(max_val)
+            b = secrets.randbelow(max_val)
             uint_a = cls(a)
             uint_b = cls(b)
             left = (uint_a + uint_b).evaluate()

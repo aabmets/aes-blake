@@ -43,7 +43,7 @@ class ExpressionNode(ABC):
         return mapping
 
     def get_leaf_assignments(self) -> dict[str, int]:
-        leaves: dict[str, int] = dict()
+        leaves: dict[str, int] = {}
         def recurse(node: ExpressionNode):
             if isinstance(node, VarNode):
                 leaves[node.name] = node.value

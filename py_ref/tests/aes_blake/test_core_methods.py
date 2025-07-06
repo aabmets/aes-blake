@@ -108,14 +108,14 @@ def test_clean_aesblake_bad_data(cls, corrupt_field):
     cipher = cls(key, nonce, context)
     ciphertext, auth_tag = cipher.encrypt(plaintext, header)
 
-    data = dict(
-        key=key,
-        nonce=nonce,
-        context=context,
-        ciphertext=ciphertext,
-        header=header,
-        auth_tag=auth_tag,
-    )
+    data = {
+        "key": key,
+        "nonce": nonce,
+        "context": context,
+        "ciphertext": ciphertext,
+        "header": header,
+        "auth_tag": auth_tag
+    }
     for k, v in data.items():
         if k == corrupt_field:
             data[k] = bytes([v[0] ^ 0x01]) + v[1:]  # flip bit
