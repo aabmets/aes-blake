@@ -1,6 +1,6 @@
 [project]
 name = "aes-blake"
-version = "0.1.0"
+version = "1.0.0"
 description = "AES cipher with the Blake hash function as key scheduling algorithm"
 authors = [
    { name = "Mattias Aabmets", email = "mattias.aabmets@gmail.com" }
