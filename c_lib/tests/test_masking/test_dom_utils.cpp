@@ -10,6 +10,7 @@
  */
 
 #include <catch2/catch_all.hpp>
+#include <climits>
 #include "csprng.h"
 #include "masking.h"
 
@@ -70,6 +71,11 @@ TEMPLATE_TEST_CASE(
     // Mask expected value and its inverse
     auto* mv_1 = dom_traits<DataType>::dom_mask(expected[0], domain, order);
     auto* mv_2 = dom_traits<DataType>::dom_mask(~expected[0], domain, order);
+
+    REQUIRE(mv_1->domain == domain);
+    REQUIRE(mv_1->order == order);
+    REQUIRE(mv_1->share_count == order + 1);
+    REQUIRE(mv_1->bit_length == sizeof(DataType) * CHAR_BIT);
 
     // Verify initial values
     DataType manually_unmasked_1 = mv_1->shares[0];
