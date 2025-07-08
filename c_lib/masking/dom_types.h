@@ -5,12 +5,13 @@
 #ifndef DOM_TYPES_H
 #define DOM_TYPES_H
 
-#include <limits.h>
 
 #ifdef __cplusplus
 #include <cstdint>
+#include <climits>
 extern "C" {
 #else
+#include <limits.h>
 #include <stdint.h>
 #endif
 
@@ -29,24 +30,27 @@ extern "C" {
     } domain_t;
 
     typedef struct {
-        uint8_t shares[N_SHARES];
-        bit_length_t bit_length;
-        uint8_t share_count;
         domain_t domain;
+        uint8_t order;
+        uint8_t share_count;
+        bit_length_t bit_length;
+        uint8_t shares[];
     } masked_uint8_t;
 
     typedef struct {
-        uint32_t shares[N_SHARES];
-        bit_length_t bit_length;
-        uint8_t share_count;
         domain_t domain;
+        uint8_t order;
+        uint8_t share_count;
+        bit_length_t bit_length;
+        uint32_t shares[];
     } masked_uint32_t;
 
     typedef struct {
-        uint64_t shares[N_SHARES];
-        bit_length_t bit_length;
-        uint8_t share_count;
         domain_t domain;
+        uint8_t order;
+        uint8_t share_count;
+        bit_length_t bit_length;
+        uint64_t shares[];
     } masked_uint64_t;
 
 

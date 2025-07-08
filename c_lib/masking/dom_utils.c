@@ -32,70 +32,100 @@
 #ifndef DOM_UTILITY_FUNCTIONS
 #define DOM_UTILITY_FUNCTIONS(TYPE, FN_SUFFIX, BIT_LENGTH)                      \
                                                                                 \
+masked_##TYPE* dom_alloc_##FN_SUFFIX(const uint8_t share_count) {               \
+    const size_t share_bytes = share_count * sizeof(TYPE);                      \
+    const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
+    const size_t alignment = sizeof(void*);                                     \
+    const size_t offset = alignment - 1;                                        \
+    const size_t total_bytes = (struct_size + offset) & ~offset;                \
+    masked_##TYPE* mv = aligned_alloc(alignment, total_bytes);                  \
+    return mv ? mv : NULL;                                                      \
+}                                                                               \
+                                                                                \
+void dom_free_##FN_SUFFIX(masked_##TYPE* mv) {                                  \
+    aligned_free(mv);                                                           \
+}                                                                               \
+                                                                                \
 masked_##TYPE* dom_mask_##FN_SUFFIX(                                            \
         const TYPE value,                                                       \
-        const domain_t domain                                                   \
+        const domain_t domain,                                                  \
+        const uint8_t order                                                     \
 ) {                                                                             \
-    const size_t alignment = sizeof(void*);                                     \
-    const size_t offset = (sizeof(masked_##TYPE) + alignment - 1);              \
-    const size_t aligned_bytes = offset & ~(alignment - 1);                     \
-                                                                                \
-    masked_##TYPE* mv = aligned_alloc(alignment, aligned_bytes);                \
+    const uint8_t share_count = order + 1;                                      \
+    masked_##TYPE* mv = dom_alloc_##FN_SUFFIX(share_count);                     \
     if (!mv) return NULL;                                                       \
                                                                                 \
-    mv->bit_length = BIT_LENGTH;                                                \
-    mv->share_count = N_SHARES;                                                 \
     mv->domain = domain;                                                        \
+    mv->order = order;                                                          \
+    mv->share_count = share_count;                                              \
+    mv->bit_length = BIT_LENGTH;                                                \
                                                                                 \
-    TYPE rval[N_SHARES - 1];                                                    \
-    csprng_read_array((uint8_t*)rval, sizeof(rval));                            \
+    TYPE* shares = (TYPE*)mv->shares;                                           \
+    csprng_read_array((uint8_t*)&shares[1], order * sizeof(TYPE));              \
                                                                                 \
-    if (domain == DOMAIN_BOOLEAN) {                                             \
-        mv->shares[0] = value ^ rval[0] ^ rval[1];                              \
-    } else {  /* DOMAIN_ARITHMETIC */                                           \
-        mv->shares[0] = (TYPE)(value + rval[0] + rval[1]);                      \
+    TYPE masked = value;                                                        \
+    if (domain == DOMAIN_BOOLEAN) {  /* XOR masking */                          \
+        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
+            masked ^= shares[i];                                                \
+        }                                                                       \
+    } else {  /* DOMAIN_ARITHMETIC - subtractive masking */                     \
+        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
+            masked -= shares[i];                                                \
+        }                                                                       \
     }                                                                           \
-    mv->shares[1] = rval[0];                                                    \
-    mv->shares[2] = rval[1];                                                    \
+    shares[0] = masked;                                                         \
     return mv;                                                                  \
 }                                                                               \
                                                                                 \
-                                                                                \
 TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE* mv) {                                \
-    TYPE result;                                                                \
-    if (mv->domain == DOMAIN_BOOLEAN) {                                         \
-        result = mv->shares[0] ^ mv->shares[1] ^ mv->shares[2];                 \
-    } else {  /* DOMAIN_ARITHMETIC */                                           \
-        result = mv->shares[0] - mv->shares[1] - mv->shares[2];                 \
+    TYPE* shares = (TYPE*)mv->shares;                                           \
+    TYPE result = shares[0];                                                    \
+    if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                    \
+        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
+            result ^= shares[i];                                                \
+        }                                                                       \
+    } else { /* DOMAIN_ARITHMETIC - additive unmasking */                       \
+        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
+            result += shares[i];                                                \
+        }                                                                       \
     }                                                                           \
-    aligned_free(mv);                                                           \
     return result;                                                              \
 }                                                                               \
                                                                                 \
+masked_##TYPE* dom_clone_##FN_SUFFIX(const masked_##TYPE* mv) {                 \
+    masked_##TYPE* clone = dom_alloc_##FN_SUFFIX(mv->share_count);              \
+    if (!mv) return NULL;                                                       \
                                                                                 \
-void dom_copy_##FN_SUFFIX(                                                      \
-        const masked_##TYPE* mv_src,                                            \
-        masked_##TYPE* mv_tgt                                                   \
-) {                                                                             \
-    mv_tgt->domain = mv_src->domain;                                            \
-    mv_tgt->shares[0] = mv_src->shares[0];                                      \
-    mv_tgt->shares[1] = mv_src->shares[1];                                      \
-    mv_tgt->shares[2] = mv_src->shares[2];                                      \
+    clone->domain = mv->domain;                                                 \
+    clone->order = mv->order;                                                   \
+    clone->share_count = mv->share_count;                                       \
+    clone->bit_length = mv->bit_length;                                         \
+                                                                                \
+    for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
+        clone->shares[i] = mv->shares[i];                                       \
+    }                                                                           \
+    return clone;                                                               \
 }                                                                               \
                                                                                 \
                                                                                 \
 void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE* mv) {                          \
-    TYPE rval[N_SHARES - 1];                                                    \
-    csprng_read_array((uint8_t*)rval, sizeof(rval));                            \
+    TYPE* shares = (TYPE*)mv->shares;                                           \
+    TYPE rnd[mv->order];                                                        \
+    uint32_t rnd_size = mv->order * sizeof(TYPE);                               \
+    csprng_read_array((uint8_t*)rnd, rnd_size);                                 \
                                                                                 \
     if (mv->domain == DOMAIN_BOOLEAN) {                                         \
-        mv->shares[0] ^= rval[0] ^ rval[1];                                     \
-        mv->shares[1] ^= rval[0];                                               \
-        mv->shares[2] ^= rval[1];                                               \
+        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
+            TYPE rand_val = rnd[i - 1];                                         \
+            shares[0] ^= rand_val;                                              \
+            shares[i] ^= rand_val;                                              \
+        }                                                                       \
     } else { /* DOMAIN_ARITHMETIC */                                            \
-        mv->shares[0] += rval[0] + rval[1];                                     \
-        mv->shares[1] += rval[0];                                               \
-        mv->shares[2] += rval[1];                                               \
+        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
+            TYPE rand_val = rnd[i - 1];                                         \
+            shares[0] -= rand_val;                                              \
+            shares[i] += rand_val;                                              \
+        }                                                                       \
     }                                                                           \
 }                                                                               \
 

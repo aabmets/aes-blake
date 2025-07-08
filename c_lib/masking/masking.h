@@ -22,21 +22,29 @@ extern "C" {
 #endif
 
 
-    masked_uint8_t * dom_mask_u8 (uint8_t value, domain_t domain);
-    masked_uint32_t * dom_mask_u32 (uint32_t value, domain_t domain);
-    masked_uint64_t * dom_mask_u64 (uint64_t value, domain_t domain);
+    masked_uint8_t* dom_alloc_u8 (uint8_t share_count);
+    masked_uint32_t* dom_alloc_u32 (uint8_t share_count);
+    masked_uint64_t* dom_alloc_u64 (uint8_t share_count);
 
-    uint8_t dom_unmask_u8 (masked_uint8_t * ms);
-    uint32_t dom_unmask_u32 (masked_uint32_t * ms);
-    uint64_t dom_unmask_u64 (masked_uint64_t * ms);
+    void dom_free_u8 (masked_uint8_t* mv);
+    void dom_free_u32 (masked_uint32_t* mv);
+    void dom_free_u64 (masked_uint64_t* mv);
 
-    void dom_copy_u8 (masked_uint8_t * mv_src, masked_uint8_t * mv_tgt);
-    void dom_copy_u32 (masked_uint32_t * mv_src, masked_uint32_t * mv_tgt);
-    void dom_copy_u64 (masked_uint64_t * mv_src, masked_uint64_t * mv_tgt);
+    masked_uint8_t* dom_mask_u8 (uint8_t value, domain_t domain, uint8_t order);
+    masked_uint32_t* dom_mask_u32 (uint32_t value, domain_t domain, uint8_t order);
+    masked_uint64_t* dom_mask_u64 (uint64_t value, domain_t domain, uint8_t order);
 
-    void dom_refresh_mask_u8 (masked_uint8_t * ms);
-    void dom_refresh_mask_u32 (masked_uint32_t * ms);
-    void dom_refresh_mask_u64 (masked_uint64_t * ms);
+    uint8_t dom_unmask_u8 (masked_uint8_t* mv);
+    uint32_t dom_unmask_u32 (masked_uint32_t* mv);
+    uint64_t dom_unmask_u64 (masked_uint64_t* mv);
+
+    masked_uint8_t* dom_clone_u8 (masked_uint8_t* mv);
+    masked_uint32_t* dom_clone_u32 (masked_uint32_t* mv);
+    masked_uint64_t* dom_clone_u64 (masked_uint64_t* mv);
+
+    void dom_refresh_mask_u8 (masked_uint8_t* mv);
+    void dom_refresh_mask_u32 (masked_uint32_t* mv);
+    void dom_refresh_mask_u64 (masked_uint64_t* mv);
 
     void dom_conv_btoa_u8 (masked_uint8_t * ms);
     void dom_conv_btoa_u32 (masked_uint32_t * ms);

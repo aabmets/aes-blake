@@ -17,19 +17,23 @@
 template<typename T>
 struct dom_traits;
 
-#define DEFINE_DOM_TRAITS(TYPE, SHORT_TYPE)                                     \
-template<>                                                                      \
-struct dom_traits<TYPE> {                                                       \
-    using mskd_t = masked_##TYPE;                                               \
-    static mskd_t* dom_mask(const TYPE value, const domain_t domain)            \
-        { return dom_mask_##SHORT_TYPE(value, domain); }                        \
-    static TYPE dom_unmask(mskd_t* mv)                                          \
-        { return dom_unmask_##SHORT_TYPE(mv); }                                 \
-    static void dom_copy(mskd_t* mv_src, mskd_t* mv_tgt)                        \
-        { dom_copy_##SHORT_TYPE(mv_src, mv_tgt); }                              \
-    static void dom_refresh_mask(mskd_t* mv)                                    \
-        { dom_refresh_mask_##SHORT_TYPE(mv); }                                  \
-};                                                                              \
+#define DEFINE_DOM_TRAITS(TYPE, SHORT_TYPE)                                                 \
+template<>                                                                                  \
+struct dom_traits<TYPE> {                                                                   \
+    using mskd_t = masked_##TYPE;                                                           \
+    static mskd_t* dom_alloc(const uint8_t share_count)                                     \
+        { return dom_alloc_##SHORT_TYPE(share_count); }                                     \
+    static void dom_free(mskd_t* mv)                                                        \
+        { dom_free_##SHORT_TYPE(mv); }                                                      \
+    static mskd_t* dom_mask(const TYPE value, const domain_t domain, const uint8_t order)   \
+        { return dom_mask_##SHORT_TYPE(value, domain, order); }                             \
+    static TYPE dom_unmask(mskd_t* mv)                                                      \
+        { return dom_unmask_##SHORT_TYPE(mv); }                                             \
+    static mskd_t* dom_clone(mskd_t* mv)                                                    \
+        { return dom_clone_##SHORT_TYPE(mv); }                                              \
+    static void dom_refresh_mask(mskd_t* mv)                                                \
+        { dom_refresh_mask_##SHORT_TYPE(mv); }                                              \
+};                                                                                          \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
 DEFINE_DOM_TRAITS(uint32_t, u32)
@@ -47,7 +51,7 @@ struct TypeDomainPair {
 
 
 TEMPLATE_TEST_CASE(
-        "2nd-order DOM utility functions work correctly", "[unittest][dom]",
+        "Assert DOM utility functions work correctly", "[unittest][dom]",
         (TypeDomainPair<uint8_t, DOMAIN_BOOLEAN>),
         (TypeDomainPair<uint8_t, DOMAIN_ARITHMETIC>),
         (TypeDomainPair<uint32_t, DOMAIN_BOOLEAN>),
@@ -57,43 +61,53 @@ TEMPLATE_TEST_CASE(
 ) {
     using DataType = typename TestType::type;
     constexpr domain_t domain = TestType::domain;
+    const int order = GENERATE_COPY(range(1, 11));
+    INFO("security order = " << order);
 
-    for (int i = 0; i < 100; i++) {
-        DataType expected[1];
-        csprng_read_array((uint8_t*)(expected), sizeof(expected));
+    DataType expected[1];
+    csprng_read_array((uint8_t*)expected, sizeof(expected));
 
-        // Mask expected value and its inverse
-        auto* mv_src = dom_traits<DataType>::dom_mask(expected[0], domain);
-        auto* mv_tgt = dom_traits<DataType>::dom_mask(~expected[0], domain);
+    // Mask expected value and its inverse
+    auto* mv_1 = dom_traits<DataType>::dom_mask(expected[0], domain, order);
+    auto* mv_2 = dom_traits<DataType>::dom_mask(~expected[0], domain, order);
 
-        // Verify initial values
-        DataType manually_unmasked_src, manually_unmasked_tgt;
-        auto pairs = std::array{
-            std::make_pair(mv_src, &manually_unmasked_src),
-            std::make_pair(mv_tgt, &manually_unmasked_tgt)
-        };
+    // Verify initial values
+    DataType manually_unmasked_1 = mv_1->shares[0];
+    DataType manually_unmasked_2 = mv_2->shares[0];
+    auto pairs = std::array{
+        std::make_pair(mv_1, &manually_unmasked_1),
+        std::make_pair(mv_2, &manually_unmasked_2)
+    };
 
-        // Iterate and manually unmask based on the domain
-        for (auto& [mv, result_ptr] : pairs) {
-            if constexpr (domain == DOMAIN_BOOLEAN) {
-                *result_ptr = mv->shares[0] ^ mv->shares[1] ^ mv->shares[2];
-            } else {
-                *result_ptr = mv->shares[0] - mv->shares[1] - mv->shares[2];
+    // Iterate and manually unmask based on the domain
+    for (auto& [mv, result_ptr] : pairs) {
+        if constexpr (domain == DOMAIN_BOOLEAN) {
+            for (int i = 1; i <= order; ++i) {
+                *result_ptr ^= mv->shares[i];
+            }
+        } else {
+            for (int i = 1; i <= order; ++i) {
+                *result_ptr += mv->shares[i];
             }
         }
-
-        REQUIRE(manually_unmasked_src == static_cast<DataType>(expected[0]));
-        REQUIRE(manually_unmasked_tgt == static_cast<DataType>(~expected[0]));
-        REQUIRE(manually_unmasked_src != manually_unmasked_tgt);
-
-        // Target should now be identical to Source
-        dom_traits<DataType>::dom_copy(mv_src, mv_tgt);
-        dom_traits<DataType>::dom_refresh_mask(mv_tgt);
-
-        DataType func_unmasked_src = dom_traits<DataType>::dom_unmask(mv_src);
-        DataType func_unmasked_tgt = dom_traits<DataType>::dom_unmask(mv_tgt);
-
-        REQUIRE(func_unmasked_src == expected[0]);
-        REQUIRE(func_unmasked_tgt == expected[0]);
     }
+
+    DataType expected_1 = static_cast<DataType>(expected[0]);
+    DataType expected_2 = static_cast<DataType>(~expected[0]);
+
+    REQUIRE(manually_unmasked_1 == expected_1);
+    REQUIRE(manually_unmasked_2 == expected_2);
+
+    auto* clone = dom_traits<DataType>::dom_clone(mv_1);
+    dom_traits<DataType>::dom_refresh_mask(mv_2);
+
+    DataType func_unmasked_1 = dom_traits<DataType>::dom_unmask(clone);
+    DataType func_unmasked_2 = dom_traits<DataType>::dom_unmask(mv_2);
+
+    REQUIRE(func_unmasked_1 == expected_1);
+    REQUIRE(func_unmasked_2 == expected_2);
+
+    dom_traits<DataType>::dom_free(clone);
+    dom_traits<DataType>::dom_free(mv_1);
+    dom_traits<DataType>::dom_free(mv_2);
 }
