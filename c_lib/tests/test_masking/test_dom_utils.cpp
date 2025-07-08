@@ -22,17 +22,17 @@ struct dom_traits;
 template<>                                                                                  \
 struct dom_traits<TYPE> {                                                                   \
     using mskd_t = masked_##TYPE;                                                           \
-    static mskd_t* dom_alloc(const uint8_t share_count)                                     \
+    static mskd_t *dom_alloc(const uint8_t share_count)                                     \
         { return dom_alloc_##SHORT_TYPE(share_count); }                                     \
-    static void dom_free(mskd_t* mv)                                                        \
+    static void dom_free(mskd_t *mv)                                                        \
         { dom_free_##SHORT_TYPE(mv); }                                                      \
-    static mskd_t* dom_mask(const TYPE value, const domain_t domain, const uint8_t order)   \
+    static mskd_t *dom_mask(const TYPE value, const domain_t domain, const uint8_t order)   \
         { return dom_mask_##SHORT_TYPE(value, domain, order); }                             \
-    static TYPE dom_unmask(mskd_t* mv)                                                      \
+    static TYPE dom_unmask(mskd_t *mv)                                                      \
         { return dom_unmask_##SHORT_TYPE(mv); }                                             \
-    static mskd_t* dom_clone(mskd_t* mv)                                                    \
+    static mskd_t *dom_clone(mskd_t *mv)                                                    \
         { return dom_clone_##SHORT_TYPE(mv); }                                              \
-    static void dom_refresh_mask(mskd_t* mv)                                                \
+    static void dom_refresh_mask(mskd_t *mv)                                                \
         { dom_refresh_mask_##SHORT_TYPE(mv); }                                              \
 };                                                                                          \
 
@@ -69,8 +69,8 @@ TEMPLATE_TEST_CASE(
     csprng_read_array((uint8_t*)expected, sizeof(expected));
 
     // Mask expected value and its inverse
-    auto* mv_1 = dom_traits<DataType>::dom_mask(expected[0], domain, order);
-    auto* mv_2 = dom_traits<DataType>::dom_mask(~expected[0], domain, order);
+    auto *mv_1 = dom_traits<DataType>::dom_mask(expected[0], domain, order);
+    auto *mv_2 = dom_traits<DataType>::dom_mask(~expected[0], domain, order);
 
     REQUIRE(mv_1->domain == domain);
     REQUIRE(mv_1->order == order);
@@ -104,7 +104,7 @@ TEMPLATE_TEST_CASE(
     REQUIRE(manually_unmasked_1 == expected_1);
     REQUIRE(manually_unmasked_2 == expected_2);
 
-    auto* clone = dom_traits<DataType>::dom_clone(mv_1);
+    auto *clone = dom_traits<DataType>::dom_clone(mv_1);
     dom_traits<DataType>::dom_refresh_mask(mv_2);
 
     DataType func_unmasked_1 = dom_traits<DataType>::dom_unmask(clone);

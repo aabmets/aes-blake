@@ -32,27 +32,27 @@
 #ifndef DOM_UTILITY_FUNCTIONS
 #define DOM_UTILITY_FUNCTIONS(TYPE, FN_SUFFIX, BIT_LENGTH)                      \
                                                                                 \
-masked_##TYPE* dom_alloc_##FN_SUFFIX(const uint8_t share_count) {               \
+masked_##TYPE *dom_alloc_##FN_SUFFIX(const uint8_t share_count) {               \
     const size_t share_bytes = share_count * sizeof(TYPE);                      \
     const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
     const size_t alignment = sizeof(void*);                                     \
     const size_t offset = alignment - 1;                                        \
     const size_t total_bytes = (struct_size + offset) & ~offset;                \
-    masked_##TYPE* mv = aligned_alloc(alignment, total_bytes);                  \
+    masked_##TYPE *mv = aligned_alloc(alignment, total_bytes);                  \
     return mv ? mv : NULL;                                                      \
 }                                                                               \
                                                                                 \
-void dom_free_##FN_SUFFIX(masked_##TYPE* mv) {                                  \
+void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
     aligned_free(mv);                                                           \
 }                                                                               \
                                                                                 \
-masked_##TYPE* dom_mask_##FN_SUFFIX(                                            \
+masked_##TYPE *dom_mask_##FN_SUFFIX(                                            \
         const TYPE value,                                                       \
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
 ) {                                                                             \
     const uint8_t share_count = order + 1;                                      \
-    masked_##TYPE* mv = dom_alloc_##FN_SUFFIX(share_count);                     \
+    masked_##TYPE *mv = dom_alloc_##FN_SUFFIX(share_count);                     \
     if (!mv) return NULL;                                                       \
                                                                                 \
     mv->domain = domain;                                                        \
@@ -60,7 +60,7 @@ masked_##TYPE* dom_mask_##FN_SUFFIX(                                            
     mv->share_count = share_count;                                              \
     mv->bit_length = BIT_LENGTH;                                                \
                                                                                 \
-    TYPE* shares = (TYPE*)mv->shares;                                           \
+    TYPE *shares = (TYPE*)mv->shares;                                           \
     csprng_read_array((uint8_t*)&shares[1], order * sizeof(TYPE));              \
                                                                                 \
     TYPE masked = value;                                                        \
@@ -77,8 +77,8 @@ masked_##TYPE* dom_mask_##FN_SUFFIX(                                            
     return mv;                                                                  \
 }                                                                               \
                                                                                 \
-TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE* mv) {                                \
-    TYPE* shares = (TYPE*)mv->shares;                                           \
+TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE *mv) {                                \
+    TYPE *shares = (TYPE*)mv->shares;                                           \
     TYPE result = shares[0];                                                    \
     if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                    \
         for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
@@ -92,8 +92,8 @@ TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE* mv) {                                
     return result;                                                              \
 }                                                                               \
                                                                                 \
-masked_##TYPE* dom_clone_##FN_SUFFIX(const masked_##TYPE* mv) {                 \
-    masked_##TYPE* clone = dom_alloc_##FN_SUFFIX(mv->share_count);              \
+masked_##TYPE *dom_clone_##FN_SUFFIX(const masked_##TYPE *mv) {                 \
+    masked_##TYPE *clone = dom_alloc_##FN_SUFFIX(mv->share_count);              \
     if (!mv) return NULL;                                                       \
                                                                                 \
     clone->domain = mv->domain;                                                 \
@@ -108,8 +108,8 @@ masked_##TYPE* dom_clone_##FN_SUFFIX(const masked_##TYPE* mv) {                 
 }                                                                               \
                                                                                 \
                                                                                 \
-void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE* mv) {                          \
-    TYPE* shares = (TYPE*)mv->shares;                                           \
+void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE *mv) {                          \
+    TYPE *shares = (TYPE*)mv->shares;                                           \
     TYPE rnd[mv->order];                                                        \
     uint32_t rnd_size = mv->order * sizeof(TYPE);                               \
     csprng_read_array((uint8_t*)rnd, rnd_size);                                 \
