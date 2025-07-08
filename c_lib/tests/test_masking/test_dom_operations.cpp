@@ -21,29 +21,32 @@ struct dom_traits;
 template<>                                                                      \
 struct dom_traits<TYPE> {                                                       \
     using mskd_t = masked_##TYPE;                                               \
-    static mskd_t* dom_mask(const TYPE value, const domain_t domain)            \
-        { return dom_mask_##SHORT_TYPE(value, domain); }                        \
-    static TYPE dom_unmask(mskd_t* mv)                                          \
+    static void dom_free(mskd_t *mv)                                            \
+        { dom_free_##SHORT_TYPE(mv); }                                          \
+    static mskd_t *dom_mask(                                                    \
+        const TYPE value, const domain_t domain, const uint8_t order            \
+    ) { return dom_mask_##SHORT_TYPE(value, domain, order); }                   \
+    static TYPE dom_unmask(mskd_t *mv)                                          \
         { return dom_unmask_##SHORT_TYPE(mv); }                                 \
-    static void dom_bool_and(mskd_t* ms_a, mskd_t* ms_b, mskd_t* ms_out)        \
+    static void dom_bool_and(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)        \
         { dom_bool_and_##SHORT_TYPE(ms_a, ms_b, ms_out); }                      \
-    static void dom_bool_or(mskd_t* ms_a, mskd_t* ms_b, mskd_t* ms_out)         \
+    static void dom_bool_or(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)         \
         { dom_bool_or_##SHORT_TYPE(ms_a, ms_b, ms_out); }                       \
-    static void dom_bool_xor(mskd_t* ms_a, mskd_t* ms_b, mskd_t* ms_out)        \
+    static void dom_bool_xor(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)        \
         { dom_bool_xor_##SHORT_TYPE(ms_a, ms_b, ms_out); }                      \
-    static void dom_bool_not(mskd_t* ms)                                        \
+    static void dom_bool_not(mskd_t *ms)                                        \
         { dom_bool_not_##SHORT_TYPE(ms); }                                      \
-    static void dom_bool_shr(mskd_t* ms, const uint8_t n)                       \
+    static void dom_bool_shr(mskd_t *ms, const uint8_t n)                       \
         { dom_bool_shr_##SHORT_TYPE(ms, n); }                                   \
-    static void dom_bool_shl(mskd_t* ms, const uint8_t n)                       \
+    static void dom_bool_shl(mskd_t *ms, const uint8_t n)                       \
         { dom_bool_shl_##SHORT_TYPE(ms, n); }                                   \
-    static void dom_bool_rotr(mskd_t* ms, const uint8_t n)                      \
+    static void dom_bool_rotr(mskd_t *ms, const uint8_t n)                      \
         { dom_bool_rotr_##SHORT_TYPE(ms, n); }                                  \
-    static void dom_bool_rotl(mskd_t* ms, const uint8_t n)                      \
+    static void dom_bool_rotl(mskd_t *ms, const uint8_t n)                      \
         { dom_bool_rotl_##SHORT_TYPE(ms, n); }                                  \
-    static void dom_arith_add(mskd_t* ms_a, mskd_t* ms_b, mskd_t* ms_out)       \
+    static void dom_arith_add(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)       \
         { dom_arith_add_##SHORT_TYPE(ms_a, ms_b, ms_out); }                     \
-    static void dom_arith_mult(mskd_t* ms_a, mskd_t* ms_b, mskd_t* ms_out)      \
+    static void dom_arith_mult(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)      \
         { dom_arith_mult_##SHORT_TYPE(ms_a, ms_b, ms_out); }                    \
 };                                                                              \
 
@@ -64,20 +67,23 @@ void test_binary_operation(
         std::function<T(T, T)> unmasked_op,
         domain_t domain
 ) {
-    for (int i = 0; i < 100; i++) {
-        T expected[2];
-        csprng_read_array((uint8_t*)(expected), sizeof(expected));
-        auto* mv_a = dom_traits<T>::dom_mask(expected[0], domain);
-        auto* mv_b = dom_traits<T>::dom_mask(expected[1], domain);
-        auto* mv_out = dom_traits<T>::dom_mask(0, domain);
-        masked_op(mv_a, mv_b, mv_out);
+    const int order = GENERATE_COPY(range(1, 11));
+    INFO("security order = " << order);
 
-        T unmasked_a = dom_traits<T>::dom_unmask(mv_a);
-        T unmasked_b = dom_traits<T>::dom_unmask(mv_b);
-        T unmasked_out = dom_traits<T>::dom_unmask(mv_out);
-        T unmasked_result = unmasked_op(expected[0], expected[1]);
-        REQUIRE(unmasked_result == unmasked_out);
-    }
+    T values[2];
+    csprng_read_array((uint8_t*)(values), sizeof(values));
+    auto *mv_a = dom_traits<T>::dom_mask(values[0], domain, order);
+    auto *mv_b = dom_traits<T>::dom_mask(values[1], domain, order);
+    auto *mv_out = dom_traits<T>::dom_mask(0, domain, order);
+
+    masked_op(mv_a, mv_b, mv_out);
+    T unmasked = dom_traits<T>::dom_unmask(mv_out);
+    T expected = unmasked_op(values[0], values[1]);
+    REQUIRE(expected == unmasked);
+
+    dom_traits<T>::dom_free(mv_a);
+    dom_traits<T>::dom_free(mv_b);
+    dom_traits<T>::dom_free(mv_out);
 }
 
 
@@ -87,16 +93,19 @@ void test_unary_operation(
         std::function<T(T)> unmasked_op,
         domain_t domain
 ) {
-    for (int i = 0; i < 100; i++) {
-        T expected[1];
-        csprng_read_array((uint8_t*)(expected), sizeof(expected));
-        auto* mv = dom_traits<T>::dom_mask(expected[0], domain);
-        masked_op(mv);
+    const int order = GENERATE_COPY(range(1, 11));
+    INFO("security order = " << order);
 
-        T unmasked = dom_traits<T>::dom_unmask(mv);
-        T unmasked_result = unmasked_op(expected[0]);
-        REQUIRE(unmasked_result == unmasked);
-    }
+    T values[1];
+    csprng_read_array((uint8_t*)values, sizeof(values));
+    auto *mv = dom_traits<T>::dom_mask(values[0], domain, order);
+
+    masked_op(mv);
+    T unmasked = dom_traits<T>::dom_unmask(mv);
+    T expected = unmasked_op(values[0]);
+    REQUIRE(expected == unmasked);
+
+    dom_traits<T>::dom_free(mv);
 }
 
 
@@ -108,21 +117,24 @@ void test_shift_rotate_operation(
         ),
         std::function<T(T, T)> unmasked_op
 ) {
-    for (int i = 0; i < 100; i++) {
-        T expected[1];
-        csprng_read_array((uint8_t*)(expected), sizeof(expected));
-        auto* mv = dom_traits<T>::dom_mask(expected[0], DOMAIN_BOOLEAN);
-        uint8_t offset = (uint8_t)(mv->bit_length / 2) - 1;
-        masked_op(mv, offset);
+    const int order = GENERATE_COPY(range(1, 11));
+    INFO("security order = " << order);
 
-        T unmasked = dom_traits<T>::dom_unmask(mv);
-        T unmasked_result = unmasked_op(expected[0], offset);
-        REQUIRE(unmasked_result == unmasked);
-    }
+    T values[1];
+    csprng_read_array((uint8_t*)values, sizeof(values));
+    auto *mv = dom_traits<T>::dom_mask(values[0], DOMAIN_BOOLEAN, order);
+    uint8_t offset = (uint8_t)(mv->bit_length / 2) - 1;
+
+    masked_op(mv, offset);
+    T unmasked = dom_traits<T>::dom_unmask(mv);
+    T expected = unmasked_op(values[0], offset);
+    REQUIRE(expected == unmasked);
+
+    dom_traits<T>::dom_free(mv);
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean AND works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean AND works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_and;
@@ -131,7 +143,7 @@ TEMPLATE_TEST_CASE("2nd-order DOM boolean AND works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean OR works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean OR works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_or;
@@ -140,7 +152,7 @@ TEMPLATE_TEST_CASE("2nd-order DOM boolean OR works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean XOR works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean XOR works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_xor;
@@ -149,7 +161,7 @@ TEMPLATE_TEST_CASE("2nd-order DOM boolean XOR works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean NOT works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean NOT works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_not;
@@ -158,7 +170,7 @@ TEMPLATE_TEST_CASE("2nd-order DOM boolean NOT works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean SHR works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean SHR works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_shr;
@@ -167,7 +179,7 @@ TEMPLATE_TEST_CASE("2nd-order DOM boolean SHR works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean SHL works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean SHL works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_shl;
@@ -176,25 +188,27 @@ TEMPLATE_TEST_CASE("2nd-order DOM boolean SHL works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean ROTR works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean ROTR works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_rotr;
-    auto unmasked_op = [](TestType a, uint8_t b) { return a >> b | a << (sizeof(TestType) * 8 - b); };
+    auto unmasked_op = [](TestType a, uint8_t b)
+        { return a >> b | a << (sizeof(TestType) * 8 - b); };
     test_shift_rotate_operation<TestType>(masked_op, unmasked_op);
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM boolean ROTL works correctly",
+TEMPLATE_TEST_CASE("Assert DOM boolean ROTL works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_bool_rotl;
-    auto unmasked_op = [](TestType a, uint8_t b) { return a << b | a >> (sizeof(TestType) * 8 - b); };
+    auto unmasked_op = [](TestType a, uint8_t b)
+        { return a << b | a >> (sizeof(TestType) * 8 - b); };
     test_shift_rotate_operation<TestType>(masked_op, unmasked_op);
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM arithmetic ADD works correctly",
+TEMPLATE_TEST_CASE("Assert DOM arithmetic ADD works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_arith_add;
@@ -203,7 +217,7 @@ TEMPLATE_TEST_CASE("2nd-order DOM arithmetic ADD works correctly",
 }
 
 
-TEMPLATE_TEST_CASE("2nd-order DOM arithmetic MULT works correctly",
+TEMPLATE_TEST_CASE("Assert DOM arithmetic MULT works correctly",
         "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
     auto masked_op = dom_traits<TestType>::dom_arith_mult;

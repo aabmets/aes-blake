@@ -26,73 +26,73 @@ extern "C" {
     masked_uint32_t* dom_alloc_u32 (uint8_t share_count);
     masked_uint64_t* dom_alloc_u64 (uint8_t share_count);
 
-    void dom_free_u8 (masked_uint8_t* mv);
-    void dom_free_u32 (masked_uint32_t* mv);
-    void dom_free_u64 (masked_uint64_t* mv);
+    void dom_free_u8 (masked_uint8_t *mv);
+    void dom_free_u32 (masked_uint32_t *mv);
+    void dom_free_u64 (masked_uint64_t *mv);
 
     masked_uint8_t* dom_mask_u8 (uint8_t value, domain_t domain, uint8_t order);
     masked_uint32_t* dom_mask_u32 (uint32_t value, domain_t domain, uint8_t order);
     masked_uint64_t* dom_mask_u64 (uint64_t value, domain_t domain, uint8_t order);
 
-    uint8_t dom_unmask_u8 (masked_uint8_t* mv);
-    uint32_t dom_unmask_u32 (masked_uint32_t* mv);
-    uint64_t dom_unmask_u64 (masked_uint64_t* mv);
+    uint8_t dom_unmask_u8 (masked_uint8_t *mv);
+    uint32_t dom_unmask_u32 (masked_uint32_t *mv);
+    uint64_t dom_unmask_u64 (masked_uint64_t *mv);
 
-    masked_uint8_t* dom_clone_u8 (masked_uint8_t* mv);
-    masked_uint32_t* dom_clone_u32 (masked_uint32_t* mv);
-    masked_uint64_t* dom_clone_u64 (masked_uint64_t* mv);
+    masked_uint8_t* dom_clone_u8 (masked_uint8_t *mv);
+    masked_uint32_t* dom_clone_u32 (masked_uint32_t *mv);
+    masked_uint64_t* dom_clone_u64 (masked_uint64_t *mv);
 
-    void dom_refresh_mask_u8 (masked_uint8_t* mv);
-    void dom_refresh_mask_u32 (masked_uint32_t* mv);
-    void dom_refresh_mask_u64 (masked_uint64_t* mv);
+    void dom_refresh_mask_u8 (masked_uint8_t *mv);
+    void dom_refresh_mask_u32 (masked_uint32_t *mv);
+    void dom_refresh_mask_u64 (masked_uint64_t *mv);
 
-    void dom_conv_btoa_u8 (masked_uint8_t * ms);
-    void dom_conv_btoa_u32 (masked_uint32_t * ms);
-    void dom_conv_btoa_u64 (masked_uint64_t * ms);
+    void dom_conv_btoa_u8 (masked_uint8_t *mv);
+    void dom_conv_btoa_u32 (masked_uint32_t *mv);
+    void dom_conv_btoa_u64 (masked_uint64_t *mv);
 
-    void dom_conv_atob_u8 (masked_uint8_t * ms);
-    void dom_conv_atob_u32 (masked_uint32_t * ms);
-    void dom_conv_atob_u64 (masked_uint64_t * ms);
+    void dom_conv_atob_u8 (masked_uint8_t *mv);
+    void dom_conv_atob_u32 (masked_uint32_t *mv);
+    void dom_conv_atob_u64 (masked_uint64_t *mv);
 
-    void dom_bool_and_u8 (masked_uint8_t * ms_a, masked_uint8_t * ms_b, masked_uint8_t * ms_out);
-    void dom_bool_and_u32 (masked_uint32_t * ms_a, masked_uint32_t * ms_b, masked_uint32_t * ms_out);
-    void dom_bool_and_u64 (masked_uint64_t * ms_a, masked_uint64_t * ms_b, masked_uint64_t * ms_out);
+    void dom_bool_and_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
+    void dom_bool_and_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
+    void dom_bool_and_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
 
-    void dom_bool_or_u8 (masked_uint8_t * ms_a, masked_uint8_t * ms_b, masked_uint8_t * ms_out);
-    void dom_bool_or_u32 (masked_uint32_t * ms_a, masked_uint32_t * ms_b, masked_uint32_t * ms_out);
-    void dom_bool_or_u64 (masked_uint64_t * ms_a, masked_uint64_t * ms_b, masked_uint64_t * ms_out);
+    void dom_bool_or_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
+    void dom_bool_or_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
+    void dom_bool_or_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
 
-    void dom_bool_xor_u8 (masked_uint8_t * ms_a, masked_uint8_t * ms_b, masked_uint8_t * ms_out);
-    void dom_bool_xor_u32 (masked_uint32_t * ms_a, masked_uint32_t * ms_b, masked_uint32_t * ms_out);
-    void dom_bool_xor_u64 (masked_uint64_t * ms_a, masked_uint64_t * ms_b, masked_uint64_t * ms_out);
+    void dom_bool_xor_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
+    void dom_bool_xor_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
+    void dom_bool_xor_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
 
-    void dom_bool_not_u8 (masked_uint8_t * ms);
-    void dom_bool_not_u32 (masked_uint32_t * ms);
-    void dom_bool_not_u64 (masked_uint64_t * ms);
+    void dom_bool_not_u8 (masked_uint8_t *mv);
+    void dom_bool_not_u32 (masked_uint32_t *mv);
+    void dom_bool_not_u64 (masked_uint64_t *mv);
 
-    void dom_bool_shr_u8 (masked_uint8_t * ms, uint8_t n);
-    void dom_bool_shr_u32 (masked_uint32_t * ms, uint8_t n);
-    void dom_bool_shr_u64 (masked_uint64_t * ms, uint8_t n);
+    void dom_bool_shr_u8 (masked_uint8_t *mv, uint8_t n);
+    void dom_bool_shr_u32 (masked_uint32_t *mv, uint8_t n);
+    void dom_bool_shr_u64 (masked_uint64_t *mv, uint8_t n);
 
-    void dom_bool_shl_u8 (masked_uint8_t * ms, uint8_t n);
-    void dom_bool_shl_u32 (masked_uint32_t * ms, uint8_t n);
-    void dom_bool_shl_u64 (masked_uint64_t * ms, uint8_t n);
+    void dom_bool_shl_u8 (masked_uint8_t *mv, uint8_t n);
+    void dom_bool_shl_u32 (masked_uint32_t *mv, uint8_t n);
+    void dom_bool_shl_u64 (masked_uint64_t *mv, uint8_t n);
 
-    void dom_bool_rotr_u8 (masked_uint8_t * ms, uint8_t n);
-    void dom_bool_rotr_u32 (masked_uint32_t * ms, uint8_t n);
-    void dom_bool_rotr_u64 (masked_uint64_t * ms, uint8_t n);
+    void dom_bool_rotr_u8 (masked_uint8_t *mv, uint8_t n);
+    void dom_bool_rotr_u32 (masked_uint32_t *mv, uint8_t n);
+    void dom_bool_rotr_u64 (masked_uint64_t *mv, uint8_t n);
 
-    void dom_bool_rotl_u8 (masked_uint8_t * ms, uint8_t n);
-    void dom_bool_rotl_u32 (masked_uint32_t * ms, uint8_t n);
-    void dom_bool_rotl_u64 (masked_uint64_t * ms, uint8_t n);
+    void dom_bool_rotl_u8 (masked_uint8_t *mv, uint8_t n);
+    void dom_bool_rotl_u32 (masked_uint32_t *mv, uint8_t n);
+    void dom_bool_rotl_u64 (masked_uint64_t *mv, uint8_t n);
 
-    void dom_arith_add_u8 (masked_uint8_t * ms_a, masked_uint8_t * ms_b, masked_uint8_t * ms_out);
-    void dom_arith_add_u32 (masked_uint32_t * ms_a, masked_uint32_t * ms_b, masked_uint32_t * ms_out);
-    void dom_arith_add_u64 (masked_uint64_t * ms_a, masked_uint64_t * ms_b, masked_uint64_t * ms_out);
+    void dom_arith_add_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
+    void dom_arith_add_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
+    void dom_arith_add_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
 
-    void dom_arith_mult_u8 (masked_uint8_t * ms_a, masked_uint8_t * ms_b, masked_uint8_t * ms_out);
-    void dom_arith_mult_u32 (masked_uint32_t * ms_a, masked_uint32_t * ms_b, masked_uint32_t * ms_out);
-    void dom_arith_mult_u64 (masked_uint64_t * ms_a, masked_uint64_t * ms_b, masked_uint64_t * ms_out);
+    void dom_arith_mult_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
+    void dom_arith_mult_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
+    void dom_arith_mult_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
 
 
 #ifdef __cplusplus
