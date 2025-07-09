@@ -22,6 +22,8 @@ extern "C" {
 #endif
 
 
+    void secure_memzero(void *ptr, size_t len);
+
     masked_uint8_t* dom_alloc_u8 (uint8_t share_count);
     masked_uint32_t* dom_alloc_u32 (uint8_t share_count);
     masked_uint64_t* dom_alloc_u64 (uint8_t share_count);

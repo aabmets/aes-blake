@@ -26,6 +26,13 @@
 #endif //ALIGNED_ALLOC_FUNC
 
 
+void secure_memzero(void *ptr, size_t len) {
+    volatile uint8_t *p = (volatile uint8_t *)ptr;
+    while (len--) { *p++ = 0u; }
+    asm volatile ("" ::: "memory");
+}
+
+
 /*
  *   Parametrized preprocessor macro template for all utility functions.
  */
@@ -43,6 +50,9 @@ masked_##TYPE *dom_alloc_##FN_SUFFIX(const uint8_t share_count) {               
 }                                                                               \
                                                                                 \
 void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
+    const size_t share_bytes = mv->share_count * sizeof(TYPE);                  \
+    const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
+    secure_memzero(mv, struct_size);                                            \
     aligned_free(mv);                                                           \
 }                                                                               \
                                                                                 \
