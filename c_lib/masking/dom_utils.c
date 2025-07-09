@@ -39,6 +39,17 @@ void secure_memzero(void *ptr, size_t len) {
 #ifndef DOM_UTILITY_FUNCTIONS
 #define DOM_UTILITY_FUNCTIONS(TYPE, FN_SUFFIX, BIT_LENGTH)                      \
                                                                                 \
+void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
+    secure_memzero(mv, mv->total_bytes);                                        \
+    aligned_free(mv);                                                           \
+}                                                                               \
+                                                                                \
+void dom_free_many_##FN_SUFFIX(masked_##TYPE **mvs, const uint8_t count) {      \
+    for (uint8_t i = 0; i < count; ++i)                                         \
+        dom_free_##FN_SUFFIX(mvs[i]);                                           \
+    aligned_free(mvs);                                                          \
+}                                                                               \
+                                                                                \
 masked_##TYPE* dom_alloc_##FN_SUFFIX(                                           \
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
@@ -63,9 +74,23 @@ masked_##TYPE* dom_alloc_##FN_SUFFIX(                                           
     return mv;                                                                  \
 }                                                                               \
                                                                                 \
-void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
-    secure_memzero(mv, mv->total_bytes);                                        \
-    aligned_free(mv);                                                           \
+masked_##TYPE** dom_alloc_many_##FN_SUFFIX(                                     \
+        const domain_t domain,                                                  \
+        const uint8_t order,                                                    \
+        const uint8_t count                                                     \
+) {                                                                             \
+    size_t align = sizeof(void*);                                               \
+    masked_##TYPE **mvs = aligned_alloc(align, count * sizeof(*mvs));           \
+    if (!mvs) return NULL;                                                      \
+                                                                                \
+    for (uint8_t i = 0; i < count; ++i) {                                       \
+        mvs[i] = dom_alloc_##FN_SUFFIX(domain, order);                          \
+        if (!mvs[i]) {                                                          \
+            dom_free_many_##FN_SUFFIX(mvs, i);                                  \
+            return NULL;                                                        \
+        }                                                                       \
+    }                                                                           \
+    return mvs;                                                                 \
 }                                                                               \
                                                                                 \
 masked_##TYPE* dom_mask_##FN_SUFFIX(                                            \
@@ -110,7 +135,7 @@ TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE *mv) {                                
                                                                                 \
 masked_##TYPE *dom_clone_##FN_SUFFIX(const masked_##TYPE *mv) {                 \
     masked_##TYPE *clone = dom_alloc_##FN_SUFFIX(mv->domain, mv->order);        \
-    if (!mv) return NULL;                                                       \
+    if (!clone) return NULL;                                                    \
                                                                                 \
     clone->domain = mv->domain;                                                 \
     clone->order = mv->order;                                                   \

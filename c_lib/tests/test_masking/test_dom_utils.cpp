@@ -22,8 +22,8 @@ struct dom_traits;
 template<>                                                                                  \
 struct dom_traits<TYPE> {                                                                   \
     using mskd_t = masked_##TYPE;                                                           \
-    static mskd_t *dom_alloc(const uint8_t share_count)                                     \
-        { return dom_alloc_##SHORT_TYPE(share_count); }                                     \
+    static mskd_t *dom_alloc(const domain_t domain, const uint8_t order)                    \
+        { return dom_alloc_##SHORT_TYPE(domain, order); }                                   \
     static void dom_free(mskd_t *mv)                                                        \
         { dom_free_##SHORT_TYPE(mv); }                                                      \
     static mskd_t *dom_mask(const TYPE value, const domain_t domain, const uint8_t order)   \

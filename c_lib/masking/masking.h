@@ -24,13 +24,21 @@ extern "C" {
 
     void secure_memzero(void *ptr, size_t len);
 
-    masked_uint8_t* dom_alloc_u8 (uint8_t share_count);
-    masked_uint32_t* dom_alloc_u32 (uint8_t share_count);
-    masked_uint64_t* dom_alloc_u64 (uint8_t share_count);
-
     void dom_free_u8 (masked_uint8_t *mv);
     void dom_free_u32 (masked_uint32_t *mv);
     void dom_free_u64 (masked_uint64_t *mv);
+
+    void dom_free_many_u8 (masked_uint8_t **mvs, uint8_t count);
+    void dom_free_many_u32 (masked_uint32_t **mvs, uint8_t count);
+    void dom_free_many_u64 (masked_uint64_t **mvs, uint8_t count);
+
+    masked_uint8_t* dom_alloc_u8 (domain_t domain, uint8_t order);
+    masked_uint32_t* dom_alloc_u32 (domain_t domain, uint8_t order);
+    masked_uint64_t* dom_alloc_u64 (domain_t domain, uint8_t order);
+
+    masked_uint8_t** dom_alloc_many_u8 (domain_t domain, uint8_t order, uint8_t count);
+    masked_uint32_t** dom_alloc_many_u32 (domain_t domain, uint8_t order, uint8_t count);
+    masked_uint64_t** dom_alloc_many_u64 (domain_t domain, uint8_t order, uint8_t count);
 
     masked_uint8_t* dom_mask_u8 (uint8_t value, domain_t domain, uint8_t order);
     masked_uint32_t* dom_mask_u32 (uint32_t value, domain_t domain, uint8_t order);
