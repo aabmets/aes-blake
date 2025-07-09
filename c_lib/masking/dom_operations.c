@@ -10,6 +10,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "csprng.h"
 #include "dom_types.h"
 
@@ -31,13 +32,15 @@ void dom_bool_and_##FN_SUFFIX(                                                  
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
+    const uint32_t share_bytes = share_count * sizeof(TYPE);                    \
     const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
                                                                                 \
     TYPE rands[pair_count];                                                     \
     csprng_read_array((uint8_t*)rands, sizeof(rands));                          \
                                                                                 \
-    const TYPE *x = mv_a->shares;                                               \
-    const TYPE *y = mv_b->shares;                                               \
+    TYPE x[share_count], y[share_count];                                        \
+    memcpy(x, mv_a->shares, share_bytes);                                       \
+    memcpy(y, mv_b->shares, share_bytes);                                       \
     TYPE *out = mv_out->shares;                                                 \
                                                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
@@ -156,13 +159,15 @@ void dom_arith_mult_##FN_SUFFIX(                                                
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
+    const uint32_t share_bytes = share_count * sizeof(TYPE);                    \
     const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
                                                                                 \
     TYPE rands[pair_count];                                                     \
     csprng_read_array((uint8_t*)rands, sizeof(rands));                          \
                                                                                 \
-    const TYPE *x = mv_a->shares;                                               \
-    const TYPE *y = mv_b->shares;                                               \
+    TYPE x[share_count], y[share_count];                                        \
+    memcpy(x, mv_a->shares, share_bytes);                                       \
+    memcpy(y, mv_b->shares, share_bytes);                                       \
     TYPE *out = mv_out->shares;                                                 \
                                                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \

@@ -64,7 +64,7 @@ void test_binary_operation(
             typename dom_traits<T>::mskd_t*,
             typename dom_traits<T>::mskd_t*
         ),
-        std::function<T(T, T)> unmasked_op,
+        const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
     const int order = GENERATE_COPY(range(1, 11));
@@ -90,7 +90,7 @@ void test_binary_operation(
 template<typename T>
 void test_unary_operation(
         void (*masked_op)(typename dom_traits<T>::mskd_t*),
-        std::function<T(T)> unmasked_op,
+        const std::function<T(T)>& unmasked_op,
         domain_t domain
 ) {
     const int order = GENERATE_COPY(range(1, 11));
@@ -115,7 +115,7 @@ void test_shift_rotate_operation(
             typename dom_traits<T>::mskd_t*,
             uint8_t
         ),
-        std::function<T(T, T)> unmasked_op
+        const std::function<T(T, T)>& unmasked_op
 ) {
     const int order = GENERATE_COPY(range(1, 11));
     INFO("security order = " << order);
