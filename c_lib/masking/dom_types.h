@@ -16,8 +16,6 @@ extern "C" {
 #endif
 
 
-    #define N_SHARES 3  // Only 2nd-order DOM is supported
-
     typedef enum {
         BIT_LENGTH_8 = CHAR_BIT * sizeof(uint8_t),
         BIT_LENGTH_32 = CHAR_BIT * sizeof(uint32_t),
