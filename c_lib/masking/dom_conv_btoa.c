@@ -18,15 +18,12 @@
 #include "dom_types.h"
 
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*   Internal helpers for the dom_conv_btoa function                           */
-/* ─────────────────────────────────────────────────────────────────────────── */
 #define DOM_BTOA_HELPERS(TYPE, FN_SUFFIX)                                       \
 static inline TYPE psi_##FN_SUFFIX(TYPE masked, TYPE mask) {                    \
     return (masked ^ mask) - mask;                                              \
 }                                                                               \
                                                                                 \
-static TYPE *convert_##FN_SUFFIX(const TYPE *x, uint8_t n_plus1) {              \
+static TYPE* convert_##FN_SUFFIX(const TYPE *x, uint8_t n_plus1) {              \
     const uint8_t n = n_plus1 - 1;                                              \
     if (n == 1) {                                                               \
         TYPE *out = (TYPE *)malloc(sizeof(TYPE));                               \
@@ -85,11 +82,8 @@ static TYPE *convert_##FN_SUFFIX(const TYPE *x, uint8_t n_plus1) {              
 }                                                                               \
 
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*   Converter macro – generates btoa & atob for each integer width            */
-/* ─────────────────────────────────────────────────────────────────────────── */
-#ifndef DOM_CONVERTER_FUNCTIONS
-#define DOM_CONVERTER_FUNCTIONS(TYPE, FN_SUFFIX)                                \
+#ifndef DOM_CONV_BTOA
+#define DOM_CONV_BTOA(TYPE, FN_SUFFIX)                                          \
                                                                                 \
 DOM_BTOA_HELPERS(TYPE, FN_SUFFIX)                                               \
                                                                                 \
@@ -131,30 +125,10 @@ void dom_conv_btoa_##FN_SUFFIX(masked_##TYPE *mv) {                             
     free(new_shares);                                                           \
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
-                                                                                \
-/*   TODO: Replace this insecure atob implementation   */                       \
-void dom_conv_atob_##FN_SUFFIX(masked_##TYPE* mv) {                             \
-    if (mv->domain == DOMAIN_BOOLEAN) return;                                   \
-    TYPE *s = mv->shares;                                                       \
-    uint8_t sc = mv->share_count;                                               \
-    TYPE value = s[0];                                                          \
-    for (uint8_t i = 1; i < sc; ++i) {                                          \
-        value += s[i];                                                          \
-    }                                                                           \
-    for (uint8_t i = 1; i < sc; ++i) {                                          \
-        value ^= s[i];                                                          \
-    }                                                                           \
-    s[0] = value;                                                               \
-    mv->domain = DOMAIN_BOOLEAN;                                                \
-    asm volatile("" ::: "memory");                                              \
-}                                                                               \
 
-#endif //DOM_CONVERTER_FUNCTIONS
+#endif //DOM_CONV_BTOA
 
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*   Instantiate converters for all supported integer widths                   */
-/* ─────────────────────────────────────────────────────────────────────────── */
-DOM_CONVERTER_FUNCTIONS(uint8_t, u8)
-DOM_CONVERTER_FUNCTIONS(uint32_t, u32)
-DOM_CONVERTER_FUNCTIONS(uint64_t, u64)
+DOM_CONV_BTOA(uint8_t, u8)
+DOM_CONV_BTOA(uint32_t, u32)
+DOM_CONV_BTOA(uint64_t, u64)
