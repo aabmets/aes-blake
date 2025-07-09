@@ -30,26 +30,32 @@ extern "C" {
     } domain_t;
 
     typedef struct {
+        bit_length_t bit_length;
+        uint32_t total_bytes;
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        bit_length_t bit_length;
+        uint8_t share_bytes;
         uint8_t shares[];
     } masked_uint8_t;
 
     typedef struct {
+        bit_length_t bit_length;
+        uint32_t total_bytes;
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        bit_length_t bit_length;
+        uint8_t share_bytes;
         uint32_t shares[];
     } masked_uint32_t;
 
     typedef struct {
+        bit_length_t bit_length;
+        uint32_t total_bytes;
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        bit_length_t bit_length;
+        uint8_t share_bytes;
         uint64_t shares[];
     } masked_uint64_t;
 

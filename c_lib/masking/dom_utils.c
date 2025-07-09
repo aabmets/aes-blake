@@ -28,7 +28,7 @@
 
 void secure_memzero(void *ptr, size_t len) {
     volatile uint8_t *p = (volatile uint8_t *)ptr;
-    while (len--) { *p++ = 0u; }
+    while (len--) *p++ = 0u;
     asm volatile ("" ::: "memory");
 }
 
@@ -39,36 +39,42 @@ void secure_memzero(void *ptr, size_t len) {
 #ifndef DOM_UTILITY_FUNCTIONS
 #define DOM_UTILITY_FUNCTIONS(TYPE, FN_SUFFIX, BIT_LENGTH)                      \
                                                                                 \
-masked_##TYPE *dom_alloc_##FN_SUFFIX(const uint8_t share_count) {               \
-    const size_t share_bytes = share_count * sizeof(TYPE);                      \
-    const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
-    const size_t alignment = sizeof(void*);                                     \
-    const size_t offset = alignment - 1;                                        \
-    const size_t total_bytes = (struct_size + offset) & ~offset;                \
-    masked_##TYPE *mv = aligned_alloc(alignment, total_bytes);                  \
-    return mv ? mv : NULL;                                                      \
-}                                                                               \
-                                                                                \
-void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
-    const size_t share_bytes = mv->share_count * sizeof(TYPE);                  \
-    const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
-    secure_memzero(mv, struct_size);                                            \
-    aligned_free(mv);                                                           \
-}                                                                               \
-                                                                                \
-masked_##TYPE *dom_mask_##FN_SUFFIX(                                            \
-        const TYPE value,                                                       \
+masked_##TYPE* dom_alloc_##FN_SUFFIX(                                           \
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
 ) {                                                                             \
     const uint8_t share_count = order + 1;                                      \
-    masked_##TYPE *mv = dom_alloc_##FN_SUFFIX(share_count);                     \
+    const uint8_t share_bytes = share_count * sizeof(TYPE);                     \
+    const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
+    const size_t alignment = sizeof(void*);                                     \
+    const size_t offset = alignment - 1;                                        \
+    const size_t total_bytes = (struct_size + offset) & ~offset;                \
+                                                                                \
+    masked_##TYPE *mv = aligned_alloc(alignment, total_bytes);                  \
     if (!mv) return NULL;                                                       \
                                                                                 \
+    mv->bit_length = BIT_LENGTH;                                                \
+    mv->total_bytes = total_bytes;                                              \
     mv->domain = domain;                                                        \
     mv->order = order;                                                          \
     mv->share_count = share_count;                                              \
-    mv->bit_length = BIT_LENGTH;                                                \
+    mv->share_bytes = share_bytes;                                              \
+    secure_memzero(mv->shares, share_bytes);                                    \
+    return mv;                                                                  \
+}                                                                               \
+                                                                                \
+void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
+    secure_memzero(mv, mv->total_bytes);                                        \
+    aligned_free(mv);                                                           \
+}                                                                               \
+                                                                                \
+masked_##TYPE* dom_mask_##FN_SUFFIX(                                            \
+        const TYPE value,                                                       \
+        const domain_t domain,                                                  \
+        const uint8_t order                                                     \
+) {                                                                             \
+    masked_##TYPE *mv = dom_alloc_##FN_SUFFIX(domain, order);                   \
+    if (!mv) return NULL;                                                       \
                                                                                 \
     TYPE *shares = (TYPE*)mv->shares;                                           \
     csprng_read_array((uint8_t*)&shares[1], order * sizeof(TYPE));              \
@@ -103,7 +109,7 @@ TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE *mv) {                                
 }                                                                               \
                                                                                 \
 masked_##TYPE *dom_clone_##FN_SUFFIX(const masked_##TYPE *mv) {                 \
-    masked_##TYPE *clone = dom_alloc_##FN_SUFFIX(mv->share_count);              \
+    masked_##TYPE *clone = dom_alloc_##FN_SUFFIX(mv->domain, mv->order);        \
     if (!mv) return NULL;                                                       \
                                                                                 \
     clone->domain = mv->domain;                                                 \
