@@ -161,7 +161,7 @@ void dom_conv_atob_##FN_SUFFIX(masked_##TYPE *mv) {                             
     dom_bool_xor_##FN_SUFFIX(s_res, k_res, k_res);                              \
     dom_bool_xor_##FN_SUFFIX(c_res, k_res, k_res);                              \
                                                                                 \
-    memcpy(shares, k_res->shares, share_count * sizeof(TYPE));                  \
+    memcpy(shares, k_res->shares, mv->share_bytes);                             \
     mv->domain = DOMAIN_BOOLEAN;                                                \
                                                                                 \
     dom_free_##FN_SUFFIX(k_res);                                                \

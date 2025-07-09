@@ -32,7 +32,7 @@ void dom_bool_and_##FN_SUFFIX(                                                  
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
-    const uint32_t share_bytes = share_count * sizeof(TYPE);                    \
+    const uint32_t share_bytes = mv_a->share_bytes;                             \
     const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
                                                                                 \
     TYPE rands[pair_count];                                                     \
@@ -159,7 +159,7 @@ void dom_arith_mult_##FN_SUFFIX(                                                
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
-    const uint32_t share_bytes = share_count * sizeof(TYPE);                    \
+    const uint32_t share_bytes = mv_a->share_bytes;                             \
     const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
                                                                                 \
     TYPE rands[pair_count];                                                     \
