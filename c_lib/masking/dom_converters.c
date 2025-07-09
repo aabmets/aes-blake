@@ -9,98 +9,130 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <stdint.h>
 
 #include "csprng.h"
+#include "masking.h"
 #include "dom_types.h"
 
 
-/*
- *   Parametrized preprocessor macro template for all converter functions.
- */
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*   Internal helpers for the dom_conv_btoa function                           */
+/* ─────────────────────────────────────────────────────────────────────────── */
+#define DOM_BTOA_HELPERS(TYPE, FN_SUFFIX)                                       \
+static inline TYPE psi_##FN_SUFFIX(TYPE masked, TYPE mask) {                    \
+    return (masked ^ mask) - mask;                                              \
+}                                                                               \
+                                                                                \
+static TYPE *convert_##FN_SUFFIX(const TYPE *x, uint8_t n_plus1) {              \
+    uint8_t n = n_plus1 - 1;                                                    \
+    if (n == 1) {                                                               \
+        TYPE *out = (TYPE *)malloc(sizeof(TYPE));                               \
+        out[0] = x[0] ^ x[1];                                                   \
+        return out;                                                             \
+    }                                                                           \
+                                                                                \
+    TYPE *rnd = (TYPE *)malloc(n * sizeof(TYPE));                               \
+    csprng_read_array((uint8_t *)rnd, n * sizeof(TYPE));                        \
+                                                                                \
+    TYPE *x_mut = (TYPE *)malloc(n_plus1 * sizeof(TYPE));                       \
+    for (uint8_t i = 0; i < n_plus1; ++i) {                                     \
+        x_mut[i] = x[i];                                                        \
+    }                                                                           \
+                                                                                \
+    for (uint8_t i = 1; i < n_plus1; ++i) {                                     \
+        TYPE r = rnd[i - 1];                                                    \
+        x_mut[i] ^= r;                                                          \
+        x_mut[0] ^= r;                                                          \
+    }                                                                           \
+                                                                                \
+    TYPE *y = (TYPE *)malloc(n * sizeof(TYPE));                                 \
+    TYPE first_term = ((n - 1) & 1U) ? x_mut[0] : (TYPE)0;                      \
+    y[0] = first_term ^ psi_##FN_SUFFIX(x_mut[0], x_mut[1]);                    \
+    for (uint8_t i = 1; i < n; ++i) {                                           \
+        y[i] = psi_##FN_SUFFIX(x_mut[0], x_mut[i + 1]);                         \
+    }                                                                           \
+                                                                                \
+    TYPE *first  = convert_##FN_SUFFIX(&x_mut[1], n);                           \
+    TYPE *second = convert_##FN_SUFFIX(y, n);                                   \
+                                                                                \
+    TYPE *out = (TYPE *)malloc(n * sizeof(TYPE));                               \
+    for (uint8_t i = 0; i < n - 2; ++i) {                                       \
+        out[i] = first[i] + second[i];                                          \
+    }                                                                           \
+    uint8_t n_1 = n - 1;                                                        \
+    uint8_t n_2 = n - 2;                                                        \
+    out[n_2] = first[n_2];                                                      \
+    out[n_1] = second[n_2];                                                     \
+                                                                                \
+    free(rnd);                                                                  \
+    free(x_mut);                                                                \
+    free(y);                                                                    \
+    free(first);                                                                \
+    free(second);                                                               \
+    return out;                                                                 \
+}                                                                               \
+
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*   Converter macro – generates btoa & atob for each integer width            */
+/* ─────────────────────────────────────────────────────────────────────────── */
 #ifndef DOM_CONVERTER_FUNCTIONS
 #define DOM_CONVERTER_FUNCTIONS(TYPE, FN_SUFFIX)                                \
                                                                                 \
-void dom_conv_btoa_##FN_SUFFIX(masked_##TYPE* mv) {                             \
-    /* working registers */                                                     \
-    TYPE z, u, v, w;                                                            \
+DOM_BTOA_HELPERS(TYPE, FN_SUFFIX)                                               \
                                                                                 \
-    /* boolean shares */                                                        \
-    const TYPE xp = mv->shares[0];  /* x prime = x ⊕ r1 ⊕ r2 */                 \
-    const TYPE r1 = mv->shares[1];                                              \
-    const TYPE r2 = mv->shares[2];                                              \
+/*   Converts masked shares from boolean to arithmetic domain using        */   \
+/*   the affine psi recursive decomposition method of Bettale et al.,      */   \
+/*   "Improved High-Order Conversion From Boolean to Arithmetic Masking"   */   \
+/*   Link: https://eprint.iacr.org/2018/328.pdf                            */   \
+void dom_conv_btoa_##FN_SUFFIX(masked_##TYPE *mv) {                             \
+    if (mv->domain == DOMAIN_ARITHMETIC) return;                                \
+    uint8_t sc = mv->share_count;                                               \
+    uint8_t sc_extra = sc + 1;                                                  \
+    TYPE *shares = mv->shares;                                                  \
                                                                                 \
-    /* fresh randomness */                                                      \
-    TYPE rand[5];                                                               \
-    csprng_read_array((uint8_t *)rand, sizeof(rand));                           \
+    TYPE *tmp = (TYPE *)malloc(sc_extra * sizeof(TYPE));                        \
+    for (uint8_t i = 0; i < sc; ++i) {                                          \
+        tmp[i] = shares[i];                                                     \
+    }                                                                           \
+    tmp[sc] = (TYPE)0;                                                          \
                                                                                 \
-    const TYPE g1 = rand[0];  /* gamma 1 */                                     \
-    const TYPE g2 = rand[1];  /* gamma 2 */                                     \
-    const TYPE aa = rand[2];  /* alpha  */                                      \
-    const TYPE s1 = rand[3];                                                    \
-    const TYPE s2 = rand[4];                                                    \
-                                                                                \
-    /* Hutter & Tunstall 2016 Algorithm 2 */                                    \
-    z  = g1 ^ r1;  /*  1 */                                                     \
-    z ^= g2;       /*  2 */                                                     \
-    z ^= r2;       /*  3 */                                                     \
-                                                                                \
-    u  = xp ^ z;   /*  4 */                                                     \
-    z ^= aa;       /*  5 */                                                     \
-    u += z;        /*  6 */                                                     \
-                                                                                \
-    v  = xp ^ g1;  /*  7 */                                                     \
-    v ^= aa;       /*  8 */                                                     \
-    v += g1;       /*  9 */                                                     \
-                                                                                \
-    w  = xp ^ g2;  /* 10 */                                                     \
-    w ^= aa;       /* 11 */                                                     \
-    w += g2;       /* 12 */                                                     \
-                                                                                \
-    z  = r2 ^ s1;  /* 13 */                                                     \
-    u ^= r2;       /* 14 */                                                     \
-    u ^= v;        /* 15 */                                                     \
-    u ^= w;        /* 16 */                                                     \
-                                                                                \
-    v  = u ^ s1;   /* 17 */                                                     \
-    v += r2;       /* 18 */                                                     \
-    w  = u ^ z;    /* 19 */                                                     \
-    v ^= w;        /* 20 */                                                     \
-    w  = u + z;    /* 21 */                                                     \
-    z  = v ^ w;    /* 22 */                                                     \
-                                                                                \
-    w  = aa ^ r2;  /* 23 */                                                     \
-    u  = s2 ^ r1;  /* 24 */                                                     \
-    u -= w;        /* 25 */                                                     \
-    w ^= s2;       /* 26 */                                                     \
-    v  = w ^ r1;   /* 27 */                                                     \
-    w -= r1;       /* 28 */                                                     \
-    u ^= v;        /* 29 */                                                     \
-    u ^= w;        /* 30 */                                                     \
-                                                                                \
-    z += u;        /* 31 */                                                     \
-                                                                                \
-    /* write back */                                                            \
-    mv->shares[0] = z;   /* x + s1 + s2 (mod 2^n) */                            \
-    mv->shares[1] = s1;                                                         \
-    mv->shares[2] = s2;                                                         \
+    TYPE *new_shares = convert_##FN_SUFFIX(tmp, sc_extra);                      \
+    for (uint8_t i = 0; i < sc; ++i) {                                          \
+        mv->shares[i] = new_shares[i];                                          \
+    }                                                                           \
     mv->domain = DOMAIN_ARITHMETIC;                                             \
+                                                                                \
+    free(tmp);                                                                  \
+    free(new_shares);                                                           \
+    asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
-                                                                                \
+/*   TODO: Replace this insecure atob implementation   */                       \
 void dom_conv_atob_##FN_SUFFIX(masked_##TYPE* mv) {                             \
-    /* TODO: replace this naive insecure implementation */                      \
-    TYPE unmasked_value = mv->shares[0] - mv->shares[1] - mv->shares[2];        \
-    mv->shares[0] = unmasked_value ^ mv->shares[1] ^ mv->shares[2];             \
+    if (mv->domain == DOMAIN_BOOLEAN) return;                                   \
+    TYPE *s = mv->shares;                                                       \
+    uint8_t sc = mv->share_count;                                               \
+    TYPE value = s[0];                                                          \
+    for (uint8_t i = 1; i < sc; ++i) {                                          \
+        value += s[i];                                                          \
+    }                                                                           \
+    for (uint8_t i = 1; i < sc; ++i) {                                          \
+        value ^= s[i];                                                          \
+    }                                                                           \
+    s[0] = value;                                                               \
     mv->domain = DOMAIN_BOOLEAN;                                                \
+    asm volatile("" ::: "memory");                                              \
 }                                                                               \
 
 #endif //DOM_CONVERTER_FUNCTIONS
 
 
-/*
- *   Create converter functions for all supported types.
- */
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*   Instantiate converters for all supported integer widths                   */
+/* ─────────────────────────────────────────────────────────────────────────── */
 DOM_CONVERTER_FUNCTIONS(uint8_t, u8)
 DOM_CONVERTER_FUNCTIONS(uint32_t, u32)
 DOM_CONVERTER_FUNCTIONS(uint64_t, u64)

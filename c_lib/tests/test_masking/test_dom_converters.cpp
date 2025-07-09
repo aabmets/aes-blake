@@ -21,8 +21,11 @@ struct dom_traits;
 template<>                                                                      \
 struct dom_traits<TYPE> {                                                       \
     using mskd_t = masked_##TYPE;                                               \
-    static mskd_t* dom_mask(const TYPE value, const domain_t domain)            \
-        { return dom_mask_##SHORT_TYPE(value, domain); }                        \
+    static void dom_free(mskd_t *mv)                                            \
+        { dom_free_##SHORT_TYPE(mv); }                                          \
+    static mskd_t *dom_mask(                                                    \
+        const TYPE value, const domain_t domain, const uint8_t order            \
+    ) { return dom_mask_##SHORT_TYPE(value, domain, order); }                   \
     static TYPE dom_unmask(mskd_t* mv)                                          \
         { return dom_unmask_##SHORT_TYPE(mv); }                                 \
     static void dom_conv_btoa(mskd_t* mv)                                       \
@@ -39,29 +42,33 @@ DEFINE_DOM_TRAITS(uint64_t, u64)
 
 
 TEMPLATE_TEST_CASE(
-        "2nd-order DOM converter functions work correctly", "[unittest][dom]",
-        uint8_t, uint32_t, uint64_t
+        "Assert DOM converter functions work correctly",
+        "[unittest][dom]", uint8_t, uint32_t, uint64_t
 ) {
-    for (int i = 0; i < 100; i++) {
-        TestType expected[1];
-        csprng_read_array((uint8_t*)(expected), sizeof(expected));
+    const int order = GENERATE_COPY(range(1, 11));
+    INFO("security order = " << order);
 
-        // Mask expected value with boolean domain
-        auto* mv = dom_traits<TestType>::dom_mask(expected[0], DOMAIN_BOOLEAN);
-        REQUIRE(mv->domain == DOMAIN_BOOLEAN);
+    TestType value[1];
+    csprng_read_array((uint8_t*)value, sizeof(value));
+    auto expected = static_cast<TestType>(value[0]);
 
-        dom_traits<TestType>::dom_conv_btoa(mv);
+    // Mask expected value with boolean domain
+    auto *mv = dom_traits<TestType>::dom_mask(expected, DOMAIN_BOOLEAN, order);
+    REQUIRE(mv->domain == DOMAIN_BOOLEAN);
 
-        // Check unmasking from the arithmetic domain
-        TestType manually_unmasked = mv->shares[0] - mv->shares[1] - mv->shares[2];
-        REQUIRE(manually_unmasked == static_cast<TestType>(expected[0]));
-        REQUIRE(mv->domain == DOMAIN_ARITHMETIC);
+    dom_traits<TestType>::dom_conv_btoa(mv);
 
-        dom_traits<TestType>::dom_conv_atob(mv);
+    // Check unmasking from the arithmetic domain
+    TestType unmasked_1 = dom_traits<TestType>::dom_unmask(mv);
+    REQUIRE(unmasked_1 == expected);
+    REQUIRE(mv->domain == DOMAIN_ARITHMETIC);
 
-        // Check unmasking back in the boolean domain
-        TestType func_unmasked = dom_traits<TestType>::dom_unmask(mv);
-        REQUIRE(func_unmasked == static_cast<TestType>(expected[0]));
-        REQUIRE(mv->domain == DOMAIN_BOOLEAN);
-    }
+    dom_traits<TestType>::dom_conv_atob(mv);
+
+    // Check unmasking back in the boolean domain
+    TestType unmasked_2 = dom_traits<TestType>::dom_unmask(mv);
+    REQUIRE(unmasked_2 == expected);
+    REQUIRE(mv->domain == DOMAIN_BOOLEAN);
+
+    dom_traits<TestType>::dom_free(mv);
 }
