@@ -44,9 +44,16 @@ void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  
     aligned_free(mv);                                                           \
 }                                                                               \
                                                                                 \
-void dom_free_many_##FN_SUFFIX(masked_##TYPE **mvs, const uint8_t count) {      \
-    for (uint8_t i = 0; i < count; ++i)                                         \
+void dom_free_many_##FN_SUFFIX(                                                 \
+        masked_##TYPE **mvs,                                                    \
+        const uint8_t count,                                                    \
+        uint32_t skip_mask                                                      \
+) {                                                                             \
+    for (uint8_t i = 0; i < count; ++i) {                                       \
+        if ((skip_mask >> i) & 1u)                                              \
+            continue;                                                           \
         dom_free_##FN_SUFFIX(mvs[i]);                                           \
+    }                                                                           \
     aligned_free(mvs);                                                          \
 }                                                                               \
                                                                                 \
@@ -86,7 +93,7 @@ masked_##TYPE** dom_alloc_many_##FN_SUFFIX(                                     
     for (uint8_t i = 0; i < count; ++i) {                                       \
         mvs[i] = dom_alloc_##FN_SUFFIX(domain, order);                          \
         if (!mvs[i]) {                                                          \
-            dom_free_many_##FN_SUFFIX(mvs, i);                                  \
+            dom_free_many_##FN_SUFFIX(mvs, i, 0);                                  \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \

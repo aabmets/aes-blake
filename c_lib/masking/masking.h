@@ -28,9 +28,9 @@ extern "C" {
     void dom_free_u32 (masked_uint32_t *mv);
     void dom_free_u64 (masked_uint64_t *mv);
 
-    void dom_free_many_u8 (masked_uint8_t **mvs, uint8_t count);
-    void dom_free_many_u32 (masked_uint32_t **mvs, uint8_t count);
-    void dom_free_many_u64 (masked_uint64_t **mvs, uint8_t count);
+    void dom_free_many_u8 (masked_uint8_t **mvs, uint8_t count, uint32_t skip_mask);
+    void dom_free_many_u32 (masked_uint32_t **mvs, uint8_t count, uint32_t skip_mask);
+    void dom_free_many_u64 (masked_uint64_t **mvs, uint8_t count, uint32_t skip_mask);
 
     masked_uint8_t* dom_alloc_u8 (domain_t domain, uint8_t order);
     masked_uint32_t* dom_alloc_u32 (domain_t domain, uint8_t order);
