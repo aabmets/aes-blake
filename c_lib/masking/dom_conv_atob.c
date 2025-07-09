@@ -36,23 +36,23 @@ static void csa_##FN_SUFFIX(                                                    
         }                                                                       \
     }                                                                           \
     /*  a = x ^ y  */                                                           \
-    masked_##TYPE *a = dom_clone_##FN_SUFFIX(x);                                \
+    masked_##TYPE *a = tmp[0];                                                  \
     dom_bool_xor_##FN_SUFFIX(x, y, a);                                          \
                                                                                 \
     /*  s = a ^ z  */                                                           \
-    masked_##TYPE *s = dom_clone_##FN_SUFFIX(x);                                \
+    masked_##TYPE *s = tmp[1];                                                  \
     dom_bool_xor_##FN_SUFFIX(a, z, s);                                          \
                                                                                 \
     /*  w = x ^ z  */                                                           \
-    masked_##TYPE *w = dom_clone_##FN_SUFFIX(x);                                \
+    masked_##TYPE *w = tmp[2];                                                  \
     dom_bool_xor_##FN_SUFFIX(x, z, w);                                          \
                                                                                 \
     /*  v = a & w  */                                                           \
-    masked_##TYPE *v = dom_clone_##FN_SUFFIX(x);                                \
+    masked_##TYPE *v = tmp[3];                                                  \
     dom_bool_and_##FN_SUFFIX(a, w, v);                                          \
                                                                                 \
     /*  c = x ^ v  */                                                           \
-    masked_##TYPE *c = dom_clone_##FN_SUFFIX(x);                                \
+    masked_##TYPE *c = tmp[4];                                                  \
     dom_bool_xor_##FN_SUFFIX(x, v, c);                                          \
     dom_bool_shl_##FN_SUFFIX(c, 1);                                             \
                                                                                 \
