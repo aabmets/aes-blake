@@ -22,87 +22,47 @@ extern "C" {
 #endif
 
 
-    void secure_memzero(void *ptr, size_t len);
+void secure_memzero(void *ptr, size_t len);
 
-    void dom_free_u8 (masked_uint8_t *mv);
-    void dom_free_u32 (masked_uint32_t *mv);
-    void dom_free_u64 (masked_uint64_t *mv);
+#define MASKING_FUNCTIONS(TYPE, SHORT)                                                                                  \
+void              dom_free_##SHORT           (masked_##TYPE* mv);                                                       \
+void              dom_free_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, uint32_t skip_mask);                  \
+                                                                                                                        \
+void              dom_clear_##SHORT          (masked_##TYPE* mv);                                                       \
+void              dom_clear_many_##SHORT     (masked_##TYPE** mvs, uint8_t count, uint32_t skip_mask);                  \
+                                                                                                                        \
+masked_##TYPE*    dom_alloc_##SHORT          (domain_t domain, uint8_t order);                                          \
+masked_##TYPE**   dom_alloc_many_##SHORT     (domain_t domain, uint8_t order, uint8_t count);                           \
+                                                                                                                        \
+masked_##TYPE*    dom_mask_##SHORT           (const TYPE value, domain_t domain, uint8_t order);                        \
+masked_##TYPE**   dom_mask_many_##SHORT      (const TYPE* values, domain_t domain, uint8_t order, uint32_t count);      \
+                                                                                                                        \
+TYPE              dom_unmask_##SHORT         (masked_##TYPE* mv);                                                       \
+void              dom_unmask_many_##SHORT    (masked_##TYPE** mvs, TYPE* out, uint8_t count);                           \
+                                                                                                                        \
+void              dom_refresh_##SHORT        (masked_##TYPE* mv);                                                       \
+void              dom_refresh_many_##SHORT   (masked_##TYPE** mvs, uint8_t count);                                      \
+                                                                                                                        \
+masked_##TYPE*    dom_clone_##SHORT          (const masked_##TYPE* mv);                                                 \
+                                                                                                                        \
+void              dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
+void              dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \
+                                                                                                                        \
+void              dom_bool_and_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+void              dom_bool_or_##SHORT        (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+void              dom_bool_xor_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+void              dom_bool_not_##SHORT       (masked_##TYPE* mv);                                                       \
+void              dom_bool_shr_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
+void              dom_bool_shl_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
+void              dom_bool_rotr_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
+void              dom_bool_rotl_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
+                                                                                                                        \
+void              dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+void              dom_arith_mult_##SHORT     (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 
-    void dom_free_many_u8 (masked_uint8_t **mvs, uint8_t count, uint32_t skip_mask);
-    void dom_free_many_u32 (masked_uint32_t **mvs, uint8_t count, uint32_t skip_mask);
-    void dom_free_many_u64 (masked_uint64_t **mvs, uint8_t count, uint32_t skip_mask);
-
-    masked_uint8_t* dom_alloc_u8 (domain_t domain, uint8_t order);
-    masked_uint32_t* dom_alloc_u32 (domain_t domain, uint8_t order);
-    masked_uint64_t* dom_alloc_u64 (domain_t domain, uint8_t order);
-
-    masked_uint8_t** dom_alloc_many_u8 (domain_t domain, uint8_t order, uint8_t count);
-    masked_uint32_t** dom_alloc_many_u32 (domain_t domain, uint8_t order, uint8_t count);
-    masked_uint64_t** dom_alloc_many_u64 (domain_t domain, uint8_t order, uint8_t count);
-
-    masked_uint8_t* dom_mask_u8 (uint8_t value, domain_t domain, uint8_t order);
-    masked_uint32_t* dom_mask_u32 (uint32_t value, domain_t domain, uint8_t order);
-    masked_uint64_t* dom_mask_u64 (uint64_t value, domain_t domain, uint8_t order);
-
-    uint8_t dom_unmask_u8 (masked_uint8_t *mv);
-    uint32_t dom_unmask_u32 (masked_uint32_t *mv);
-    uint64_t dom_unmask_u64 (masked_uint64_t *mv);
-
-    masked_uint8_t* dom_clone_u8 (masked_uint8_t *mv);
-    masked_uint32_t* dom_clone_u32 (masked_uint32_t *mv);
-    masked_uint64_t* dom_clone_u64 (masked_uint64_t *mv);
-
-    void dom_refresh_mask_u8 (masked_uint8_t *mv);
-    void dom_refresh_mask_u32 (masked_uint32_t *mv);
-    void dom_refresh_mask_u64 (masked_uint64_t *mv);
-
-    void dom_conv_btoa_u8 (masked_uint8_t *mv);
-    void dom_conv_btoa_u32 (masked_uint32_t *mv);
-    void dom_conv_btoa_u64 (masked_uint64_t *mv);
-
-    void dom_conv_atob_u8 (masked_uint8_t *mv);
-    void dom_conv_atob_u32 (masked_uint32_t *mv);
-    void dom_conv_atob_u64 (masked_uint64_t *mv);
-
-    void dom_bool_and_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
-    void dom_bool_and_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
-    void dom_bool_and_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
-
-    void dom_bool_or_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
-    void dom_bool_or_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
-    void dom_bool_or_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
-
-    void dom_bool_xor_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
-    void dom_bool_xor_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
-    void dom_bool_xor_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
-
-    void dom_bool_not_u8 (masked_uint8_t *mv);
-    void dom_bool_not_u32 (masked_uint32_t *mv);
-    void dom_bool_not_u64 (masked_uint64_t *mv);
-
-    void dom_bool_shr_u8 (masked_uint8_t *mv, uint8_t n);
-    void dom_bool_shr_u32 (masked_uint32_t *mv, uint8_t n);
-    void dom_bool_shr_u64 (masked_uint64_t *mv, uint8_t n);
-
-    void dom_bool_shl_u8 (masked_uint8_t *mv, uint8_t n);
-    void dom_bool_shl_u32 (masked_uint32_t *mv, uint8_t n);
-    void dom_bool_shl_u64 (masked_uint64_t *mv, uint8_t n);
-
-    void dom_bool_rotr_u8 (masked_uint8_t *mv, uint8_t n);
-    void dom_bool_rotr_u32 (masked_uint32_t *mv, uint8_t n);
-    void dom_bool_rotr_u64 (masked_uint64_t *mv, uint8_t n);
-
-    void dom_bool_rotl_u8 (masked_uint8_t *mv, uint8_t n);
-    void dom_bool_rotl_u32 (masked_uint32_t *mv, uint8_t n);
-    void dom_bool_rotl_u64 (masked_uint64_t *mv, uint8_t n);
-
-    void dom_arith_add_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
-    void dom_arith_add_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
-    void dom_arith_add_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
-
-    void dom_arith_mult_u8 (masked_uint8_t *mv_a, masked_uint8_t *mv_b, masked_uint8_t *mv_out);
-    void dom_arith_mult_u32 (masked_uint32_t *mv_a, masked_uint32_t *mv_b, masked_uint32_t *mv_out);
-    void dom_arith_mult_u64 (masked_uint64_t *mv_a, masked_uint64_t *mv_b, masked_uint64_t *mv_out);
+MASKING_FUNCTIONS(uint8_t, u8)
+MASKING_FUNCTIONS(uint32_t, u32)
+MASKING_FUNCTIONS(uint64_t, u64)
 
 
 #ifdef __cplusplus

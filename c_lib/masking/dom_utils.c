@@ -10,6 +10,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include "csprng.h"
 #include "dom_types.h"
@@ -37,27 +38,50 @@ void secure_memzero(void *ptr, size_t len) {
  *   Parametrized preprocessor macro template for all utility functions.
  */
 #ifndef DOM_UTILITY_FUNCTIONS
-#define DOM_UTILITY_FUNCTIONS(TYPE, FN_SUFFIX, BIT_LENGTH)                      \
+#define DOM_UTILITY_FUNCTIONS(TYPE, SHORT, BIT_LENGTH)                          \
                                                                                 \
-void dom_free_##FN_SUFFIX(masked_##TYPE *mv) {                                  \
+void dom_free_##SHORT(masked_##TYPE *mv) {                                      \
     secure_memzero(mv, mv->total_bytes);                                        \
     aligned_free(mv);                                                           \
 }                                                                               \
                                                                                 \
-void dom_free_many_##FN_SUFFIX(                                                 \
+                                                                                \
+void dom_free_many_##SHORT(                                                     \
         masked_##TYPE **mvs,                                                    \
         const uint8_t count,                                                    \
-        uint32_t skip_mask                                                      \
+        const uint32_t skip_mask                                                \
 ) {                                                                             \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         if ((skip_mask >> i) & 1u)                                              \
             continue;                                                           \
-        dom_free_##FN_SUFFIX(mvs[i]);                                           \
+        masked_##TYPE *mv = mvs[i];                                             \
+        secure_memzero(mv, mv->total_bytes);                                    \
+        aligned_free(mv);                                                       \
     }                                                                           \
     aligned_free(mvs);                                                          \
 }                                                                               \
                                                                                 \
-masked_##TYPE* dom_alloc_##FN_SUFFIX(                                           \
+                                                                                \
+void dom_clear_##SHORT(masked_##TYPE *mv) {                                     \
+    secure_memzero(mv->shares, mv->share_bytes);                                \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_clear_many_##SHORT(                                                    \
+        masked_##TYPE **mvs,                                                    \
+        const uint8_t count,                                                    \
+        const uint32_t skip_mask                                                \
+) {                                                                             \
+    for (uint8_t i = 0; i < count; ++i) {                                       \
+        if ((skip_mask >> i) & 1u)                                              \
+            continue;                                                           \
+        masked_##TYPE *mv = mvs[i];                                             \
+        secure_memzero(mv->shares, mv->share_bytes);                            \
+    }                                                                           \
+}                                                                               \
+                                                                                \
+                                                                                \
+masked_##TYPE* dom_alloc_##SHORT(                                               \
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
 ) {                                                                             \
@@ -81,7 +105,8 @@ masked_##TYPE* dom_alloc_##FN_SUFFIX(                                           
     return mv;                                                                  \
 }                                                                               \
                                                                                 \
-masked_##TYPE** dom_alloc_many_##FN_SUFFIX(                                     \
+                                                                                \
+masked_##TYPE** dom_alloc_many_##SHORT(                                         \
         const domain_t domain,                                                  \
         const uint8_t order,                                                    \
         const uint8_t count                                                     \
@@ -91,21 +116,22 @@ masked_##TYPE** dom_alloc_many_##FN_SUFFIX(                                     
     if (!mvs) return NULL;                                                      \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
-        mvs[i] = dom_alloc_##FN_SUFFIX(domain, order);                          \
+        mvs[i] = dom_alloc_##SHORT(domain, order);                              \
         if (!mvs[i]) {                                                          \
-            dom_free_many_##FN_SUFFIX(mvs, i, 0);                                  \
+            dom_free_many_##SHORT(mvs, i, 0);                                   \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \
     return mvs;                                                                 \
 }                                                                               \
                                                                                 \
-masked_##TYPE* dom_mask_##FN_SUFFIX(                                            \
+                                                                                \
+masked_##TYPE* dom_mask_##SHORT(                                                \
         const TYPE value,                                                       \
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
 ) {                                                                             \
-    masked_##TYPE *mv = dom_alloc_##FN_SUFFIX(domain, order);                   \
+    masked_##TYPE *mv = dom_alloc_##SHORT(domain, order);                       \
     if (!mv) return NULL;                                                       \
                                                                                 \
     TYPE *shares = (TYPE*)mv->shares;                                           \
@@ -125,7 +151,29 @@ masked_##TYPE* dom_mask_##FN_SUFFIX(                                            
     return mv;                                                                  \
 }                                                                               \
                                                                                 \
-TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE *mv) {                                \
+                                                                                \
+masked_##TYPE** dom_mask_many_##SHORT(                                          \
+        const TYPE *values,                                                     \
+        const domain_t domain,                                                  \
+        const uint8_t order,                                                    \
+        const uint32_t count                                                    \
+) {                                                                             \
+    size_t align = sizeof(void*);                                               \
+    masked_##TYPE **mvs = aligned_alloc(align, count * sizeof(*mvs));           \
+    if (!mvs) return NULL;                                                      \
+                                                                                \
+    for (uint32_t i = 0; i < count; ++i) {                                      \
+        mvs[i] = dom_mask_##SHORT(values[i], domain, order);                    \
+        if (!mvs[i]) {                                                          \
+            dom_free_many_##SHORT(mvs, i, 0);                                   \
+            return NULL;                                                        \
+        }                                                                       \
+    }                                                                           \
+    return mvs;                                                                 \
+}                                                                               \
+                                                                                \
+                                                                                \
+TYPE dom_unmask_##SHORT(masked_##TYPE *mv) {                                    \
     TYPE *shares = (TYPE*)mv->shares;                                           \
     TYPE result = shares[0];                                                    \
     if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                    \
@@ -140,28 +188,24 @@ TYPE dom_unmask_##FN_SUFFIX(masked_##TYPE *mv) {                                
     return result;                                                              \
 }                                                                               \
                                                                                 \
-masked_##TYPE *dom_clone_##FN_SUFFIX(const masked_##TYPE *mv) {                 \
-    masked_##TYPE *clone = dom_alloc_##FN_SUFFIX(mv->domain, mv->order);        \
-    if (!clone) return NULL;                                                    \
                                                                                 \
-    clone->domain = mv->domain;                                                 \
-    clone->order = mv->order;                                                   \
-    clone->share_count = mv->share_count;                                       \
-    clone->bit_length = mv->bit_length;                                         \
-                                                                                \
-    for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
-        clone->shares[i] = mv->shares[i];                                       \
+void dom_unmask_many_##SHORT(                                                   \
+        masked_##TYPE **mvs,                                                    \
+        TYPE *out,                                                              \
+        uint8_t count                                                           \
+) {                                                                             \
+    for (uint8_t i = 0; i < count; ++i) {                                       \
+        out[i] = dom_unmask_##SHORT(mvs[i]);                                    \
     }                                                                           \
-    return clone;                                                               \
 }                                                                               \
                                                                                 \
                                                                                 \
-void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE *mv) {                          \
-    TYPE *shares = (TYPE*)mv->shares;                                           \
-    TYPE rnd[mv->order];                                                        \
-    uint32_t rnd_size = mv->order * sizeof(TYPE);                               \
-    csprng_read_array((uint8_t*)rnd, rnd_size);                                 \
+void dom_refresh_##SHORT(masked_##TYPE *mv) {                                   \
+    uint8_t order = mv->order;                                                  \
+    TYPE rnd[order];                                                            \
+    csprng_read_array((uint8_t*)rnd, order * sizeof(TYPE));                     \
                                                                                 \
+    TYPE *shares = (TYPE*)mv->shares;                                           \
     if (mv->domain == DOMAIN_BOOLEAN) {                                         \
         for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
             TYPE rand_val = rnd[i - 1];                                         \
@@ -175,6 +219,23 @@ void dom_refresh_mask_##FN_SUFFIX(masked_##TYPE *mv) {                          
             shares[i] += rand_val;                                              \
         }                                                                       \
     }                                                                           \
+}                                                                               \
+                                                                                \
+                                                                                \
+void dom_refresh_many_##SHORT(masked_##TYPE **mvs, uint8_t count) {             \
+    for (uint8_t i = 0; i < count; ++i) {                                       \
+        dom_refresh_##SHORT(mvs[i]);                                            \
+    }                                                                           \
+}                                                                               \
+                                                                                \
+                                                                                \
+masked_##TYPE *dom_clone_##SHORT(const masked_##TYPE *mv) {                     \
+    size_t align = sizeof(void *);                                              \
+    masked_##TYPE *clone = aligned_alloc(align, mv->total_bytes);               \
+    if (!clone) return NULL;                                                    \
+                                                                                \
+    memcpy(clone, mv, mv->total_bytes);                                         \
+    return clone;                                                               \
 }                                                                               \
 
 #endif //DOM_UTILITY_FUNCTIONS
