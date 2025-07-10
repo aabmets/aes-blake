@@ -17,22 +17,17 @@
 template<typename T>
 struct dom_traits;
 
-#define DEFINE_DOM_TRAITS(TYPE, SHORT_TYPE)                                     \
-template<>                                                                      \
-struct dom_traits<TYPE> {                                                       \
-    using mskd_t = masked_##TYPE;                                               \
-    static void dom_free(mskd_t *mv)                                            \
-        { dom_free_##SHORT_TYPE(mv); }                                          \
-    static mskd_t *dom_mask(                                                    \
-        const TYPE value, const domain_t domain, const uint8_t order            \
-    ) { return dom_mask_##SHORT_TYPE(value, domain, order); }                   \
-    static TYPE dom_unmask(mskd_t* mv)                                          \
-        { return dom_unmask_##SHORT_TYPE(mv); }                                 \
-    static void dom_conv_btoa(mskd_t* mv)                                       \
-        { dom_conv_btoa_##SHORT_TYPE(mv); }                                     \
-    static void dom_conv_atob(mskd_t* mv)                                       \
-        { dom_conv_atob_##SHORT_TYPE(mv); }                                     \
-};                                                                              \
+#define DEFINE_DOM_TRAITS(TYPE, SHORT)                                                                                  \
+template<>                                                                                                              \
+struct dom_traits<TYPE> {                                                                                               \
+    using mskd_t = masked_##TYPE;                                                                                       \
+                                                                                                                        \
+    static void      dom_free        (mskd_t *mv)                      { dom_free_##SHORT(mv); }                        \
+    static mskd_t*   dom_mask        (TYPE v, domain_t d, uint8_t o)   { return dom_mask_##SHORT(v, d, o); }            \
+    static TYPE      dom_unmask      (mskd_t* mv)                      { return dom_unmask_##SHORT(mv); }               \
+    static void      dom_conv_btoa   (mskd_t* mv)                      { dom_conv_btoa_##SHORT(mv); }                   \
+    static void      dom_conv_atob   (mskd_t* mv)                      { dom_conv_atob_##SHORT(mv); }                   \
+};                                                                                                                      \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
 DEFINE_DOM_TRAITS(uint32_t, u32)
@@ -49,11 +44,11 @@ TEMPLATE_TEST_CASE(
     INFO("security order = " << order);
 
     TestType value[1];
-    csprng_read_array((uint8_t*)value, sizeof(value));
+    csprng_read_array(reinterpret_cast<uint8_t*>(value), sizeof(value));
     auto expected = static_cast<TestType>(value[0]);
 
     // Mask expected value with boolean domain
-    auto *mv = dom_traits<TestType>::dom_mask(expected, DOMAIN_BOOLEAN, order);
+    auto* mv = dom_traits<TestType>::dom_mask(expected, DOMAIN_BOOLEAN, order);
     REQUIRE(mv->domain == DOMAIN_BOOLEAN);
 
     dom_traits<TestType>::dom_conv_btoa(mv);

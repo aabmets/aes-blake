@@ -17,38 +17,25 @@
 template<typename T>
 struct dom_traits;
 
-#define DEFINE_DOM_TRAITS(TYPE, SHORT_TYPE)                                     \
-template<>                                                                      \
-struct dom_traits<TYPE> {                                                       \
-    using mskd_t = masked_##TYPE;                                               \
-    static void dom_free(mskd_t *mv)                                            \
-        { dom_free_##SHORT_TYPE(mv); }                                          \
-    static mskd_t *dom_mask(                                                    \
-        const TYPE value, const domain_t domain, const uint8_t order            \
-    ) { return dom_mask_##SHORT_TYPE(value, domain, order); }                   \
-    static TYPE dom_unmask(mskd_t *mv)                                          \
-        { return dom_unmask_##SHORT_TYPE(mv); }                                 \
-    static void dom_bool_and(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)        \
-        { dom_bool_and_##SHORT_TYPE(ms_a, ms_b, ms_out); }                      \
-    static void dom_bool_or(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)         \
-        { dom_bool_or_##SHORT_TYPE(ms_a, ms_b, ms_out); }                       \
-    static void dom_bool_xor(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)        \
-        { dom_bool_xor_##SHORT_TYPE(ms_a, ms_b, ms_out); }                      \
-    static void dom_bool_not(mskd_t *ms)                                        \
-        { dom_bool_not_##SHORT_TYPE(ms); }                                      \
-    static void dom_bool_shr(mskd_t *ms, const uint8_t n)                       \
-        { dom_bool_shr_##SHORT_TYPE(ms, n); }                                   \
-    static void dom_bool_shl(mskd_t *ms, const uint8_t n)                       \
-        { dom_bool_shl_##SHORT_TYPE(ms, n); }                                   \
-    static void dom_bool_rotr(mskd_t *ms, const uint8_t n)                      \
-        { dom_bool_rotr_##SHORT_TYPE(ms, n); }                                  \
-    static void dom_bool_rotl(mskd_t *ms, const uint8_t n)                      \
-        { dom_bool_rotl_##SHORT_TYPE(ms, n); }                                  \
-    static void dom_arith_add(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)       \
-        { dom_arith_add_##SHORT_TYPE(ms_a, ms_b, ms_out); }                     \
-    static void dom_arith_mult(mskd_t *ms_a, mskd_t *ms_b, mskd_t *ms_out)      \
-        { dom_arith_mult_##SHORT_TYPE(ms_a, ms_b, ms_out); }                    \
-};                                                                              \
+#define DEFINE_DOM_TRAITS(TYPE, SHORT_TYPE)                                                                             \
+template<>                                                                                                              \
+struct dom_traits<TYPE> {                                                                                               \
+    using mskd_t = masked_##TYPE;                                                                                       \
+                                                                                                                        \
+    static void      dom_free         (mskd_t* mv)                        { dom_free_##SHORT_TYPE(mv); }                \
+    static mskd_t*   dom_mask         (TYPE v, domain_t d, uint8_t o)     { return dom_mask_##SHORT_TYPE(v, d, o); }    \
+    static TYPE      dom_unmask       (mskd_t* mv)                        { return dom_unmask_##SHORT_TYPE(mv); }       \
+    static void      dom_bool_and     (mskd_t* a, mskd_t* b, mskd_t* o)   { dom_bool_and_##SHORT_TYPE(a, b, o); }       \
+    static void      dom_bool_or      (mskd_t* a, mskd_t* b, mskd_t* o)   { dom_bool_or_##SHORT_TYPE(a, b, o); }        \
+    static void      dom_bool_xor     (mskd_t* a, mskd_t* b, mskd_t* o)   { dom_bool_xor_##SHORT_TYPE(a, b, o); }       \
+    static void      dom_bool_not     (mskd_t* mv)                        { dom_bool_not_##SHORT_TYPE(mv); }            \
+    static void      dom_bool_shr     (mskd_t* mv, uint8_t n)             { dom_bool_shr_##SHORT_TYPE(mv, n); }         \
+    static void      dom_bool_shl     (mskd_t* mv, uint8_t n)             { dom_bool_shl_##SHORT_TYPE(mv, n); }         \
+    static void      dom_bool_rotr    (mskd_t* mv, uint8_t n)             { dom_bool_rotr_##SHORT_TYPE(mv, n); }        \
+    static void      dom_bool_rotl    (mskd_t* mv, uint8_t n)             { dom_bool_rotl_##SHORT_TYPE(mv, n); }        \
+    static void      dom_arith_add    (mskd_t* a, mskd_t* b, mskd_t* o)   { dom_arith_add_##SHORT_TYPE(a, b, o); }      \
+    static void      dom_arith_mult   (mskd_t* a, mskd_t* b, mskd_t* o)   { dom_arith_mult_##SHORT_TYPE(a, b, o); }     \
+};                                                                                                                      \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
 DEFINE_DOM_TRAITS(uint32_t, u32)
@@ -71,10 +58,10 @@ void test_binary_operation(
     INFO("security order = " << order);
 
     T values[2];
-    csprng_read_array((uint8_t*)(values), sizeof(values));
-    auto *mv_a = dom_traits<T>::dom_mask(values[0], domain, order);
-    auto *mv_b = dom_traits<T>::dom_mask(values[1], domain, order);
-    auto *mv_out = dom_traits<T>::dom_mask(0, domain, order);
+    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+    auto* mv_a = dom_traits<T>::dom_mask(values[0], domain, order);
+    auto* mv_b = dom_traits<T>::dom_mask(values[1], domain, order);
+    auto* mv_out = dom_traits<T>::dom_mask(0, domain, order);
 
     masked_op(mv_a, mv_b, mv_out);
     T unmasked = dom_traits<T>::dom_unmask(mv_out);
@@ -97,8 +84,8 @@ void test_unary_operation(
     INFO("security order = " << order);
 
     T values[1];
-    csprng_read_array((uint8_t*)values, sizeof(values));
-    auto *mv = dom_traits<T>::dom_mask(values[0], domain, order);
+    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+    auto* mv = dom_traits<T>::dom_mask(values[0], domain, order);
 
     masked_op(mv);
     T unmasked = dom_traits<T>::dom_unmask(mv);
@@ -121,9 +108,9 @@ void test_shift_rotate_operation(
     INFO("security order = " << order);
 
     T values[1];
-    csprng_read_array((uint8_t*)values, sizeof(values));
-    auto *mv = dom_traits<T>::dom_mask(values[0], DOMAIN_BOOLEAN, order);
-    uint8_t offset = (uint8_t)(mv->bit_length / 2) - 1;
+    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+    auto* mv = dom_traits<T>::dom_mask(values[0], DOMAIN_BOOLEAN, order);
+    uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
 
     masked_op(mv, offset);
     T unmasked = dom_traits<T>::dom_unmask(mv);
