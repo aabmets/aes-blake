@@ -35,7 +35,7 @@ struct dom_traits<TYPE> {                                                       
     static mskd_t*   dom_mask      (TYPE v, domain_t d, uint8_t o)   { return dom_mask_##SHORT(v, d, o); }              \
     static TYPE      dom_unmask    (mskd_t *mv)                      { return dom_unmask_##SHORT(mv); }                 \
     static void      dom_refresh   (mskd_t *mv)                      { dom_refresh_##SHORT(mv); }                       \
-    static mskd_t*   dom_clone     (const mskd_t *mv)                { return dom_clone_##SHORT(mv); }                  \
+    static mskd_t*   dom_clone     (mskd_t *mv, bool z)    { return dom_clone_##SHORT(mv, z); }                  \
                                                                                                                         \
     /* Array helpers */                                                                                                 \
     static void       dom_free_many      (mskd_t **mvs, uint8_t count, uint32_t skip_mask)                              \
@@ -55,6 +55,9 @@ struct dom_traits<TYPE> {                                                       
                                                                                                                         \
     static void       dom_refresh_many   (mskd_t **mvs, uint8_t count)                                                  \
                                          { dom_refresh_many_##SHORT(mvs, count); }                                      \
+                                                                                                                        \
+    static mskd_t**   dom_clone_many     (mskd_t *mv, bool zero_shares, uint8_t count)                                  \
+                                         { return dom_clone_many_##SHORT(mv, zero_shares, count); }                     \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
@@ -250,24 +253,76 @@ TEMPLATE_TEST_CASE(
     }
 
     // ---------------------------------------------------------------------
-    SECTION("clone performs a deep copy (independent storage)")
+    SECTION("clone performs a deep copy with and without zero_shares")
     {
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType *orig = dom_traits<DataType>::dom_mask(value, domain, order);
-        MaskedType *clone = dom_traits<DataType>::dom_clone(orig);
+        MaskedType *orig        = dom_traits<DataType>::dom_mask(value, domain, order);
+        MaskedType *clone_full  = dom_traits<DataType>::dom_clone(orig, false);
+        MaskedType *clone_zero  = dom_traits<DataType>::dom_clone(orig, true);
 
-        REQUIRE(clone != nullptr);
-        REQUIRE(clone != orig);  // different memory
-        REQUIRE(std::memcmp(clone, orig, orig->total_bytes) == 0); // identical content
+        // ---- zero_shares == false ----
+        REQUIRE(clone_full != nullptr);
+        REQUIRE(clone_full != orig);  // different memory
+        REQUIRE(std::memcmp(clone_full, orig, orig->total_bytes) == 0); // identical content
 
         // Mutate clone, orig must stay intact
-        auto* c_shares = reinterpret_cast<DataType*>(clone->shares);
+        auto* c_shares = reinterpret_cast<DataType*>(clone_full->shares);
         c_shares[0] ^= static_cast<DataType>(1);
         REQUIRE(dom_traits<DataType>::dom_unmask(orig) == value);
 
-        dom_traits<DataType>::dom_free(clone);
+        // ---- zero_shares == true ----
+        REQUIRE(clone_zero != nullptr);
+        REQUIRE(clone_zero != orig);
+        REQUIRE(clone_zero->order == orig->order);
+        auto* z_shares = reinterpret_cast<DataType*>(clone_zero->shares);
+        for (uint8_t i = 0; i < clone_zero->share_count; ++i)
+            REQUIRE(z_shares[i] == static_cast<DataType>(0));
+
+        dom_traits<DataType>::dom_free(clone_full);
+        dom_traits<DataType>::dom_free(clone_zero);
+        dom_traits<DataType>::dom_free(orig);
+    }
+
+    // ---------------------------------------------------------------------
+    SECTION("clone_many replicates semantics across array")
+    {
+        DataType value{};
+        csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+        MaskedType* orig = dom_traits<DataType>::dom_mask(value, domain, order);
+        constexpr uint8_t count = 4;
+
+        // ---- zero_shares == false ----
+        MaskedType** full_clones = dom_traits<DataType>::dom_clone_many(orig, false, count);
+        REQUIRE(full_clones != nullptr);
+        for (uint8_t i = 0; i < count; ++i) {
+            REQUIRE(full_clones[i] != nullptr);
+            REQUIRE(full_clones[i] != orig);
+            for (uint8_t j = i + 1; j < count; ++j)
+                REQUIRE(full_clones[i] != full_clones[j]);
+            REQUIRE(std::memcmp(full_clones[i], orig, orig->total_bytes) == 0);
+        }
+
+        // mutate one clone to ensure independence
+        auto* shares0 = reinterpret_cast<DataType*>(full_clones[0]->shares);
+        shares0[0] ^= static_cast<DataType>(1);
+        REQUIRE(dom_traits<DataType>::dom_unmask(orig) == value);
+        for (uint8_t i = 1; i < count; ++i)
+            REQUIRE(std::memcmp(full_clones[i], orig, orig->total_bytes) == 0);
+
+        // ---- zero_shares == true ----
+        MaskedType** zero_clones = dom_traits<DataType>::dom_clone_many(orig, true, count);
+        REQUIRE(zero_clones != nullptr);
+        for (uint8_t i = 0; i < count; ++i) {
+            REQUIRE(zero_clones[i] != nullptr);
+            auto* shares = reinterpret_cast<DataType*>(zero_clones[i]->shares);
+            for (uint8_t s = 0; s < zero_clones[i]->share_count; ++s)
+                REQUIRE(shares[s] == static_cast<DataType>(0));
+        }
+
+        dom_traits<DataType>::dom_free_many(full_clones, count, 0u);
+        dom_traits<DataType>::dom_free_many(zero_clones, count, 0u);
         dom_traits<DataType>::dom_free(orig);
     }
 
