@@ -26,9 +26,9 @@
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
 void dom_bool_and_##FN_SUFFIX(                                                  \
-        const masked_##TYPE *mv_a,                                              \
-        const masked_##TYPE *mv_b,                                              \
-        masked_##TYPE *mv_out                                                   \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
@@ -41,7 +41,7 @@ void dom_bool_and_##FN_SUFFIX(                                                  
     TYPE x[share_count], y[share_count];                                        \
     memcpy(x, mv_a->shares, share_bytes);                                       \
     memcpy(y, mv_b->shares, share_bytes);                                       \
-    TYPE *out = mv_out->shares;                                                 \
+    TYPE* out = mv_out->shares;                                                 \
                                                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
         out[i] = x[i] & y[i];                                                   \
@@ -58,15 +58,15 @@ void dom_bool_and_##FN_SUFFIX(                                                  
 }                                                                               \
                                                                                 \
 void dom_bool_or_##FN_SUFFIX(                                                   \
-        const masked_##TYPE *mv_a,                                              \
-        const masked_##TYPE *mv_b,                                              \
-        masked_##TYPE *mv_out                                                   \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     dom_bool_and_##FN_SUFFIX(mv_a, mv_b, mv_out);                               \
     const uint8_t share_count = mv_out->share_count;                            \
-    const TYPE *x = mv_a->shares;                                               \
-    const TYPE *y = mv_b->shares;                                               \
-    TYPE *out = mv_out->shares;                                                 \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
         out[i] ^= x[i] ^ y[i];                                                  \
     }                                                                           \
@@ -74,13 +74,13 @@ void dom_bool_or_##FN_SUFFIX(                                                   
 }                                                                               \
                                                                                 \
 void dom_bool_xor_##FN_SUFFIX(                                                  \
-        const masked_##TYPE *mv_a,                                              \
-        const masked_##TYPE *mv_b,                                              \
-        masked_##TYPE *mv_out                                                   \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
-    const TYPE *x = mv_a->shares;                                               \
-    const TYPE *y = mv_b->shares;                                               \
-    TYPE *out = mv_out->shares;                                                 \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
     const uint8_t sc = mv_out->share_count;                                     \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         out[i] = x[i] ^ y[i];                                                   \
@@ -88,13 +88,13 @@ void dom_bool_xor_##FN_SUFFIX(                                                  
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
-void dom_bool_not_##FN_SUFFIX(masked_##TYPE *mv) {                              \
+void dom_bool_not_##FN_SUFFIX(masked_##TYPE* mv) {                              \
     mv->shares[0] = ~mv->shares[0];                                             \
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
-void dom_bool_shr_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                   \
-    TYPE *s = mv->shares;                                                       \
+void dom_bool_shr_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                   \
+    TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         s[i] >>= n;                                                             \
@@ -102,8 +102,8 @@ void dom_bool_shr_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                   
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
-void dom_bool_shl_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                   \
-    TYPE *s = mv->shares;                                                       \
+void dom_bool_shl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                   \
+    TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         s[i] <<= n;                                                             \
@@ -111,8 +111,8 @@ void dom_bool_shl_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                   
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
-void dom_bool_rotr_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                  \
-    TYPE *s = mv->shares;                                                       \
+void dom_bool_rotr_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                  \
+    TYPE* s = mv->shares;                                                       \
     bit_length_t bl = mv->bit_length;                                           \
     const uint8_t sc = mv->share_count;                                         \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
@@ -122,8 +122,8 @@ void dom_bool_rotr_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                  
     asm volatile ("" ::: "memory");                                             \
 }                                                                               \
                                                                                 \
-void dom_bool_rotl_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                  \
-    TYPE *s = mv->shares;                                                       \
+void dom_bool_rotl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                  \
+    TYPE* s = mv->shares;                                                       \
     bit_length_t bl = mv->bit_length;                                           \
     const uint8_t sc = mv->share_count;                                         \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
@@ -134,13 +134,13 @@ void dom_bool_rotl_##FN_SUFFIX(masked_##TYPE *mv, uint8_t n) {                  
 }                                                                               \
                                                                                 \
 void dom_arith_add_##FN_SUFFIX(                                                 \
-        const masked_##TYPE *mv_a,                                              \
-        const masked_##TYPE *mv_b,                                              \
-        masked_##TYPE *mv_out                                                   \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
-    const TYPE *x = mv_a->shares;                                               \
-    const TYPE *y = mv_b->shares;                                               \
-    TYPE *out = mv_out->shares;                                                 \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
     const uint8_t sc = mv_out->share_count;                                     \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         out[i] = x[i] + y[i];                                                   \
@@ -153,9 +153,9 @@ void dom_arith_add_##FN_SUFFIX(                                                 
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
 void dom_arith_mult_##FN_SUFFIX(                                                \
-        const masked_##TYPE *mv_a,                                              \
-        const masked_##TYPE *mv_b,                                              \
-        masked_##TYPE *mv_out                                                   \
+        const masked_##TYPE* mv_a,                                              \
+        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
@@ -168,7 +168,7 @@ void dom_arith_mult_##FN_SUFFIX(                                                
     TYPE x[share_count], y[share_count];                                        \
     memcpy(x, mv_a->shares, share_bytes);                                       \
     memcpy(y, mv_b->shares, share_bytes);                                       \
-    TYPE *out = mv_out->shares;                                                 \
+    TYPE* out = mv_out->shares;                                                 \
                                                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
         out[i] = x[i] * y[i];                                                   \
