@@ -45,7 +45,7 @@ void              dom_refresh_many_##SHORT   (masked_##TYPE** mvs, uint8_t count
                                                                                                                         \
 masked_##TYPE*    dom_clone_##SHORT          (const masked_##TYPE* mv);                                                 \
                                                                                                                         \
-void              dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
+int               dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
 void              dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \
                                                                                                                         \
 void              dom_bool_and_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
