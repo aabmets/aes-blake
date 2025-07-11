@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include "csprng.h"
 #include "dom_types.h"
+#include "masking.h"
 
 
 #ifndef ALIGNED_ALLOC_FUNC

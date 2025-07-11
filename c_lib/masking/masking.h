@@ -45,8 +45,8 @@ void              dom_unmask_many_##SHORT    (masked_##TYPE** mvs, TYPE* out, ui
 void              dom_refresh_##SHORT        (masked_##TYPE* mv);                                                       \
 void              dom_refresh_many_##SHORT   (masked_##TYPE** mvs, uint8_t count);                                      \
                                                                                                                         \
-masked_##TYPE*    dom_clone_##SHORT          (masked_##TYPE* mv, bool zero_shares);                                     \
-masked_##TYPE**   dom_clone_many_##SHORT     (masked_##TYPE* mv, bool zero_shares, uint8_t count);                      \
+masked_##TYPE*    dom_clone_##SHORT          (const masked_##TYPE* mv, bool zero_shares);                               \
+masked_##TYPE**   dom_clone_many_##SHORT     (const masked_##TYPE* mv, bool zero_shares, uint8_t count);                \
                                                                                                                         \
 int               dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
 int               dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \

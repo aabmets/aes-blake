@@ -13,6 +13,7 @@
 #include <string.h>
 #include "csprng.h"
 #include "dom_types.h"
+#include "masking.h"
 
 
 /*
@@ -26,8 +27,8 @@
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
 void dom_bool_and_##FN_SUFFIX(                                                  \
-        const masked_##TYPE* mv_a,                                              \
-        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
@@ -58,8 +59,8 @@ void dom_bool_and_##FN_SUFFIX(                                                  
 }                                                                               \
                                                                                 \
 void dom_bool_or_##FN_SUFFIX(                                                   \
-        const masked_##TYPE* mv_a,                                              \
-        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     dom_bool_and_##FN_SUFFIX(mv_a, mv_b, mv_out);                               \
@@ -74,8 +75,8 @@ void dom_bool_or_##FN_SUFFIX(                                                   
 }                                                                               \
                                                                                 \
 void dom_bool_xor_##FN_SUFFIX(                                                  \
-        const masked_##TYPE* mv_a,                                              \
-        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     const TYPE* x = mv_a->shares;                                               \
@@ -134,8 +135,8 @@ void dom_bool_rotl_##FN_SUFFIX(masked_##TYPE* mv, uint8_t n) {                  
 }                                                                               \
                                                                                 \
 void dom_arith_add_##FN_SUFFIX(                                                 \
-        const masked_##TYPE* mv_a,                                              \
-        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     const TYPE* x = mv_a->shares;                                               \
@@ -153,8 +154,8 @@ void dom_arith_add_##FN_SUFFIX(                                                 
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
 void dom_arith_mult_##FN_SUFFIX(                                                \
-        const masked_##TYPE* mv_a,                                              \
-        const masked_##TYPE* mv_b,                                              \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     const uint8_t order = mv_a->order;                                          \
