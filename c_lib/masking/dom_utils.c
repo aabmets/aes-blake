@@ -48,13 +48,14 @@ void dom_free_##SHORT(masked_##TYPE* mv) {                                      
 }                                                                               \
                                                                                 \
                                                                                 \
+/* Note: skip_mask applies only to the first 32 elements of **mvs */            \
 void dom_free_many_##SHORT(                                                     \
         masked_##TYPE** mvs,                                                    \
         const uint8_t count,                                                    \
         const uint32_t skip_mask                                                \
 ) {                                                                             \
     for (uint8_t i = 0; i < count; ++i) {                                       \
-        if ((skip_mask >> i) & 1u)                                              \
+        if (i < 32 && (skip_mask >> i) & 1u)                                    \
             continue;                                                           \
         masked_##TYPE* mv = mvs[i];                                             \
         secure_memzero(mv, mv->total_bytes);                                    \
@@ -69,13 +70,14 @@ void dom_clear_##SHORT(masked_##TYPE* mv) {                                     
 }                                                                               \
                                                                                 \
                                                                                 \
+/* Note: skip_mask applies only to the first 32 elements of **mvs */            \
 void dom_clear_many_##SHORT(                                                    \
         masked_##TYPE** mvs,                                                    \
         const uint8_t count,                                                    \
         const uint32_t skip_mask                                                \
 ) {                                                                             \
     for (uint8_t i = 0; i < count; ++i) {                                       \
-        if ((skip_mask >> i) & 1u)                                              \
+        if (i < 32 && (skip_mask >> i) & 1u)                                    \
             continue;                                                           \
         masked_##TYPE* mv = mvs[i];                                             \
         secure_memzero(mv->shares, mv->share_bytes);                            \
@@ -87,6 +89,9 @@ masked_##TYPE* dom_alloc_##SHORT(                                               
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
 ) {                                                                             \
+    if (order == 0 || order > MAX_SEC_ORDER)                                    \
+        return NULL;                                                            \
+                                                                                \
     const uint8_t share_count = order + 1;                                      \
     const uint8_t share_bytes = share_count * sizeof(TYPE);                     \
     const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
@@ -104,6 +109,7 @@ masked_##TYPE* dom_alloc_##SHORT(                                               
     mv->order = order;                                                          \
     mv->share_count = share_count;                                              \
     mv->share_bytes = share_bytes;                                              \
+    mv->sig = (uint16_t)order << 8 | BIT_LENGTH;                                \
     secure_memzero(mv->shares, share_bytes);                                    \
     return mv;                                                                  \
 }                                                                               \
@@ -114,6 +120,9 @@ masked_##TYPE** dom_alloc_many_##SHORT(                                         
         const uint8_t order,                                                    \
         const uint8_t count                                                     \
 ) {                                                                             \
+    if (order == 0 || order > MAX_SEC_ORDER || count < 2)                       \
+        return NULL;                                                            \
+                                                                                \
     size_t align = sizeof(void*);                                               \
     masked_##TYPE** mvs = aligned_alloc(align, count * sizeof(*mvs));           \
     if (!mvs)                                                                   \
@@ -135,6 +144,9 @@ masked_##TYPE* dom_mask_##SHORT(                                                
         const domain_t domain,                                                  \
         const uint8_t order                                                     \
 ) {                                                                             \
+    if (order == 0 || order > MAX_SEC_ORDER)                                    \
+        return NULL;                                                            \
+                                                                                \
     masked_##TYPE* mv = dom_alloc_##SHORT(domain, order);                       \
     if (!mv)                                                                    \
         return NULL;                                                            \
@@ -163,6 +175,9 @@ masked_##TYPE** dom_mask_many_##SHORT(                                          
         const uint8_t order,                                                    \
         const uint32_t count                                                    \
 ) {                                                                             \
+    if (order == 0 || order > MAX_SEC_ORDER || count < 2)                       \
+        return NULL;                                                            \
+                                                                                \
     size_t align = sizeof(void*);                                               \
     masked_##TYPE** mvs = aligned_alloc(align, count * sizeof(*mvs));           \
     if (!mvs)                                                                   \
@@ -209,7 +224,8 @@ void dom_unmask_many_##SHORT(                                                   
 void dom_refresh_##SHORT(masked_##TYPE* mv) {                                   \
     uint8_t order = mv->order;                                                  \
     TYPE rnd[order];                                                            \
-    csprng_read_array((uint8_t*)rnd, order * sizeof(TYPE));                     \
+    uint8_t order_bytes = order * sizeof(TYPE);                                 \
+    csprng_read_array((uint8_t*)rnd, order_bytes);                              \
                                                                                 \
     TYPE* shares = (TYPE*)mv->shares;                                           \
     if (mv->domain == DOMAIN_BOOLEAN) {                                         \
@@ -225,6 +241,7 @@ void dom_refresh_##SHORT(masked_##TYPE* mv) {                                   
             shares[i] += rand_val;                                              \
         }                                                                       \
     }                                                                           \
+    secure_memzero(rnd, order_bytes);                                           \
 }                                                                               \
                                                                                 \
                                                                                 \
@@ -256,6 +273,9 @@ masked_##TYPE** dom_clone_many_##SHORT(                                         
         const bool zero_shares,                                                 \
         const uint8_t count                                                     \
 ) {                                                                             \
+    if (count < 2)                                                              \
+        return NULL;                                                            \
+                                                                                \
     size_t align = sizeof(void*);                                               \
     masked_##TYPE** mvs = aligned_alloc(align, count * sizeof(*mvs));           \
     if (!mvs)                                                                   \

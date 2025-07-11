@@ -34,6 +34,8 @@ int dom_bool_and_##SHORT(                                                       
     masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
     if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_BOOLEAN))                          \
         return 1;                                                               \
+    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
+        return 1;                                                               \
                                                                                 \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
@@ -59,6 +61,8 @@ int dom_bool_and_##SHORT(                                                       
             out[j] ^= (x[j] & y[i]) ^ r;                                        \
         }                                                                       \
     }                                                                           \
+    secure_memzero(x, share_bytes);                                             \
+    secure_memzero(y, share_bytes);                                             \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
@@ -70,6 +74,8 @@ int dom_bool_or_##SHORT(                                                        
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
     if (dom_bool_and_##SHORT(mv_a, mv_b, mv_out))                               \
+        return 1;                                                               \
+    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
         return 1;                                                               \
                                                                                 \
     const uint8_t share_count = mv_out->share_count;                            \
@@ -92,6 +98,8 @@ int dom_bool_xor_##SHORT(                                                       
 ) {                                                                             \
     masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
     if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_BOOLEAN))                          \
+        return 1;                                                               \
+    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
         return 1;                                                               \
                                                                                 \
     const TYPE* x = mv_a->shares;                                               \
@@ -120,8 +128,14 @@ int dom_bool_shr_##SHORT(masked_##TYPE* mv, uint8_t n) {                        
     if (!mv || dom_conv_atob_##SHORT(mv))                                       \
         return 1;                                                               \
                                                                                 \
+    bit_length_t bl = mv->bit_length;                                           \
+    n %= bl;                                                                    \
+    if (n == 0)                                                                 \
+        return 0;                                                               \
+                                                                                \
     TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
+                                                                                \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         s[i] >>= n;                                                             \
     }                                                                           \
@@ -134,8 +148,14 @@ int dom_bool_shl_##SHORT(masked_##TYPE* mv, uint8_t n) {                        
     if (!mv || dom_conv_atob_##SHORT(mv))                                       \
         return 1;                                                               \
                                                                                 \
+    bit_length_t bl = mv->bit_length;                                           \
+    n %= bl;                                                                    \
+    if (n == 0)                                                                 \
+        return 0;                                                               \
+                                                                                \
     TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
+                                                                                \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         s[i] <<= n;                                                             \
     }                                                                           \
@@ -148,9 +168,14 @@ int dom_bool_rotr_##SHORT(masked_##TYPE* mv, uint8_t n) {                       
     if (!mv || dom_conv_atob_##SHORT(mv))                                       \
         return 1;                                                               \
                                                                                 \
-    TYPE* s = mv->shares;                                                       \
     bit_length_t bl = mv->bit_length;                                           \
+    n %= bl;                                                                    \
+    if (n == 0)                                                                 \
+        return 0;                                                               \
+                                                                                \
+    TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
+                                                                                \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         const TYPE v = s[i];                                                    \
         s[i] = (v >> n) | (v << (bl - n));                                      \
@@ -164,8 +189,12 @@ int dom_bool_rotl_##SHORT(masked_##TYPE* mv, uint8_t n) {                       
     if (!mv || dom_conv_atob_##SHORT(mv))                                       \
         return 1;                                                               \
                                                                                 \
-    TYPE* s = mv->shares;                                                       \
     bit_length_t bl = mv->bit_length;                                           \
+    n %= bl;                                                                    \
+    if (n == 0)                                                                 \
+        return 0;                                                               \
+                                                                                \
+    TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
                                                                                 \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
@@ -184,6 +213,8 @@ int dom_arith_add_##SHORT(                                                      
 ) {                                                                             \
     masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
     if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_ARITHMETIC))                       \
+        return 1;                                                               \
+    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
         return 1;                                                               \
                                                                                 \
     const TYPE* x = mv_a->shares;                                               \
@@ -210,6 +241,8 @@ int dom_arith_mult_##SHORT(                                                     
     masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
     if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_ARITHMETIC))                       \
         return 1;                                                               \
+    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
+        return 1;                                                               \
                                                                                 \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
@@ -235,6 +268,8 @@ int dom_arith_mult_##SHORT(                                                     
             out[j] += (x[j] * y[i]) - r;                                        \
         }                                                                       \
     }                                                                           \
+    secure_memzero(x, share_bytes);                                             \
+    secure_memzero(y, share_bytes);                                             \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \

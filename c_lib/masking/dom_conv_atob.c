@@ -151,15 +151,22 @@ int dom_conv_atob_##SHORT(masked_##TYPE *mv) {                                  
         s_res = vals[0];                                                        \
         c_res = vals[1];                                                        \
     } else {                                                                    \
-        int err = csa_tree_##SHORT(vals, &s_res, &c_res, share_count);          \
-        if (err) {                                                              \
+        if (csa_tree_##SHORT(vals, &s_res, &c_res, share_count)) {              \
             dom_free_many_##SHORT(vals, share_count, 0);                        \
+            if (s_res != NULL)                                                  \
+                dom_free_##SHORT(s_res);                                        \
+            if (c_res != NULL)                                                  \
+                dom_free_##SHORT(c_res);                                        \
             return 1;                                                           \
         }                                                                       \
     }                                                                           \
     masked_##TYPE* k_res = ksa_##SHORT(s_res, c_res);                           \
     if (!k_res) {                                                               \
         dom_free_many_##SHORT(vals, share_count, 0);                            \
+        if (share_count > 2) {                                                  \
+            dom_free_##SHORT(s_res);                                            \
+            dom_free_##SHORT(c_res);                                            \
+        }                                                                       \
         return 1;                                                               \
     }                                                                           \
                                                                                 \
@@ -171,6 +178,10 @@ int dom_conv_atob_##SHORT(masked_##TYPE *mv) {                                  
                                                                                 \
     dom_free_many_##SHORT(vals, share_count, 0);                                \
     dom_free_##SHORT(k_res);                                                    \
+    if (share_count > 2) {                                                      \
+        dom_free_##SHORT(s_res);                                                \
+        dom_free_##SHORT(c_res);                                                \
+    }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
