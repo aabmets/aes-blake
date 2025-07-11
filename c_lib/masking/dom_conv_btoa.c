@@ -28,7 +28,8 @@ static TYPE* convert_##SHORT(const TYPE* x, uint8_t n_plus1) {                  
     const uint8_t n = n_plus1 - 1;                                              \
     if (n == 1) {                                                               \
         TYPE* out = (TYPE*)malloc(sizeof(TYPE));                                \
-        if (!out) return NULL;                                                  \
+        if (!out)                                                               \
+            return NULL;                                                        \
         *out = x[0] ^ x[1];                                                     \
         return out;                                                             \
     }                                                                           \
