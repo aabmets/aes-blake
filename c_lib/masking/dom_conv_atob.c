@@ -17,80 +17,80 @@
 #include "dom_types.h"
 
 
-#define DOM_ATOB_HELPERS(TYPE, FN_SUFFIX)                                       \
-static int csa_##FN_SUFFIX(                                                     \
+#define DOM_ATOB_HELPERS(TYPE, SHORT)                                           \
+static int csa_##SHORT(                                                         \
         masked_##TYPE* x,                                                       \
         masked_##TYPE* y,                                                       \
         masked_##TYPE* z,                                                       \
         masked_##TYPE** s_res,                                                  \
         masked_##TYPE** c_res                                                   \
 ) {                                                                             \
-    masked_##TYPE** tmp = dom_alloc_many_##FN_SUFFIX(x->domain, x->order, 5);   \
+    masked_##TYPE** tmp = dom_alloc_many_##SHORT(x->domain, x->order, 5);       \
     if (!tmp)                                                                   \
         return 1;                                                               \
                                                                                 \
     /*  a = x ^ y  */                                                           \
     masked_##TYPE* a = tmp[0];                                                  \
-    dom_bool_xor_##FN_SUFFIX(x, y, a);                                          \
+    dom_bool_xor_##SHORT(x, y, a);                                              \
                                                                                 \
     /*  s = a ^ z  */                                                           \
     masked_##TYPE* s = tmp[1];                                                  \
-    dom_bool_xor_##FN_SUFFIX(a, z, s);                                          \
+    dom_bool_xor_##SHORT(a, z, s);                                              \
                                                                                 \
     /*  w = x ^ z  */                                                           \
     masked_##TYPE* w = tmp[2];                                                  \
-    dom_bool_xor_##FN_SUFFIX(x, z, w);                                          \
+    dom_bool_xor_##SHORT(x, z, w);                                              \
                                                                                 \
     /*  v = a & w  */                                                           \
     masked_##TYPE* v = tmp[3];                                                  \
-    dom_bool_and_##FN_SUFFIX(a, w, v);                                          \
+    dom_bool_and_##SHORT(a, w, v);                                              \
                                                                                 \
     /*  c = x ^ v  */                                                           \
     masked_##TYPE* c = tmp[4];                                                  \
-    dom_bool_xor_##FN_SUFFIX(x, v, c);                                          \
-    dom_bool_shl_##FN_SUFFIX(c, 1);                                             \
+    dom_bool_xor_##SHORT(x, v, c);                                              \
+    dom_bool_shl_##SHORT(c, 1);                                                 \
                                                                                 \
     *s_res = s;                                                                 \
     *c_res = c;                                                                 \
                                                                                 \
-    dom_free_many_##FN_SUFFIX(tmp, 5, 0b10010u);                                \
+    dom_free_many_##SHORT(tmp, 5, 0b10010u);                                    \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
 /* NOLINTNEXTLINE(misc-no-recursion) */                                         \
-static int csa_tree_##FN_SUFFIX(                                                \
+static int csa_tree_##SHORT(                                                    \
         masked_##TYPE* vals[],                                                  \
         masked_##TYPE** s_res,                                                  \
         masked_##TYPE** c_res,                                                  \
         const uint8_t len                                                       \
 ) {                                                                             \
     if (len == 3) {                                                             \
-        return csa_##FN_SUFFIX(vals[0], vals[1], vals[2], s_res, c_res);        \
+        return csa_##SHORT(vals[0], vals[1], vals[2], s_res, c_res);            \
     }                                                                           \
     const uint8_t len_min1 = len - 1;                                           \
     const domain_t domain = vals[0]->domain;                                    \
     const uint8_t order = vals[0]->order;                                       \
                                                                                 \
-    masked_##TYPE** tmp = dom_alloc_many_##FN_SUFFIX(domain, order, 2);         \
+    masked_##TYPE** tmp = dom_alloc_many_##SHORT(domain, order, 2);             \
     if (!tmp)                                                                   \
         return 1;                                                               \
                                                                                 \
-    int err = csa_tree_##FN_SUFFIX(vals, &tmp[0], &tmp[1], len_min1);           \
+    int err = csa_tree_##SHORT(vals, &tmp[0], &tmp[1], len_min1);               \
     if (err) {                                                                  \
-        dom_free_many_##FN_SUFFIX(tmp, 2, 0);                                   \
+        dom_free_many_##SHORT(tmp, 2, 0);                                       \
         return 1;                                                               \
     }                                                                           \
-    err = csa_##FN_SUFFIX(tmp[0], tmp[1], vals[len_min1], s_res, c_res);        \
+    err = csa_##SHORT(tmp[0], tmp[1], vals[len_min1], s_res, c_res);            \
                                                                                 \
-    dom_free_many_##FN_SUFFIX(tmp, 2, 0);                                       \
+    dom_free_many_##SHORT(tmp, 2, 0);                                           \
     asm volatile ("" ::: "memory");                                             \
     return err;                                                                 \
 }                                                                               \
                                                                                 \
 /* NOLINTNEXTLINE(bugprone-macro-parentheses) */                                \
-static masked_##TYPE* ksa_##FN_SUFFIX(masked_##TYPE* a, masked_##TYPE* b) {     \
-    masked_##TYPE** clones = dom_clone_many_##FN_SUFFIX(a, true, 5);            \
+static masked_##TYPE* ksa_##SHORT(masked_##TYPE* a, masked_##TYPE* b) {         \
+    masked_##TYPE** clones = dom_clone_many_##SHORT(a, true, 5);                \
     if (!clones)                                                                \
         return NULL;                                                            \
                                                                                 \
@@ -100,8 +100,8 @@ static masked_##TYPE* ksa_##FN_SUFFIX(masked_##TYPE* a, masked_##TYPE* b) {     
     masked_##TYPE* p_shift = clones[3];                                         \
     masked_##TYPE* g_shift = clones[4];                                         \
                                                                                 \
-    dom_bool_xor_##FN_SUFFIX(a, b, p);                                          \
-    dom_bool_and_##FN_SUFFIX(a, b, g);                                          \
+    dom_bool_xor_##SHORT(a, b, p);                                              \
+    dom_bool_and_##SHORT(a, b, g);                                              \
                                                                                 \
     const uint8_t bl = (uint8_t)a->bit_length;                                  \
     for (uint8_t dist = 1; dist < bl; dist <<= 1) {                             \
@@ -109,37 +109,37 @@ static masked_##TYPE* ksa_##FN_SUFFIX(masked_##TYPE* a, masked_##TYPE* b) {     
         memcpy(p_shift->shares, p->shares, p->share_bytes);                     \
         memcpy(g_shift->shares, g->shares, g->share_bytes);                     \
                                                                                 \
-        dom_bool_shl_##FN_SUFFIX(p_shift, dist);                                \
-        dom_bool_shl_##FN_SUFFIX(g_shift, dist);                                \
+        dom_bool_shl_##SHORT(p_shift, dist);                                    \
+        dom_bool_shl_##SHORT(g_shift, dist);                                    \
                                                                                 \
-        dom_bool_and_##FN_SUFFIX(p, g_shift, tmp);                              \
-        dom_bool_xor_##FN_SUFFIX(g, tmp, g);                                    \
-        dom_bool_and_##FN_SUFFIX(p, p_shift, p);                                \
+        dom_bool_and_##SHORT(p, g_shift, tmp);                                  \
+        dom_bool_xor_##SHORT(g, tmp, g);                                        \
+        dom_bool_and_##SHORT(p, p_shift, p);                                    \
     }                                                                           \
-    dom_bool_shl_##FN_SUFFIX(g, 1);                                             \
-    dom_free_many_##FN_SUFFIX(clones, 5, 0b10u);                                \
+    dom_bool_shl_##SHORT(g, 1);                                                 \
+    dom_free_many_##SHORT(clones, 5, 0b10u);                                    \
     asm volatile ("" ::: "memory");                                             \
     return g;                                                                   \
 }                                                                               \
 
 
 #ifndef DOM_CONV_ATOB
-#define DOM_CONV_ATOB(TYPE, FN_SUFFIX)                                          \
+#define DOM_CONV_ATOB(TYPE, SHORT)                                              \
                                                                                 \
-DOM_ATOB_HELPERS(TYPE, FN_SUFFIX)                                               \
+DOM_ATOB_HELPERS(TYPE, SHORT)                                                   \
                                                                                 \
 /*   Converts masked shares from arithmetic to boolean domain using        */   \
 /*   the high-order recursive carry-save-adder method of Liu et al.,       */   \
 /*   “A Low-Latency High-Order Arithmetic to Boolean Masking Conversion”   */   \
 /*   Link: https://eprint.iacr.org/2024/045.pdf                            */   \
-int dom_conv_atob_##FN_SUFFIX(masked_##TYPE *mv) {                              \
+int dom_conv_atob_##SHORT(masked_##TYPE *mv) {                                  \
     if (mv->domain == DOMAIN_BOOLEAN)                                           \
         return 0;                                                               \
                                                                                 \
     const uint8_t order = mv->order;                                            \
     const uint8_t share_count = mv->share_count;                                \
                                                                                 \
-    masked_##TYPE** vals = dom_mask_many_##FN_SUFFIX                            \
+    masked_##TYPE** vals = dom_mask_many_##SHORT                                \
         (mv->shares, DOMAIN_BOOLEAN, order, share_count);                       \
     if (!vals)                                                                  \
         return 1;                                                               \
@@ -151,26 +151,26 @@ int dom_conv_atob_##FN_SUFFIX(masked_##TYPE *mv) {                              
         s_res = vals[0];                                                        \
         c_res = vals[1];                                                        \
     } else {                                                                    \
-        int err = csa_tree_##FN_SUFFIX(vals, &s_res, &c_res, share_count);      \
+        int err = csa_tree_##SHORT(vals, &s_res, &c_res, share_count);          \
         if (err) {                                                              \
-            dom_free_many_##FN_SUFFIX(vals, share_count, 0);                    \
+            dom_free_many_##SHORT(vals, share_count, 0);                        \
             return 1;                                                           \
         }                                                                       \
     }                                                                           \
-    masked_##TYPE* k_res = ksa_##FN_SUFFIX(s_res, c_res);                       \
+    masked_##TYPE* k_res = ksa_##SHORT(s_res, c_res);                           \
     if (!k_res) {                                                               \
-        dom_free_many_##FN_SUFFIX(vals, share_count, 0);                        \
+        dom_free_many_##SHORT(vals, share_count, 0);                            \
         return 1;                                                               \
     }                                                                           \
                                                                                 \
-    dom_bool_xor_##FN_SUFFIX(s_res, k_res, k_res);                              \
-    dom_bool_xor_##FN_SUFFIX(c_res, k_res, k_res);                              \
+    dom_bool_xor_##SHORT(s_res, k_res, k_res);                                  \
+    dom_bool_xor_##SHORT(c_res, k_res, k_res);                                  \
                                                                                 \
     memcpy(mv->shares, k_res->shares, mv->share_bytes);                         \
     mv->domain = DOMAIN_BOOLEAN;                                                \
                                                                                 \
-    dom_free_many_##FN_SUFFIX(vals, share_count, 0);                            \
-    dom_free_##FN_SUFFIX(k_res);                                                \
+    dom_free_many_##SHORT(vals, share_count, 0);                                \
+    dom_free_##SHORT(k_res);                                                    \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \

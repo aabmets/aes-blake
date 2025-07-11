@@ -18,13 +18,13 @@
 #include "dom_types.h"
 
 
-#define DOM_BTOA_HELPERS(TYPE, FN_SUFFIX)                                       \
-static inline TYPE psi_##FN_SUFFIX(TYPE masked, TYPE mask) {                    \
+#define DOM_BTOA_HELPERS(TYPE, SHORT)                                           \
+static inline TYPE psi_##SHORT(TYPE masked, TYPE mask) {                        \
     return (masked ^ mask) - mask;                                              \
 }                                                                               \
                                                                                 \
 /* NOLINTNEXTLINE(bugprone-macro-parentheses, misc-no-recursion) */             \
-static TYPE* convert_##FN_SUFFIX(const TYPE* x, uint8_t n_plus1) {              \
+static TYPE* convert_##SHORT(const TYPE* x, uint8_t n_plus1) {                  \
     const uint8_t n = n_plus1 - 1;                                              \
     if (n == 1) {                                                               \
         TYPE* out = (TYPE*)malloc(sizeof(TYPE));                                \
@@ -47,13 +47,13 @@ static TYPE* convert_##FN_SUFFIX(const TYPE* x, uint8_t n_plus1) {              
                                                                                 \
     TYPE y[n];                                                                  \
     TYPE first_term = ((n - 1) & 1U) ? x_mut[0] : (TYPE)0;                      \
-    y[0] = first_term ^ psi_##FN_SUFFIX(x_mut[0], x_mut[1]);                    \
+    y[0] = first_term ^ psi_##SHORT(x_mut[0], x_mut[1]);                        \
     for (uint8_t i = 1; i < n; ++i) {                                           \
-        y[i] = psi_##FN_SUFFIX(x_mut[0], x_mut[i + 1]);                         \
+        y[i] = psi_##SHORT(x_mut[0], x_mut[i + 1]);                             \
     }                                                                           \
                                                                                 \
-    TYPE* first = convert_##FN_SUFFIX(&x_mut[1], n);                            \
-    TYPE* second = convert_##FN_SUFFIX(y, n);                                   \
+    TYPE* first = convert_##SHORT(&x_mut[1], n);                                \
+    TYPE* second = convert_##SHORT(y, n);                                       \
     if (!first || !second) {                                                    \
         free(first);                                                            \
         free(second);                                                           \
@@ -84,15 +84,15 @@ static TYPE* convert_##FN_SUFFIX(const TYPE* x, uint8_t n_plus1) {              
 
 
 #ifndef DOM_CONV_BTOA
-#define DOM_CONV_BTOA(TYPE, FN_SUFFIX)                                          \
+#define DOM_CONV_BTOA(TYPE, SHORT)                                              \
                                                                                 \
-DOM_BTOA_HELPERS(TYPE, FN_SUFFIX)                                               \
+DOM_BTOA_HELPERS(TYPE, SHORT)                                                   \
                                                                                 \
 /*   Converts masked shares from boolean to arithmetic domain using        */   \
 /*   the affine psi recursive decomposition method of Bettale et al.,      */   \
 /*   "Improved High-Order Conversion From Boolean to Arithmetic Masking"   */   \
 /*   Link: https://eprint.iacr.org/2018/328.pdf                            */   \
-int dom_conv_btoa_##FN_SUFFIX(masked_##TYPE *mv) {                              \
+int dom_conv_btoa_##SHORT(masked_##TYPE *mv) {                                  \
     if (mv->domain == DOMAIN_ARITHMETIC)                                        \
         return 0;                                                               \
                                                                                 \
@@ -109,7 +109,7 @@ int dom_conv_btoa_##FN_SUFFIX(masked_##TYPE *mv) {                              
     memcpy(tmp, shares, share_bytes);                                           \
     tmp[share_count] = (TYPE)0;                                                 \
                                                                                 \
-    TYPE* new_shares = convert_##FN_SUFFIX(tmp, sc_extra);                      \
+    TYPE* new_shares = convert_##SHORT(tmp, sc_extra);                          \
     if (!new_shares) {                                                          \
         secure_memzero(tmp, sce_bytes);                                         \
         free(tmp);                                                              \
