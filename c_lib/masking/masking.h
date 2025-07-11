@@ -50,18 +50,19 @@ masked_##TYPE**   dom_clone_many_##SHORT     (const masked_##TYPE* mv, bool zero
                                                                                                                         \
 int               dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
 int               dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \
+int               dom_conv_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, domain_t target_domain);              \
                                                                                                                         \
-void              dom_bool_and_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
-void              dom_bool_or_##SHORT        (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
-void              dom_bool_xor_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
-void              dom_bool_not_##SHORT       (masked_##TYPE* mv);                                                       \
-void              dom_bool_shr_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
-void              dom_bool_shl_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
-void              dom_bool_rotr_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
-void              dom_bool_rotl_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
+int               dom_bool_and_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+int               dom_bool_or_##SHORT        (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+int               dom_bool_xor_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+int               dom_bool_not_##SHORT       (masked_##TYPE* mv);                                                       \
+int               dom_bool_shr_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
+int               dom_bool_shl_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
+int               dom_bool_rotr_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
+int               dom_bool_rotl_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
                                                                                                                         \
-void              dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
-void              dom_arith_mult_##SHORT     (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+int               dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+int               dom_arith_mult_##SHORT     (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 
 MASKING_FUNCTIONS(uint8_t, u8)
 MASKING_FUNCTIONS(uint32_t, u32)

@@ -26,11 +26,15 @@
 /*   using the DOM-independent secure gadget as described by   */               \
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
-void dom_bool_and_##SHORT(                                                      \
+int dom_bool_and_##SHORT(                                                       \
         masked_##TYPE* mv_a,                                                    \
         masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
+    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
+    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_BOOLEAN))                          \
+        return 1;                                                               \
+                                                                                \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
     const uint32_t share_bytes = mv_a->share_bytes;                             \
@@ -56,29 +60,40 @@ void dom_bool_and_##SHORT(                                                      
         }                                                                       \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_or_##SHORT(                                                       \
+                                                                                \
+int dom_bool_or_##SHORT(                                                        \
         masked_##TYPE* mv_a,                                                    \
         masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
-    dom_bool_and_##SHORT(mv_a, mv_b, mv_out);                                   \
+    if (dom_bool_and_##SHORT(mv_a, mv_b, mv_out))                               \
+        return 1;                                                               \
+                                                                                \
     const uint8_t share_count = mv_out->share_count;                            \
     const TYPE* x = mv_a->shares;                                               \
     const TYPE* y = mv_b->shares;                                               \
     TYPE* out = mv_out->shares;                                                 \
+                                                                                \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
         out[i] ^= x[i] ^ y[i];                                                  \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_xor_##SHORT(                                                      \
+                                                                                \
+int dom_bool_xor_##SHORT(                                                       \
         masked_##TYPE* mv_a,                                                    \
         masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
+    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
+    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_BOOLEAN))                          \
+        return 1;                                                               \
+                                                                                \
     const TYPE* x = mv_a->shares;                                               \
     const TYPE* y = mv_b->shares;                                               \
     TYPE* out = mv_out->shares;                                                 \
@@ -87,32 +102,52 @@ void dom_bool_xor_##SHORT(                                                      
         out[i] = x[i] ^ y[i];                                                   \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_not_##SHORT(masked_##TYPE* mv) {                                  \
+                                                                                \
+int dom_bool_not_##SHORT(masked_##TYPE* mv) {                                   \
+    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+        return 1;                                                               \
+                                                                                \
     mv->shares[0] = ~mv->shares[0];                                             \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_shr_##SHORT(masked_##TYPE* mv, uint8_t n) {                       \
+                                                                                \
+int dom_bool_shr_##SHORT(masked_##TYPE* mv, uint8_t n) {                        \
+    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+        return 1;                                                               \
+                                                                                \
     TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         s[i] >>= n;                                                             \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_shl_##SHORT(masked_##TYPE* mv, uint8_t n) {                       \
+                                                                                \
+int dom_bool_shl_##SHORT(masked_##TYPE* mv, uint8_t n) {                        \
+    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+        return 1;                                                               \
+                                                                                \
     TYPE* s = mv->shares;                                                       \
     const uint8_t sc = mv->share_count;                                         \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         s[i] <<= n;                                                             \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_rotr_##SHORT(masked_##TYPE* mv, uint8_t n) {                      \
+                                                                                \
+int dom_bool_rotr_##SHORT(masked_##TYPE* mv, uint8_t n) {                       \
+    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+        return 1;                                                               \
+                                                                                \
     TYPE* s = mv->shares;                                                       \
     bit_length_t bl = mv->bit_length;                                           \
     const uint8_t sc = mv->share_count;                                         \
@@ -121,24 +156,36 @@ void dom_bool_rotr_##SHORT(masked_##TYPE* mv, uint8_t n) {                      
         s[i] = (v >> n) | (v << (bl - n));                                      \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_bool_rotl_##SHORT(masked_##TYPE* mv, uint8_t n) {                      \
+                                                                                \
+int dom_bool_rotl_##SHORT(masked_##TYPE* mv, uint8_t n) {                       \
+    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+        return 1;                                                               \
+                                                                                \
     TYPE* s = mv->shares;                                                       \
     bit_length_t bl = mv->bit_length;                                           \
     const uint8_t sc = mv->share_count;                                         \
+                                                                                \
     for (uint8_t i = 0; i < sc; ++i) {                                          \
         const TYPE v = s[i];                                                    \
         s[i] = (v << n) | (v >> (bl - n));                                      \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
-void dom_arith_add_##SHORT(                                                     \
+                                                                                \
+int dom_arith_add_##SHORT(                                                      \
         masked_##TYPE* mv_a,                                                    \
         masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
+    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
+    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_ARITHMETIC))                       \
+        return 1;                                                               \
+                                                                                \
     const TYPE* x = mv_a->shares;                                               \
     const TYPE* y = mv_b->shares;                                               \
     TYPE* out = mv_out->shares;                                                 \
@@ -147,17 +194,23 @@ void dom_arith_add_##SHORT(                                                     
         out[i] = x[i] + y[i];                                                   \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
+                                                                                \
                                                                                 \
 /*   Performs multiplication/AND logic on two masked shares    */               \
 /*   using the DOM-independent secure gadget as described by   */               \
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
-void dom_arith_mult_##SHORT(                                                    \
+int dom_arith_mult_##SHORT(                                                     \
         masked_##TYPE* mv_a,                                                    \
         masked_##TYPE* mv_b,                                                    \
         masked_##TYPE* mv_out                                                   \
 ) {                                                                             \
+    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
+    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_ARITHMETIC))                       \
+        return 1;                                                               \
+                                                                                \
     const uint8_t order = mv_a->order;                                          \
     const uint8_t share_count = mv_a->share_count;                              \
     const uint32_t share_bytes = mv_a->share_bytes;                             \
@@ -183,6 +236,7 @@ void dom_arith_mult_##SHORT(                                                    
         }                                                                       \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
 }                                                                               \
 
 #endif //DOM_OPERATION_FUNCTIONS

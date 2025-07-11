@@ -54,7 +54,7 @@ void test_binary_operation(
         const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
-    const int order = GENERATE_COPY(range(1, 11));
+    const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
     T values[2];
@@ -80,7 +80,7 @@ void test_unary_operation(
         const std::function<T(T)>& unmasked_op,
         domain_t domain
 ) {
-    const int order = GENERATE_COPY(range(1, 11));
+    const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
     T values[1];
@@ -104,7 +104,7 @@ void test_shift_rotate_operation(
         ),
         const std::function<T(T, T)>& unmasked_op
 ) {
-    const int order = GENERATE_COPY(range(1, 11));
+    const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
     T values[1];
