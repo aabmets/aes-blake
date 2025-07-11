@@ -144,93 +144,72 @@ void test_shift_rotate_operation(
 }
 
 
-TEMPLATE_TEST_CASE("Assert DOM boolean AND works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_and;
-    auto unmasked_op = [](TestType a, TestType b) { return a & b; };
-    test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
+TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
+        "[unittest][dom]", uint8_t, uint32_t, uint64_t)
+{
+    SECTION("boolean AND") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_and;
+        auto unmasked_op = [](TestType a, TestType b) { return a & b; };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
+    SECTION("boolean OR") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_or;
+        auto unmasked_op = [](TestType a, TestType b) { return a | b; };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
-TEMPLATE_TEST_CASE("Assert DOM boolean OR works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_or;
-    auto unmasked_op = [](TestType a, TestType b) { return a | b; };
-    test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
+    SECTION("boolean XOR") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_xor;
+        auto unmasked_op = [](TestType a, TestType b) { return a ^ b; };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
+    SECTION("boolean NOT") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_not;
+        auto unmasked_op = [](TestType a) { return static_cast<TestType>(~a); };
+        test_unary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
-TEMPLATE_TEST_CASE("Assert DOM boolean XOR works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_xor;
-    auto unmasked_op = [](TestType a, TestType b) { return a ^ b; };
-    test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
+    SECTION("boolean SHR") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_shr;
+        auto unmasked_op = [](TestType a, uint8_t b) { return static_cast<TestType>(a >> b); };
+        test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
+    SECTION("boolean SHL") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_shl;
+        auto unmasked_op = [](TestType a, uint8_t b) { return static_cast<TestType>(a << b); };
+        test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
-TEMPLATE_TEST_CASE("Assert DOM boolean NOT works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_not;
-    auto unmasked_op = [](TestType a) { return ~a; };
-    test_unary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
+    SECTION("boolean ROTR") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_rotr;
+        auto unmasked_op = [](TestType a, uint8_t b) {
+            const uint8_t w = sizeof(TestType) * 8;
+            return static_cast<TestType>((a >> b) | (a << (w - b)));
+        };
+        test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
+    SECTION("boolean ROTL") {
+        auto masked_op   = dom_traits<TestType>::dom_bool_rotl;
+        auto unmasked_op = [](TestType a, uint8_t b) {
+            const uint8_t w = sizeof(TestType) * 8;
+            return static_cast<TestType>((a << b) | (a >> (w - b)));
+        };
+        test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
 
-TEMPLATE_TEST_CASE("Assert DOM boolean SHR works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_shr;
-    auto unmasked_op = [](TestType a, uint8_t b) { return a >> b; };
-    test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
+    SECTION("arithmetic ADD") {
+        auto masked_op   = dom_traits<TestType>::dom_arith_add;
+        auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a + b); };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
+    }
 
-
-TEMPLATE_TEST_CASE("Assert DOM boolean SHL works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_shl;
-    auto unmasked_op = [](TestType a, uint8_t b) { return a << b; };
-    test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
-
-
-TEMPLATE_TEST_CASE("Assert DOM boolean ROTR works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_rotr;
-    auto unmasked_op = [](TestType a, uint8_t b)
-        { return a >> b | a << (sizeof(TestType) * 8 - b); };
-    test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
-
-
-TEMPLATE_TEST_CASE("Assert DOM boolean ROTL works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_bool_rotl;
-    auto unmasked_op = [](TestType a, uint8_t b)
-        { return a << b | a >> (sizeof(TestType) * 8 - b); };
-    test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
-}
-
-
-TEMPLATE_TEST_CASE("Assert DOM arithmetic ADD works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_arith_add;
-    auto unmasked_op = [](TestType a, TestType b) { return a + b; };
-    test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
-}
-
-
-TEMPLATE_TEST_CASE("Assert DOM arithmetic MULT works correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
-) {
-    auto masked_op = dom_traits<TestType>::dom_arith_mult;
-    auto unmasked_op = [](TestType a, TestType b) { return a * b; };
-    test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
+    SECTION("arithmetic MULT") {
+        auto masked_op   = dom_traits<TestType>::dom_arith_mult;
+        auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a * b); };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
+    }
 }
