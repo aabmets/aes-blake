@@ -50,6 +50,7 @@ masked_##TYPE**   dom_clone_many_##SHORT     (const masked_##TYPE* mv, bool zero
                                                                                                                         \
 int               dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
 int               dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \
+int               dom_conv_##SHORT           (masked_##TYPE* mv, domain_t target_domain);                               \
 int               dom_conv_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, domain_t target_domain);              \
                                                                                                                         \
 int               dom_bool_and_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \

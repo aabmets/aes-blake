@@ -17,6 +17,16 @@
 #ifndef DOM_CONV
 #define DOM_CONV(TYPE, SHORT)                                                   \
                                                                                 \
+int dom_conv_##SHORT(masked_##TYPE* mv, domain_t target_domain) {               \
+    int(*conv)(masked_##TYPE*) = target_domain == DOMAIN_BOOLEAN                \
+        ? dom_conv_atob_##SHORT                                                 \
+        : dom_conv_btoa_##SHORT;                                                \
+    if (!mv || (mv->domain != target_domain && conv(mv)))                       \
+        return 1;                                                               \
+    return 0;                                                                   \
+}                                                                               \
+                                                                                \
+                                                                                \
 int dom_conv_many_##SHORT(                                                      \
         masked_##TYPE** mvs,                                                    \
         uint8_t count,                                                          \
