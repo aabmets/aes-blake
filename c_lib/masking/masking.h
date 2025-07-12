@@ -66,6 +66,7 @@ int               dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE
 int               dom_arith_mult_##SHORT     (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 
 MASKING_FUNCTIONS(uint8_t, u8)
+MASKING_FUNCTIONS(uint16_t, u16)
 MASKING_FUNCTIONS(uint32_t, u32)
 MASKING_FUNCTIONS(uint64_t, u64)
 

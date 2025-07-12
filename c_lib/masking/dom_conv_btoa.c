@@ -131,5 +131,6 @@ int dom_conv_btoa_##SHORT(masked_##TYPE *mv) {                                  
 
 
 DOM_CONV_BTOA(uint8_t, u8)
+DOM_CONV_BTOA(uint16_t, u16)
 DOM_CONV_BTOA(uint32_t, u32)
 DOM_CONV_BTOA(uint64_t, u64)

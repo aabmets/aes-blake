@@ -20,6 +20,7 @@ extern "C" {
 
     typedef enum {
         BIT_LENGTH_8 = CHAR_BIT * sizeof(uint8_t),
+        BIT_LENGTH_16 = CHAR_BIT * sizeof(uint16_t),
         BIT_LENGTH_32 = CHAR_BIT * sizeof(uint32_t),
         BIT_LENGTH_64 = CHAR_BIT * sizeof(uint64_t)
     } bit_length_t;
@@ -39,6 +40,17 @@ extern "C" {
         uint8_t share_bytes;
         uint8_t shares[];
     } masked_uint8_t;
+
+    typedef struct {
+        uint16_t sig;
+        bit_length_t bit_length;
+        uint32_t total_bytes;
+        domain_t domain;
+        uint8_t order;
+        uint8_t share_count;
+        uint8_t share_bytes;
+        uint16_t shares[];
+    } masked_uint16_t;
 
     typedef struct {
         uint16_t sig;

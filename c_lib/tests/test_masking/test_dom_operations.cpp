@@ -39,6 +39,7 @@ struct dom_traits<TYPE> {                                                       
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
+DEFINE_DOM_TRAITS(uint16_t, u16)
 DEFINE_DOM_TRAITS(uint32_t, u32)
 DEFINE_DOM_TRAITS(uint64_t, u64)
 
@@ -145,7 +146,7 @@ void test_shift_rotate_operation(
 
 
 TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t)
+        "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t)
 {
     SECTION("boolean AND") {
         auto masked_op   = dom_traits<TestType>::dom_bool_and;

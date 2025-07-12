@@ -281,5 +281,6 @@ int dom_arith_mult_##SHORT(                                                     
  *   Create operations functions for all supported types.
  */
 DOM_OPERATION_FUNCTIONS(uint8_t, u8)
+DOM_OPERATION_FUNCTIONS(uint16_t, u16)
 DOM_OPERATION_FUNCTIONS(uint32_t, u32)
 DOM_OPERATION_FUNCTIONS(uint64_t, u64)

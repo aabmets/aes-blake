@@ -49,5 +49,6 @@ int dom_conv_many_##SHORT(                                                      
 
 
 DOM_CONV(uint8_t, u8)
+DOM_CONV(uint16_t, u16)
 DOM_CONV(uint32_t, u32)
 DOM_CONV(uint64_t, u64)

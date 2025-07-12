@@ -298,5 +298,6 @@ masked_##TYPE** dom_clone_many_##SHORT(                                         
  *   Create utility functions for all supported types.
  */
 DOM_UTILITY_FUNCTIONS(uint8_t, u8, BIT_LENGTH_8)
+DOM_UTILITY_FUNCTIONS(uint16_t, u16, BIT_LENGTH_16)
 DOM_UTILITY_FUNCTIONS(uint32_t, u32, BIT_LENGTH_32)
 DOM_UTILITY_FUNCTIONS(uint64_t, u64, BIT_LENGTH_64)

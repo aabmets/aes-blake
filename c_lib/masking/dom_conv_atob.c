@@ -190,5 +190,6 @@ int dom_conv_atob_##SHORT(masked_##TYPE *mv) {                                  
 
 
 DOM_CONV_ATOB(uint8_t, u8)
+DOM_CONV_ATOB(uint16_t, u16)
 DOM_CONV_ATOB(uint32_t, u32)
 DOM_CONV_ATOB(uint64_t, u64)

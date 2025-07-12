@@ -39,6 +39,7 @@ struct dom_traits<TYPE> {                                                       
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
+DEFINE_DOM_TRAITS(uint16_t, u16)
 DEFINE_DOM_TRAITS(uint32_t, u32)
 DEFINE_DOM_TRAITS(uint64_t, u64)
 
@@ -47,7 +48,7 @@ DEFINE_DOM_TRAITS(uint64_t, u64)
 
 TEMPLATE_TEST_CASE(
         "Assert DOM converter functions work correctly",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
+        "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
@@ -80,7 +81,7 @@ TEMPLATE_TEST_CASE(
 
 TEMPLATE_TEST_CASE(
         "dom_conv_many preserves values across domains",
-        "[unittest][dom]", uint8_t, uint32_t, uint64_t
+        "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
     constexpr uint8_t COUNT = 6;
     const int order = GENERATE_COPY(range(1, 4));

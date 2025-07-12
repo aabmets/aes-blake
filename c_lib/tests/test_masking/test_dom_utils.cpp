@@ -35,7 +35,7 @@ struct dom_traits<TYPE> {                                                       
     static mskd_t*   dom_mask      (TYPE v, domain_t d, uint8_t o)   { return dom_mask_##SHORT(v, d, o); }              \
     static TYPE      dom_unmask    (mskd_t *mv)                      { return dom_unmask_##SHORT(mv); }                 \
     static void      dom_refresh   (mskd_t *mv)                      { dom_refresh_##SHORT(mv); }                       \
-    static mskd_t*   dom_clone     (mskd_t *mv, bool z)    { return dom_clone_##SHORT(mv, z); }                  \
+    static mskd_t*   dom_clone     (mskd_t *mv, bool z)    { return dom_clone_##SHORT(mv, z); }                         \
                                                                                                                         \
     /* Array helpers */                                                                                                 \
     static void       dom_free_many      (mskd_t **mvs, uint8_t count, uint32_t skip_mask)                              \
@@ -61,6 +61,7 @@ struct dom_traits<TYPE> {                                                       
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(uint8_t, u8)
+DEFINE_DOM_TRAITS(uint16_t, u16)
 DEFINE_DOM_TRAITS(uint32_t, u32)
 DEFINE_DOM_TRAITS(uint64_t, u64)
 
@@ -84,6 +85,8 @@ TEMPLATE_TEST_CASE(
         "DOM utility functions - full coverage", "[unittest][dom]",
         (TypeDomainPair<uint8_t, DOMAIN_BOOLEAN>),
         (TypeDomainPair<uint8_t, DOMAIN_ARITHMETIC>),
+        (TypeDomainPair<uint16_t, DOMAIN_BOOLEAN>),
+        (TypeDomainPair<uint16_t, DOMAIN_ARITHMETIC>),
         (TypeDomainPair<uint32_t, DOMAIN_BOOLEAN>),
         (TypeDomainPair<uint32_t, DOMAIN_ARITHMETIC>),
         (TypeDomainPair<uint64_t, DOMAIN_BOOLEAN>),
