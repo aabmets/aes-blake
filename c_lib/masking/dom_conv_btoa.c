@@ -33,12 +33,14 @@ static TYPE* convert_##SHORT(const TYPE* x, uint8_t n_plus1) {                  
         *out = x[0] ^ x[1];                                                     \
         return out;                                                             \
     }                                                                           \
+    const uint16_t n_bytes = n * sizeof(TYPE);                                  \
+    const uint16_t np1_bytes = n_plus1 * sizeof(TYPE);                          \
                                                                                 \
     TYPE rnd[n];                                                                \
-    csprng_read_array((uint8_t*)rnd, n * sizeof(TYPE));                         \
+    csprng_read_array((uint8_t*)rnd, n_bytes);                                  \
                                                                                 \
     TYPE x_mut[n_plus1];                                                        \
-    memcpy(x_mut, x, n_plus1 * sizeof(TYPE));                                   \
+    memcpy(x_mut, x, np1_bytes);                                                \
                                                                                 \
     for (uint8_t i = 1; i < n_plus1; ++i) {                                     \
         TYPE r = rnd[i - 1];                                                    \
@@ -56,14 +58,20 @@ static TYPE* convert_##SHORT(const TYPE* x, uint8_t n_plus1) {                  
     TYPE* first = convert_##SHORT(&x_mut[1], n);                                \
     TYPE* second = convert_##SHORT(y, n);                                       \
     if (!first || !second) {                                                    \
-        free(first);                                                            \
-        free(second);                                                           \
+        secure_memzero(rnd, n_bytes);                                           \
+        secure_memzero(x_mut, np1_bytes);                                       \
+        if (first)                                                              \
+            free(first);                                                        \
+        if (second)                                                             \
+            free(second);                                                       \
         return NULL;                                                            \
     }                                                                           \
                                                                                 \
     size_t buf_size = (size_t)(n - 1) * sizeof(TYPE);                           \
-    TYPE* out = (TYPE*)malloc(n * sizeof(TYPE));                                \
+    TYPE* out = (TYPE*)malloc(n_bytes);                                         \
     if (!out) {                                                                 \
+        secure_memzero(rnd, n_bytes);                                           \
+        secure_memzero(x_mut, np1_bytes);                                       \
         secure_memzero(first, buf_size);                                        \
         secure_memzero(second, buf_size);                                       \
         free(first);                                                            \
@@ -76,6 +84,8 @@ static TYPE* convert_##SHORT(const TYPE* x, uint8_t n_plus1) {                  
     out[n - 2] = first[n - 2];                                                  \
     out[n - 1] = second[n - 2];                                                 \
                                                                                 \
+    secure_memzero(rnd, n_bytes);                                               \
+    secure_memzero(x_mut, np1_bytes);                                           \
     secure_memzero(first, buf_size);                                            \
     secure_memzero(second, buf_size);                                           \
     free(first);                                                                \

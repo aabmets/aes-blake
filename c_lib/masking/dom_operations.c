@@ -41,9 +41,10 @@ int dom_bool_and_##SHORT(                                                       
     const uint8_t share_count = mv_a->share_count;                              \
     const uint32_t share_bytes = mv_a->share_bytes;                             \
     const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
+    const uint32_t pair_bytes = pair_count * sizeof(TYPE);                      \
                                                                                 \
-    TYPE rands[pair_count];                                                     \
-    csprng_read_array((uint8_t*)rands, sizeof(rands));                          \
+    TYPE rnd[pair_count];                                                       \
+    csprng_read_array((uint8_t*)rnd, pair_bytes);                               \
                                                                                 \
     TYPE x[share_count], y[share_count];                                        \
     memcpy(x, mv_a->shares, share_bytes);                                       \
@@ -53,14 +54,15 @@ int dom_bool_and_##SHORT(                                                       
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
         out[i] = x[i] & y[i];                                                   \
     }                                                                           \
-    uint8_t r_idx = 0;                                                          \
+    uint16_t r_idx = 0;                                                         \
     for (uint8_t i = 0; i < order; ++i) {                                       \
         for (uint8_t j = i + 1; j < share_count; ++j) {                         \
-            const TYPE r = rands[r_idx++];                                      \
+            const TYPE r = rnd[r_idx++];                                        \
             out[i] ^= (x[i] & y[j]) ^ r;                                        \
             out[j] ^= (x[j] & y[i]) ^ r;                                        \
         }                                                                       \
     }                                                                           \
+    secure_memzero(rnd, pair_bytes);                                            \
     secure_memzero(x, share_bytes);                                             \
     secure_memzero(y, share_bytes);                                             \
     asm volatile ("" ::: "memory");                                             \
@@ -248,9 +250,10 @@ int dom_arith_mult_##SHORT(                                                     
     const uint8_t share_count = mv_a->share_count;                              \
     const uint32_t share_bytes = mv_a->share_bytes;                             \
     const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
+    const uint32_t pair_bytes = pair_count * sizeof(TYPE);                      \
                                                                                 \
-    TYPE rands[pair_count];                                                     \
-    csprng_read_array((uint8_t*)rands, sizeof(rands));                          \
+    TYPE rnd[pair_count];                                                       \
+    csprng_read_array((uint8_t*)rnd, pair_bytes);                               \
                                                                                 \
     TYPE x[share_count], y[share_count];                                        \
     memcpy(x, mv_a->shares, share_bytes);                                       \
@@ -260,14 +263,15 @@ int dom_arith_mult_##SHORT(                                                     
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
         out[i] = x[i] * y[i];                                                   \
     }                                                                           \
-    uint8_t r_idx = 0;                                                          \
+    uint16_t r_idx = 0;                                                         \
     for (uint8_t i = 0; i < order; ++i) {                                       \
         for (uint8_t j = i + 1; j < share_count; ++j) {                         \
-            const TYPE r = rands[r_idx++];                                      \
+            const TYPE r = rnd[r_idx++];                                        \
             out[i] += (x[i] * y[j]) + r;                                        \
             out[j] += (x[j] * y[i]) - r;                                        \
         }                                                                       \
     }                                                                           \
+    secure_memzero(rnd, pair_bytes);                                            \
     secure_memzero(x, share_bytes);                                             \
     secure_memzero(y, share_bytes);                                             \
     asm volatile ("" ::: "memory");                                             \
