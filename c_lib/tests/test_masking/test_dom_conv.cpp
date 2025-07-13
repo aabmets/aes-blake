@@ -22,11 +22,11 @@ template<>                                                                      
 struct dom_traits<TYPE> {                                                                                               \
     using mskd_t = masked_##TYPE;                                                                                       \
                                                                                                                         \
-    static void       dom_free        (mskd_t *mv)                            { dom_free_##SHORT(mv); }                 \
-    static mskd_t*    dom_mask        (TYPE v, domain_t d, uint8_t o)         { return dom_mask_##SHORT(v, d, o); }     \
-    static TYPE       dom_unmask      (mskd_t* mv)                            { return dom_unmask_##SHORT(mv); }        \
-    static int        dom_conv_btoa   (mskd_t* mv)                            { return dom_conv_btoa_##SHORT(mv); }     \
-    static int        dom_conv_atob   (mskd_t* mv)                            { return dom_conv_atob_##SHORT(mv); }     \
+    static void       dom_free        (mskd_t *mv)                      { dom_free_##SHORT(mv); }                       \
+    static mskd_t*    dom_mask        (TYPE v, domain_t d, uint8_t o)   { return dom_mask_##SHORT(v, d, o); }           \
+    static TYPE       dom_unmask      (mskd_t* mv)                      { return dom_unmask_##SHORT(mv); }              \
+    static int        dom_conv_btoa   (mskd_t* mv)                      { return dom_conv_btoa_##SHORT(mv); }           \
+    static int        dom_conv_atob   (mskd_t* mv)                      { return dom_conv_atob_##SHORT(mv); }           \
                                                                                                                         \
     static int        dom_conv_many   (mskd_t** mv, uint8_t c, domain_t td)                                             \
                                       { return dom_conv_many_##SHORT(mv, c, td); }                                      \

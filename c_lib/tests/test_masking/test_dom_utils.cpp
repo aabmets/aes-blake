@@ -35,7 +35,7 @@ struct dom_traits<TYPE> {                                                       
     static mskd_t*   dom_mask      (TYPE v, domain_t d, uint8_t o)   { return dom_mask_##SHORT(v, d, o); }              \
     static TYPE      dom_unmask    (mskd_t *mv)                      { return dom_unmask_##SHORT(mv); }                 \
     static void      dom_refresh   (mskd_t *mv)                      { dom_refresh_##SHORT(mv); }                       \
-    static mskd_t*   dom_clone     (mskd_t *mv, bool z)    { return dom_clone_##SHORT(mv, z); }                         \
+    static mskd_t*   dom_clone     (mskd_t *mv, bool z)              { return dom_clone_##SHORT(mv, z); }               \
                                                                                                                         \
     /* Array helpers */                                                                                                 \
     static void       dom_free_many      (mskd_t **mvs, uint8_t count, uint32_t skip_mask)                              \

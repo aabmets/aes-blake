@@ -17,11 +17,19 @@
 #ifdef __cplusplus
 #include <cstdint>
 #include <cstdbool>
+#include <cassert>
 extern "C" {
 #else
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 #endif
+
+
+static_assert(
+    __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,
+    "Domain-object masking library requires the target platform to be little-endian"
+);
 
 
 void secure_memzero(void *ptr, size_t len);
@@ -69,6 +77,23 @@ MASKING_FUNCTIONS(uint8_t, u8)
 MASKING_FUNCTIONS(uint16_t, u16)
 MASKING_FUNCTIONS(uint32_t, u32)
 MASKING_FUNCTIONS(uint64_t, u64)
+
+
+#define MASKING_FUNCTIONS_CONV_TYPE(L_TYPE, L_SHORT, S_TYPE, S_SHORT)                                                   \
+masked_##L_TYPE*    dom_conv_##S_SHORT##_to_##L_SHORT   (masked_##S_TYPE** mvs);                                        \
+masked_##S_TYPE**   dom_conv_##L_SHORT##_to_##S_SHORT   (masked_##L_TYPE* mv);                                          \
+
+// 2-to-1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint32_t, u32)
+MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint16_t, u16)
+MASKING_FUNCTIONS_CONV_TYPE(uint16_t, u16, uint8_t, u8)
+
+// 4-to-1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint16_t, u16)
+MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint8_t, u8)
+
+// 8-to-1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint8_t, u8)
 
 
 #ifdef __cplusplus
