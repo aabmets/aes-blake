@@ -71,6 +71,7 @@ int               dom_bool_rotr_##SHORT      (masked_##TYPE* mv, uint8_t n);    
 int               dom_bool_rotl_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
                                                                                                                         \
 int               dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
+int               dom_arith_sub_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 int               dom_arith_mult_##SHORT     (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 
 MASKING_FUNCTIONS(uint8_t, u8)

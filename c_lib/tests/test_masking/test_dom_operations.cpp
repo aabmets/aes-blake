@@ -34,6 +34,7 @@ struct dom_traits<TYPE> {                                                       
     static int       dom_bool_rotr    (mskd_t* mv, uint8_t n)             { return dom_bool_rotr_##SHORT(mv, n); }      \
     static int       dom_bool_rotl    (mskd_t* mv, uint8_t n)             { return dom_bool_rotl_##SHORT(mv, n); }      \
     static int       dom_arith_add    (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_arith_add_##SHORT(a, b, o); }    \
+    static int       dom_arith_sub    (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_arith_sub_##SHORT(a, b, o); }    \
     static int       dom_arith_mult   (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_arith_mult_##SHORT(a, b, o); }   \
     static int       dom_conv         (mskd_t* mv, domain_t td)           { return dom_conv_##SHORT(mv, td); }          \
 };                                                                                                                      \
@@ -205,6 +206,12 @@ TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
     SECTION("arithmetic ADD") {
         auto masked_op   = dom_traits<TestType>::dom_arith_add;
         auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a + b); };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
+    }
+
+    SECTION("arithmetic SUB") {
+        auto masked_op   = dom_traits<TestType>::dom_arith_sub;
+        auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a - b); };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
     }
 

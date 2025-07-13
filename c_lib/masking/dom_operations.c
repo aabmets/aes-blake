@@ -231,6 +231,29 @@ int dom_arith_add_##SHORT(                                                      
 }                                                                               \
                                                                                 \
                                                                                 \
+int dom_arith_sub_##SHORT(                                                      \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
+        masked_##TYPE* mv_out                                                   \
+) {                                                                             \
+    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
+    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_ARITHMETIC))                       \
+        return 1;                                                               \
+    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
+        return 1;                                                               \
+                                                                                \
+    const TYPE* x = mv_a->shares;                                               \
+    const TYPE* y = mv_b->shares;                                               \
+    TYPE* out = mv_out->shares;                                                 \
+    const uint8_t sc = mv_out->share_count;                                     \
+    for (uint8_t i = 0; i < sc; ++i) {                                          \
+        out[i] = x[i] - y[i];                                                   \
+    }                                                                           \
+    asm volatile ("" ::: "memory");                                             \
+    return 0;                                                                   \
+}                                                                               \
+                                                                                \
+                                                                                \
 /*   Performs multiplication/AND logic on two masked shares    */               \
 /*   using the DOM-independent secure gadget as described by   */               \
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
