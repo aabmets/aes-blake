@@ -46,25 +46,26 @@ int dom_bool_and_##SHORT(                                                       
     TYPE rnd[pair_count];                                                       \
     csprng_read_array((uint8_t*)rnd, pair_bytes);                               \
                                                                                 \
-    TYPE x[share_count], y[share_count];                                        \
-    memcpy(x, mv_a->shares, share_bytes);                                       \
-    memcpy(y, mv_b->shares, share_bytes);                                       \
-    TYPE* out = mv_out->shares;                                                 \
+    const TYPE* a_shares = mv_a->shares;                                        \
+    const TYPE* b_shares = mv_b->shares;                                        \
+    TYPE out[share_count];                                                      \
                                                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
-        out[i] = x[i] & y[i];                                                   \
+        out[i] = a_shares[i] & b_shares[i];                                     \
     }                                                                           \
     uint16_t r_idx = 0;                                                         \
     for (uint8_t i = 0; i < order; ++i) {                                       \
         for (uint8_t j = i + 1; j < share_count; ++j) {                         \
             const TYPE r = rnd[r_idx++];                                        \
-            out[i] ^= (x[i] & y[j]) ^ r;                                        \
-            out[j] ^= (x[j] & y[i]) ^ r;                                        \
+            out[i] ^= (a_shares[i] & b_shares[j]) ^ r;                          \
+            out[j] ^= (a_shares[j] & b_shares[i]) ^ r;                          \
         }                                                                       \
     }                                                                           \
+    memcpy(mv_out->shares, out, share_bytes);                                   \
+    dom_refresh_##SHORT(mv_out);                                                \
+                                                                                \
     secure_memzero(rnd, pair_bytes);                                            \
-    secure_memzero(x, share_bytes);                                             \
-    secure_memzero(y, share_bytes);                                             \
+    secure_memzero(out, share_bytes);                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
@@ -278,25 +279,26 @@ int dom_arith_mult_##SHORT(                                                     
     TYPE rnd[pair_count];                                                       \
     csprng_read_array((uint8_t*)rnd, pair_bytes);                               \
                                                                                 \
-    TYPE x[share_count], y[share_count];                                        \
-    memcpy(x, mv_a->shares, share_bytes);                                       \
-    memcpy(y, mv_b->shares, share_bytes);                                       \
-    TYPE* out = mv_out->shares;                                                 \
+    const TYPE* a_shares = mv_a->shares;                                        \
+    const TYPE* b_shares = mv_b->shares;                                        \
+    TYPE out[share_count];                                                      \
                                                                                 \
     for (uint8_t i = 0; i < share_count; ++i) {                                 \
-        out[i] = x[i] * y[i];                                                   \
+        out[i] = a_shares[i] * b_shares[i];                                     \
     }                                                                           \
     uint16_t r_idx = 0;                                                         \
     for (uint8_t i = 0; i < order; ++i) {                                       \
         for (uint8_t j = i + 1; j < share_count; ++j) {                         \
             const TYPE r = rnd[r_idx++];                                        \
-            out[i] += (x[i] * y[j]) + r;                                        \
-            out[j] += (x[j] * y[i]) - r;                                        \
+            out[i] += (a_shares[i] * b_shares[j]) + r;                          \
+            out[j] += (a_shares[j] * b_shares[i]) - r;                          \
         }                                                                       \
     }                                                                           \
+    memcpy(mv_out->shares, out, share_bytes);                                   \
+    dom_refresh_##SHORT(mv_out);                                                \
+                                                                                \
     secure_memzero(rnd, pair_bytes);                                            \
-    secure_memzero(x, share_bytes);                                             \
-    secure_memzero(y, share_bytes);                                             \
+    secure_memzero(out, share_bytes);                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
