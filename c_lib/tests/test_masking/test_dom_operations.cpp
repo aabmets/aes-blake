@@ -57,31 +57,32 @@ void test_binary_operation(
         const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
+    using traits = dom_traits<T>;
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
     T values[2];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv_a = dom_traits<T>::dom_mask(values[0], domain, order);
-    auto* mv_b = dom_traits<T>::dom_mask(values[1], domain, order);
-    auto* mv_out = dom_traits<T>::dom_mask(0, domain, order);
+    auto* mv_a = traits::dom_mask(values[0], domain, order);
+    auto* mv_b = traits::dom_mask(values[1], domain, order);
+    auto* mv_out = traits::dom_mask(0, domain, order);
 
     REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
 
-    T unmasked = dom_traits<T>::dom_unmask(mv_out);
+    T unmasked = traits::dom_unmask(mv_out);
     T expected = unmasked_op(values[0], values[1]);
     REQUIRE(expected == unmasked);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    dom_traits<T>::dom_conv(mv_a, counter_domain);
+    traits::dom_conv(mv_a, counter_domain);
     REQUIRE(mv_a->domain == counter_domain);
     REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
     REQUIRE(mv_a->domain == domain);
 
-    dom_traits<T>::dom_free(mv_a);
-    dom_traits<T>::dom_free(mv_b);
-    dom_traits<T>::dom_free(mv_out);
+    traits::dom_free(mv_a);
+    traits::dom_free(mv_b);
+    traits::dom_free(mv_out);
 }
 
 
@@ -91,27 +92,28 @@ void test_unary_operation(
         const std::function<T(T)>& unmasked_op,
         domain_t domain
 ) {
+    using traits = dom_traits<T>;
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv = dom_traits<T>::dom_mask(values[0], domain, order);
+    auto* mv = traits::dom_mask(values[0], domain, order);
 
     REQUIRE(masked_op(mv) == 0);
 
-    T unmasked = dom_traits<T>::dom_unmask(mv);
+    T unmasked = traits::dom_unmask(mv);
     T expected = unmasked_op(values[0]);
     REQUIRE(expected == unmasked);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    dom_traits<T>::dom_conv(mv, counter_domain);
+    traits::dom_conv(mv, counter_domain);
     REQUIRE(mv->domain == counter_domain);
     REQUIRE(masked_op(mv) == 0);
     REQUIRE(mv->domain == domain);
 
-    dom_traits<T>::dom_free(mv);
+    traits::dom_free(mv);
 }
 
 
@@ -121,72 +123,75 @@ void test_shift_rotate_operation(
         const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
+    using traits = dom_traits<T>;
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv = dom_traits<T>::dom_mask(values[0], DOMAIN_BOOLEAN, order);
+    auto* mv = traits::dom_mask(values[0], DOMAIN_BOOLEAN, order);
     uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
 
     REQUIRE(masked_op(mv, offset) == 0);
 
-    T unmasked = dom_traits<T>::dom_unmask(mv);
+    T unmasked = traits::dom_unmask(mv);
     T expected = unmasked_op(values[0], offset);
     REQUIRE(expected == unmasked);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    dom_traits<T>::dom_conv(mv, counter_domain);
+    traits::dom_conv(mv, counter_domain);
     REQUIRE(mv->domain == counter_domain);
     REQUIRE(masked_op(mv, offset) == 0);
     REQUIRE(mv->domain == domain);
 
-    dom_traits<T>::dom_free(mv);
+    traits::dom_free(mv);
 }
 
 
 TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
         "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t)
 {
+    using traits = dom_traits<TestType>;
+
     SECTION("boolean AND") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_and;
+        auto masked_op = traits::dom_bool_and;
         auto unmasked_op = [](TestType a, TestType b) { return a & b; };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("boolean OR") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_or;
+        auto masked_op = traits::dom_bool_or;
         auto unmasked_op = [](TestType a, TestType b) { return a | b; };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("boolean XOR") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_xor;
+        auto masked_op = traits::dom_bool_xor;
         auto unmasked_op = [](TestType a, TestType b) { return a ^ b; };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("boolean NOT") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_not;
+        auto masked_op = traits::dom_bool_not;
         auto unmasked_op = [](TestType a) { return static_cast<TestType>(~a); };
         test_unary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("boolean SHR") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_shr;
+        auto masked_op = traits::dom_bool_shr;
         auto unmasked_op = [](TestType a, uint8_t b) { return static_cast<TestType>(a >> b); };
         test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("boolean SHL") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_shl;
+        auto masked_op = traits::dom_bool_shl;
         auto unmasked_op = [](TestType a, uint8_t b) { return static_cast<TestType>(a << b); };
         test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("boolean ROTR") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_rotr;
+        auto masked_op = traits::dom_bool_rotr;
         auto unmasked_op = [](TestType a, uint8_t b) {
             const uint8_t w = sizeof(TestType) * 8;
             return static_cast<TestType>((a >> b) | (a << (w - b)));
@@ -195,7 +200,7 @@ TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
     }
 
     SECTION("boolean ROTL") {
-        auto masked_op   = dom_traits<TestType>::dom_bool_rotl;
+        auto masked_op = traits::dom_bool_rotl;
         auto unmasked_op = [](TestType a, uint8_t b) {
             const uint8_t w = sizeof(TestType) * 8;
             return static_cast<TestType>((a << b) | (a >> (w - b)));
@@ -204,19 +209,19 @@ TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
     }
 
     SECTION("arithmetic ADD") {
-        auto masked_op   = dom_traits<TestType>::dom_arith_add;
+        auto masked_op = traits::dom_arith_add;
         auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a + b); };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
     }
 
     SECTION("arithmetic SUB") {
-        auto masked_op   = dom_traits<TestType>::dom_arith_sub;
+        auto masked_op = traits::dom_arith_sub;
         auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a - b); };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
     }
 
     SECTION("arithmetic MULT") {
-        auto masked_op   = dom_traits<TestType>::dom_arith_mult;
+        auto masked_op = traits::dom_arith_mult;
         auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a * b); };
         test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_ARITHMETIC);
     }

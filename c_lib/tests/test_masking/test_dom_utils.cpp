@@ -94,6 +94,7 @@ TEMPLATE_TEST_CASE(
 ) {
     using DataType = typename TestType::type;
     using MaskedType = typename dom_traits<DataType>::mskd_t;
+    using traits = dom_traits<typename TestType::type>;
     constexpr domain_t domain = TestType::domain;
 
     const uint8_t order = GENERATE_COPY(range(1, 4));
@@ -102,7 +103,7 @@ TEMPLATE_TEST_CASE(
     // ---------------------------------------------------------------------
     SECTION("Single allocation initialises all meta‑data and zeroes shares")
     {
-        MaskedType* mv = dom_traits<DataType>::dom_alloc(domain, order);
+        MaskedType* mv = traits::dom_alloc(domain, order);
         REQUIRE(mv != nullptr);
         REQUIRE(mv->domain == domain);
         REQUIRE(mv->order == order);
@@ -113,21 +114,21 @@ TEMPLATE_TEST_CASE(
         for (uint8_t i = 0; i < mv->share_count; ++i)
             REQUIRE(shares[i] == static_cast<DataType>(0));
 
-        dom_traits<DataType>::dom_free(mv);
+        traits::dom_free(mv);
     }
 
     // ---------------------------------------------------------------------
     SECTION("Bulk allocation produces *count* valid, independent objects")
     {
         constexpr uint8_t count = 4;
-        MaskedType** mvs = dom_traits<DataType>::dom_alloc_many(domain, order, count);
+        MaskedType** mvs = traits::dom_alloc_many(domain, order, count);
         REQUIRE(mvs != nullptr);
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(mvs[i] != nullptr);
             REQUIRE(mvs[i]->domain == domain);
             REQUIRE(mvs[i]->order == order);
         }
-        dom_traits<DataType>::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count, 0u);
     }
 
     // ---------------------------------------------------------------------
@@ -136,10 +137,10 @@ TEMPLATE_TEST_CASE(
         DataType value;
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType* mv = dom_traits<DataType>::dom_mask(value, domain, order);
-        REQUIRE(dom_traits<DataType>::dom_unmask(mv) == value);
+        MaskedType* mv = traits::dom_mask(value, domain, order);
+        REQUIRE(traits::dom_unmask(mv) == value);
 
-        dom_traits<DataType>::dom_free(mv);
+        traits::dom_free(mv);
     }
 
     // ---------------------------------------------------------------------
@@ -149,14 +150,14 @@ TEMPLATE_TEST_CASE(
         std::vector<DataType> values(count);
         csprng_read_array(reinterpret_cast<uint8_t*>(values.data()), count * sizeof(DataType));
 
-        MaskedType** mvs = dom_traits<DataType>::dom_mask_many(values.data(), domain, order, count);
+        MaskedType** mvs = traits::dom_mask_many(values.data(), domain, order, count);
         REQUIRE(mvs != nullptr);
 
         std::vector<DataType> out(count, {});
-        dom_traits<DataType>::dom_unmask_many(mvs, out.data(), count);
+        traits::dom_unmask_many(mvs, out.data(), count);
         REQUIRE(out == values);
 
-        dom_traits<DataType>::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count, 0u);
     }
 
     // ---------------------------------------------------------------------
@@ -165,14 +166,14 @@ TEMPLATE_TEST_CASE(
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType* mv = dom_traits<DataType>::dom_mask(value, domain, order);
-        dom_traits<DataType>::dom_clear(mv);
+        MaskedType* mv = traits::dom_mask(value, domain, order);
+        traits::dom_clear(mv);
 
         auto* shares = reinterpret_cast<DataType*>(mv->shares);
         for (uint8_t i = 0; i < mv->share_count; ++i)
             REQUIRE(shares[i] == static_cast<DataType>(0));
 
-        dom_traits<DataType>::dom_free(mv);
+        traits::dom_free(mv);
     }
 
     // ---------------------------------------------------------------------
@@ -182,15 +183,15 @@ TEMPLATE_TEST_CASE(
         std::vector<DataType> vals(count);
         csprng_read_array(reinterpret_cast<uint8_t*>(vals.data()), count * sizeof(DataType));
 
-        MaskedType** mvs = dom_traits<DataType>::dom_mask_many(vals.data(), domain, order, count);
+        MaskedType** mvs = traits::dom_mask_many(vals.data(), domain, order, count);
         REQUIRE(mvs != nullptr);
 
         // Skip index 0 -> binary 001
         constexpr uint32_t skip = 0b001u;
-        dom_traits<DataType>::dom_clear_many(mvs, count, skip);
+        traits::dom_clear_many(mvs, count, skip);
 
         // index 0 untouched
-        REQUIRE(dom_traits<DataType>::dom_unmask(mvs[0]) == vals[0]);
+        REQUIRE(traits::dom_unmask(mvs[0]) == vals[0]);
         // indices 1 & 2 cleared
         for (uint8_t idx = 1; idx < count; ++idx) {
             auto* shares = reinterpret_cast<DataType*>(mvs[idx]->shares);
@@ -198,7 +199,7 @@ TEMPLATE_TEST_CASE(
                 REQUIRE(shares[i] == static_cast<DataType>(0));
         }
 
-        dom_traits<DataType>::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count, 0u);
     }
 
     // ---------------------------------------------------------------------
@@ -206,14 +207,14 @@ TEMPLATE_TEST_CASE(
     {
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
-        MaskedType* mv = dom_traits<DataType>::dom_mask(value, domain, order);
+        MaskedType* mv = traits::dom_mask(value, domain, order);
 
         // Snapshot previous shares
         std::vector<DataType> before(mv->share_count);
         std::memcpy(before.data(), mv->shares, mv->share_bytes);
 
-        dom_traits<DataType>::dom_refresh(mv);
-        REQUIRE(dom_traits<DataType>::dom_unmask(mv) == value);
+        traits::dom_refresh(mv);
+        REQUIRE(traits::dom_unmask(mv) == value);
 
         bool changed = false;
         const auto* after = reinterpret_cast<const DataType*>(mv->shares);
@@ -221,7 +222,7 @@ TEMPLATE_TEST_CASE(
             changed |= (after[i] != before[i]);
         REQUIRE(changed);  // at least one share altered
 
-        dom_traits<DataType>::dom_free(mv);
+        traits::dom_free(mv);
     }
 
     // ---------------------------------------------------------------------
@@ -231,7 +232,7 @@ TEMPLATE_TEST_CASE(
         std::vector<DataType> vals(count);
         csprng_read_array(reinterpret_cast<uint8_t*>(vals.data()), count * sizeof(DataType));
 
-        MaskedType** mvs = dom_traits<DataType>::dom_mask_many(vals.data(), domain, order, count);
+        MaskedType** mvs = traits::dom_mask_many(vals.data(), domain, order, count);
         REQUIRE(mvs != nullptr);
 
         // Preserve old shares for later comparison
@@ -241,10 +242,10 @@ TEMPLATE_TEST_CASE(
             std::memcpy(snapshots[i].data(), mvs[i]->shares, mvs[i]->share_bytes);
         }
 
-        dom_traits<DataType>::dom_refresh_many(mvs, count);
+        traits::dom_refresh_many(mvs, count);
 
         for (uint8_t i = 0; i < count; ++i) {
-            REQUIRE(dom_traits<DataType>::dom_unmask(mvs[i]) == vals[i]);
+            REQUIRE(traits::dom_unmask(mvs[i]) == vals[i]);
             bool changed = false;
             const auto* after = reinterpret_cast<const DataType*>(mvs[i]->shares);
             for (uint8_t j = 0; j < mvs[i]->share_count; ++j)
@@ -252,7 +253,7 @@ TEMPLATE_TEST_CASE(
             REQUIRE(changed);  // at least one share altered
         }
 
-        dom_traits<DataType>::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count, 0u);
     }
 
     // ---------------------------------------------------------------------
@@ -261,9 +262,9 @@ TEMPLATE_TEST_CASE(
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType *orig        = dom_traits<DataType>::dom_mask(value, domain, order);
-        MaskedType *clone_full  = dom_traits<DataType>::dom_clone(orig, false);
-        MaskedType *clone_zero  = dom_traits<DataType>::dom_clone(orig, true);
+        MaskedType *orig        = traits::dom_mask(value, domain, order);
+        MaskedType *clone_full  = traits::dom_clone(orig, false);
+        MaskedType *clone_zero  = traits::dom_clone(orig, true);
 
         // ---- zero_shares == false ----
         REQUIRE(clone_full != nullptr);
@@ -273,7 +274,7 @@ TEMPLATE_TEST_CASE(
         // Mutate clone, orig must stay intact
         auto* c_shares = reinterpret_cast<DataType*>(clone_full->shares);
         c_shares[0] ^= static_cast<DataType>(1);
-        REQUIRE(dom_traits<DataType>::dom_unmask(orig) == value);
+        REQUIRE(traits::dom_unmask(orig) == value);
 
         // ---- zero_shares == true ----
         REQUIRE(clone_zero != nullptr);
@@ -283,9 +284,9 @@ TEMPLATE_TEST_CASE(
         for (uint8_t i = 0; i < clone_zero->share_count; ++i)
             REQUIRE(z_shares[i] == static_cast<DataType>(0));
 
-        dom_traits<DataType>::dom_free(clone_full);
-        dom_traits<DataType>::dom_free(clone_zero);
-        dom_traits<DataType>::dom_free(orig);
+        traits::dom_free(clone_full);
+        traits::dom_free(clone_zero);
+        traits::dom_free(orig);
     }
 
     // ---------------------------------------------------------------------
@@ -293,11 +294,11 @@ TEMPLATE_TEST_CASE(
     {
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
-        MaskedType* orig = dom_traits<DataType>::dom_mask(value, domain, order);
+        MaskedType* orig = traits::dom_mask(value, domain, order);
         constexpr uint8_t count = 4;
 
         // ---- zero_shares == false ----
-        MaskedType** full_clones = dom_traits<DataType>::dom_clone_many(orig, false, count);
+        MaskedType** full_clones = traits::dom_clone_many(orig, false, count);
         REQUIRE(full_clones != nullptr);
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(full_clones[i] != nullptr);
@@ -310,12 +311,12 @@ TEMPLATE_TEST_CASE(
         // mutate one clone to ensure independence
         auto* shares0 = reinterpret_cast<DataType*>(full_clones[0]->shares);
         shares0[0] ^= static_cast<DataType>(1);
-        REQUIRE(dom_traits<DataType>::dom_unmask(orig) == value);
+        REQUIRE(traits::dom_unmask(orig) == value);
         for (uint8_t i = 1; i < count; ++i)
             REQUIRE(std::memcmp(full_clones[i], orig, orig->total_bytes) == 0);
 
         // ---- zero_shares == true ----
-        MaskedType** zero_clones = dom_traits<DataType>::dom_clone_many(orig, true, count);
+        MaskedType** zero_clones = traits::dom_clone_many(orig, true, count);
         REQUIRE(zero_clones != nullptr);
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(zero_clones[i] != nullptr);
@@ -324,24 +325,24 @@ TEMPLATE_TEST_CASE(
                 REQUIRE(shares[s] == static_cast<DataType>(0));
         }
 
-        dom_traits<DataType>::dom_free_many(full_clones, count, 0u);
-        dom_traits<DataType>::dom_free_many(zero_clones, count, 0u);
-        dom_traits<DataType>::dom_free(orig);
+        traits::dom_free_many(full_clones, count, 0u);
+        traits::dom_free_many(zero_clones, count, 0u);
+        traits::dom_free(orig);
     }
 
     // ---------------------------------------------------------------------
     SECTION("free_many honours skip‑mask by leaving chosen items alive")
     {
         constexpr uint8_t count = 3;
-        MaskedType** mvs = dom_traits<DataType>::dom_alloc_many(domain, order, count);
+        MaskedType** mvs = traits::dom_alloc_many(domain, order, count);
         REQUIRE(mvs != nullptr);
 
         MaskedType* kept = mvs[1];  // keep index 1 alive
         constexpr uint32_t skip_mask = 0b010u;  // binary: keep index‑1
-        dom_traits<DataType>::dom_free_many(mvs, count, skip_mask);
+        traits::dom_free_many(mvs, count, skip_mask);
 
         // array memory was released, but kept pointer must still be valid
         REQUIRE(kept->order == order);
-        dom_traits<DataType>::dom_free(kept);
+        traits::dom_free(kept);
     }
 }

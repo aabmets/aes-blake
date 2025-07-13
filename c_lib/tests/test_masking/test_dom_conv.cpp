@@ -50,6 +50,7 @@ TEMPLATE_TEST_CASE(
         "Assert DOM converter functions work correctly",
         "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
+    using traits = dom_traits<TestType>;
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
@@ -58,24 +59,24 @@ TEMPLATE_TEST_CASE(
     auto expected = static_cast<TestType>(value[0]);
 
     // Mask expected value with boolean domain
-    auto* mv = dom_traits<TestType>::dom_mask(expected, DOMAIN_BOOLEAN, order);
+    auto* mv = traits::dom_mask(expected, DOMAIN_BOOLEAN, order);
     REQUIRE(mv->domain == DOMAIN_BOOLEAN);
 
-    REQUIRE(dom_traits<TestType>::dom_conv_btoa(mv) == 0);
+    REQUIRE(traits::dom_conv_btoa(mv) == 0);
 
     // Check unmasking from the arithmetic domain
-    TestType unmasked_1 = dom_traits<TestType>::dom_unmask(mv);
+    TestType unmasked_1 = traits::dom_unmask(mv);
     REQUIRE(unmasked_1 == expected);
     REQUIRE(mv->domain == DOMAIN_ARITHMETIC);
 
-    REQUIRE(dom_traits<TestType>::dom_conv_atob(mv) == 0);
+    REQUIRE(traits::dom_conv_atob(mv) == 0);
 
     // Check unmasking back in the boolean domain
-    TestType unmasked_2 = dom_traits<TestType>::dom_unmask(mv);
+    TestType unmasked_2 = traits::dom_unmask(mv);
     REQUIRE(unmasked_2 == expected);
     REQUIRE(mv->domain == DOMAIN_BOOLEAN);
 
-    dom_traits<TestType>::dom_free(mv);
+    traits::dom_free(mv);
 }
 
 
@@ -83,6 +84,7 @@ TEMPLATE_TEST_CASE(
         "dom_conv_many preserves values across domains",
         "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
+    using traits = dom_traits<TestType>;
     constexpr uint8_t COUNT = 6;
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
@@ -90,24 +92,24 @@ TEMPLATE_TEST_CASE(
     TestType texts[COUNT];
     csprng_read_array(reinterpret_cast<uint8_t*>(texts), sizeof(texts));
 
-    auto** mvs = dom_traits<TestType>::dom_mask_many
-        (texts, DOMAIN_BOOLEAN, static_cast<uint8_t>(order), COUNT);
-
+    auto** mvs = traits::dom_mask_many(
+        texts, DOMAIN_BOOLEAN, static_cast<uint8_t>(order), COUNT
+    );
     REQUIRE(mvs != nullptr);
     for (uint8_t i = 0; i < COUNT; ++i)
         REQUIRE(mvs[i]->domain == DOMAIN_BOOLEAN);
 
-    REQUIRE(dom_traits<TestType>::dom_conv_many(mvs, COUNT, DOMAIN_ARITHMETIC) == 0);
+    REQUIRE(traits::dom_conv_many(mvs, COUNT, DOMAIN_ARITHMETIC) == 0);
     for (uint8_t i = 0; i < COUNT; ++i) {
         REQUIRE(mvs[i]->domain == DOMAIN_ARITHMETIC);
-        CHECK(dom_traits<TestType>::dom_unmask(mvs[i]) == texts[i]);
+        CHECK(traits::dom_unmask(mvs[i]) == texts[i]);
     }
 
-    REQUIRE(dom_traits<TestType>::dom_conv_many(mvs, COUNT, DOMAIN_BOOLEAN) == 0);
+    REQUIRE(traits::dom_conv_many(mvs, COUNT, DOMAIN_BOOLEAN) == 0);
     for (uint8_t i = 0; i < COUNT; ++i) {
         REQUIRE(mvs[i]->domain == DOMAIN_BOOLEAN);
-        CHECK(dom_traits<TestType>::dom_unmask(mvs[i]) == texts[i]);
+        CHECK(traits::dom_unmask(mvs[i]) == texts[i]);
     }
 
-    dom_traits<TestType>::dom_free_many(mvs, COUNT, 0);
+    traits::dom_free_many(mvs, COUNT, 0);
 }
