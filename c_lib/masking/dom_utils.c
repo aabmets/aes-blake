@@ -37,9 +37,6 @@ void secure_memzero(void* ptr, size_t len) {
 }
 
 
-/*
- *   Parametrized preprocessor macro template for all utility functions.
- */
 #ifndef DOM_UTILITY_FUNCTIONS
 #define DOM_UTILITY_FUNCTIONS(TYPE, SHORT, BIT_LENGTH)                          \
                                                                                 \
@@ -295,9 +292,6 @@ masked_##TYPE** dom_clone_many_##SHORT(                                         
 #endif //DOM_UTILITY_FUNCTIONS
 
 
-/*
- *   Create utility functions for all supported types.
- */
 DOM_UTILITY_FUNCTIONS(uint8_t, u8, BIT_LENGTH_8)
 DOM_UTILITY_FUNCTIONS(uint16_t, u16, BIT_LENGTH_16)
 DOM_UTILITY_FUNCTIONS(uint32_t, u32, BIT_LENGTH_32)
