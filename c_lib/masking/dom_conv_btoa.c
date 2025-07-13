@@ -107,7 +107,7 @@ int dom_conv_btoa_##SHORT(masked_##TYPE *mv) {                                  
     if (mv->domain == DOMAIN_ARITHMETIC)                                        \
         return 0;                                                               \
                                                                                 \
-    uint8_t share_bytes = mv->share_bytes;                                      \
+    uint16_t share_bytes = mv->share_bytes;                                     \
     uint8_t share_count = mv->share_count;                                      \
     uint8_t sc_extra = share_count + 1;                                         \
     uint8_t sce_bytes = sc_extra * sizeof(TYPE);                                \

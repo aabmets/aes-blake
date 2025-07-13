@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdalign.h>
 #include "csprng.h"
 #include "dom_types.h"
 #include "masking.h"
@@ -93,13 +94,13 @@ masked_##TYPE* dom_alloc_##SHORT(                                               
         return NULL;                                                            \
                                                                                 \
     const uint8_t share_count = order + 1;                                      \
-    const uint8_t share_bytes = share_count * sizeof(TYPE);                     \
+    const uint16_t share_bytes = share_count * sizeof(TYPE);                    \
     const size_t struct_size = share_bytes + sizeof(masked_##TYPE);             \
-    const size_t alignment = sizeof(void*);                                     \
-    const size_t offset = alignment - 1;                                        \
+    const size_t align = alignof(TYPE);                                         \
+    const size_t offset = align - 1;                                            \
     const size_t total_bytes = (struct_size + offset) & ~offset;                \
                                                                                 \
-    masked_##TYPE* mv = aligned_alloc(alignment, total_bytes);                  \
+    masked_##TYPE* mv = aligned_alloc(align, total_bytes);                      \
     if (!mv)                                                                    \
         return NULL;                                                            \
                                                                                 \
@@ -123,7 +124,7 @@ masked_##TYPE** dom_alloc_many_##SHORT(                                         
     if (order == 0 || order > MAX_SEC_ORDER || count < 2)                       \
         return NULL;                                                            \
                                                                                 \
-    size_t align = sizeof(void*);                                               \
+    const size_t align = alignof(TYPE);                                         \
     masked_##TYPE** mvs = aligned_alloc(align, count * sizeof(*mvs));           \
     if (!mvs)                                                                   \
         return NULL;                                                            \
@@ -178,7 +179,7 @@ masked_##TYPE** dom_mask_many_##SHORT(                                          
     if (order == 0 || order > MAX_SEC_ORDER || count < 2)                       \
         return NULL;                                                            \
                                                                                 \
-    size_t align = sizeof(void*);                                               \
+    const size_t align = alignof(TYPE);                                         \
     masked_##TYPE** mvs = aligned_alloc(align, count * sizeof(*mvs));           \
     if (!mvs)                                                                   \
         return NULL;                                                            \
@@ -256,7 +257,7 @@ masked_##TYPE* dom_clone_##SHORT(                                               
         const masked_##TYPE* mv,                                                \
         const bool zero_shares                                                  \
 ) {                                                                             \
-    size_t align = sizeof(void *);                                              \
+    const size_t align = sizeof(void *);                                        \
     masked_##TYPE *clone = aligned_alloc(align, mv->total_bytes);               \
     if (!clone)                                                                 \
         return NULL;                                                            \
@@ -276,7 +277,7 @@ masked_##TYPE** dom_clone_many_##SHORT(                                         
     if (count < 2)                                                              \
         return NULL;                                                            \
                                                                                 \
-    size_t align = sizeof(void*);                                               \
+    const size_t align = alignof(TYPE);                                         \
     masked_##TYPE** mvs = aligned_alloc(align, count * sizeof(*mvs));           \
     if (!mvs)                                                                   \
         return NULL;                                                            \

@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 
-    #define MAX_SEC_ORDER  30  // Limited by share_bytes and fingerprint; higher orders are impractical anyway
+    #define MAX_SEC_ORDER  30  // higher orders are impractical
 
     typedef enum {
         BIT_LENGTH_8 = CHAR_BIT * sizeof(uint8_t),
@@ -37,7 +37,7 @@ extern "C" {
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        uint8_t share_bytes;
+        uint16_t share_bytes;
         uint8_t shares[];
     } masked_uint8_t;
 
@@ -48,7 +48,7 @@ extern "C" {
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        uint8_t share_bytes;
+        uint16_t share_bytes;
         uint16_t shares[];
     } masked_uint16_t;
 
@@ -59,7 +59,7 @@ extern "C" {
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        uint8_t share_bytes;
+        uint16_t share_bytes;
         uint32_t shares[];
     } masked_uint32_t;
 
@@ -70,7 +70,7 @@ extern "C" {
         domain_t domain;
         uint8_t order;
         uint8_t share_count;
-        uint8_t share_bytes;
+        uint16_t share_bytes;
         uint64_t shares[];
     } masked_uint64_t;
 
