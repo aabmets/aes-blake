@@ -204,6 +204,36 @@ int dom_bool_rotl_##SHORT(masked_##TYPE* mv, uint8_t n) {                       
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
+                                                                                \
+                                                                                \
+int dom_bool_sub_##SHORT(                                                       \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
+        masked_##TYPE* out                                                      \
+) {                                                                             \
+    masked_##TYPE* mv_brw = dom_ksa_borrow_##SHORT(mv_a, mv_b);                 \
+    if (!mv_brw)                                                                \
+        return 1;                                                               \
+    dom_bool_xor_##SHORT(mv_a, mv_b, out);                                      \
+    dom_bool_xor_##SHORT(out, mv_brw, out);                                     \
+    dom_free_##SHORT(mv_brw);                                                   \
+    return 0;                                                                   \
+}                                                                               \
+                                                                                \
+                                                                                \
+int dom_bool_add_##SHORT(                                                       \
+        masked_##TYPE* mv_a,                                                    \
+        masked_##TYPE* mv_b,                                                    \
+        masked_##TYPE* out                                                      \
+) {                                                                             \
+    masked_##TYPE* mv_brw = dom_ksa_carry_##SHORT(mv_a, mv_b);                  \
+    if (!mv_brw)                                                                \
+        return 1;                                                               \
+    dom_bool_xor_##SHORT(mv_a, mv_b, out);                                      \
+    dom_bool_xor_##SHORT(out, mv_brw, out);                                     \
+    dom_free_##SHORT(mv_brw);                                                   \
+    return 0;                                                                   \
+}                                                                               \
 
 #endif //DOM_OPS_BOOL
 

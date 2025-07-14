@@ -33,6 +33,8 @@ struct dom_traits<TYPE> {                                                       
     static int       dom_bool_shl     (mskd_t* mv, uint8_t n)             { return dom_bool_shl_##SHORT(mv, n); }       \
     static int       dom_bool_rotr    (mskd_t* mv, uint8_t n)             { return dom_bool_rotr_##SHORT(mv, n); }      \
     static int       dom_bool_rotl    (mskd_t* mv, uint8_t n)             { return dom_bool_rotl_##SHORT(mv, n); }      \
+    static int       dom_bool_add     (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_bool_add_##SHORT(a, b, o); }     \
+    static int       dom_bool_sub     (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_bool_sub_##SHORT(a, b, o); }     \
     static int       dom_arith_add    (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_arith_add_##SHORT(a, b, o); }    \
     static int       dom_arith_sub    (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_arith_sub_##SHORT(a, b, o); }    \
     static int       dom_arith_mult   (mskd_t* a, mskd_t* b, mskd_t* o)   { return dom_arith_mult_##SHORT(a, b, o); }   \
@@ -150,8 +152,8 @@ void test_shift_rotate_operation(
 
 
 TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
-        "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t)
-{
+        "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t
+) {
     using traits = dom_traits<TestType>;
 
     SECTION("boolean AND") {
@@ -206,6 +208,18 @@ TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
             return static_cast<TestType>((a << b) | (a >> (w - b)));
         };
         test_shift_rotate_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
+
+    SECTION("boolean ADD") {
+        auto masked_op = traits::dom_bool_add;
+        auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a + b); };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
+    }
+
+    SECTION("boolean SUB") {
+        auto masked_op = traits::dom_bool_sub;
+        auto unmasked_op = [](TestType a, TestType b) { return static_cast<TestType>(a - b); };
+        test_binary_operation<TestType>(masked_op, unmasked_op, DOMAIN_BOOLEAN);
     }
 
     SECTION("arithmetic ADD") {

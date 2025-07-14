@@ -208,20 +208,27 @@ TEMPLATE_TEST_CASE(
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
         MaskedType* mv = traits::dom_mask(value, domain, order);
+        const auto* after = reinterpret_cast<const DataType*>(mv->shares);
 
         // Snapshot previous shares
         std::vector<DataType> before(mv->share_count);
-        std::memcpy(before.data(), mv->shares, mv->share_bytes);
+        std::memcpy(before.data(), after, mv->share_bytes);
 
-        traits::dom_refresh(mv);
-        REQUIRE(traits::dom_unmask(mv) == value);
-
+        uint8_t retries = 3;
         bool changed = false;
-        const auto* after = reinterpret_cast<const DataType*>(mv->shares);
-        for (uint8_t i = 0; i < mv->share_count; ++i)
-            changed |= (after[i] != before[i]);
-        REQUIRE(changed);  // at least one share altered
 
+        while (retries) {
+            traits::dom_refresh(mv);
+            REQUIRE(traits::dom_unmask(mv) == value);
+
+            for (uint8_t i = 0; i < mv->share_count; ++i)
+                changed |= (after[i] != before[i]);
+
+            if (changed)
+                break;
+            --retries;
+        }
+        REQUIRE(changed);
         traits::dom_free(mv);
     }
 

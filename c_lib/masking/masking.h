@@ -61,6 +61,9 @@ int               dom_conv_atob_##SHORT      (masked_##TYPE* mv);               
 int               dom_conv_##SHORT           (masked_##TYPE* mv, domain_t target_domain);                               \
 int               dom_conv_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, domain_t target_domain);              \
                                                                                                                         \
+masked_##TYPE*    dom_ksa_carry_##SHORT      (masked_##TYPE* a, masked_##TYPE* b);                                      \
+masked_##TYPE*    dom_ksa_borrow_##SHORT     (masked_##TYPE* a, masked_##TYPE* b);                                      \
+                                                                                                                        \
 int               dom_bool_and_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 int               dom_bool_or_##SHORT        (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 int               dom_bool_xor_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
@@ -69,6 +72,8 @@ int               dom_bool_shr_##SHORT       (masked_##TYPE* mv, uint8_t n);    
 int               dom_bool_shl_##SHORT       (masked_##TYPE* mv, uint8_t n);                                            \
 int               dom_bool_rotr_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
 int               dom_bool_rotl_##SHORT      (masked_##TYPE* mv, uint8_t n);                                            \
+int               dom_bool_add_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* out);            \
+int               dom_bool_sub_##SHORT       (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* out);            \
                                                                                                                         \
 int               dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 int               dom_arith_sub_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
@@ -95,6 +100,10 @@ MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint8_t, u8)
 
 // 8-to-1 ratio
 MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint8_t, u8)
+
+int dom_cmp_lt_u32(masked_uint32_t *mv_a,
+                   masked_uint32_t *mv_b,
+                   masked_uint32_t *mv_out);
 
 
 #ifdef __cplusplus

@@ -87,40 +87,6 @@ static int csa_tree_##SHORT(                                                    
     asm volatile ("" ::: "memory");                                             \
     return err;                                                                 \
 }                                                                               \
-                                                                                \
-/* NOLINTNEXTLINE(bugprone-macro-parentheses) */                                \
-static masked_##TYPE* ksa_##SHORT(masked_##TYPE* a, masked_##TYPE* b) {         \
-    masked_##TYPE** clones = dom_clone_many_##SHORT(a, true, 5);                \
-    if (!clones)                                                                \
-        return NULL;                                                            \
-                                                                                \
-    masked_##TYPE* p = clones[0];                                               \
-    masked_##TYPE* g = clones[1];                                               \
-    masked_##TYPE* tmp = clones[2];                                             \
-    masked_##TYPE* p_shift = clones[3];                                         \
-    masked_##TYPE* g_shift = clones[4];                                         \
-                                                                                \
-    dom_bool_xor_##SHORT(a, b, p);                                              \
-    dom_bool_and_##SHORT(a, b, g);                                              \
-                                                                                \
-    const uint8_t bl = (uint8_t)a->bit_length;                                  \
-    for (uint8_t dist = 1; dist < bl; dist <<= 1) {                             \
-        secure_memzero(tmp->shares, tmp->share_bytes);                          \
-        memcpy(p_shift->shares, p->shares, p->share_bytes);                     \
-        memcpy(g_shift->shares, g->shares, g->share_bytes);                     \
-                                                                                \
-        dom_bool_shl_##SHORT(p_shift, dist);                                    \
-        dom_bool_shl_##SHORT(g_shift, dist);                                    \
-                                                                                \
-        dom_bool_and_##SHORT(p, g_shift, tmp);                                  \
-        dom_bool_xor_##SHORT(g, tmp, g);                                        \
-        dom_bool_and_##SHORT(p, p_shift, p);                                    \
-    }                                                                           \
-    dom_bool_shl_##SHORT(g, 1);                                                 \
-    dom_free_many_##SHORT(clones, 5, 0b10u);                                    \
-    asm volatile ("" ::: "memory");                                             \
-    return g;                                                                   \
-}                                                                               \
 
 
 #ifndef DOM_CONV_ATOB
@@ -160,7 +126,7 @@ int dom_conv_atob_##SHORT(masked_##TYPE *mv) {                                  
             return 1;                                                           \
         }                                                                       \
     }                                                                           \
-    masked_##TYPE* k_res = ksa_##SHORT(s_res, c_res);                           \
+    masked_##TYPE* k_res = dom_ksa_carry_##SHORT(s_res, c_res);                 \
     if (!k_res) {                                                               \
         dom_free_many_##SHORT(vals, share_count, 0);                            \
         if (share_count > 2) {                                                  \
