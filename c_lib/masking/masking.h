@@ -34,32 +34,30 @@ static_assert(
 
 void secure_memzero(void *ptr, size_t len);
 
+
+// ---------------------------------------------------------------------------------------------------------------------
 #define MASKING_FUNCTIONS(TYPE, SHORT)                                                                                  \
+                                                                                                                        \
 void              dom_free_##SHORT           (masked_##TYPE* mv);                                                       \
-void              dom_free_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, uint32_t skip_mask);                  \
-                                                                                                                        \
 void              dom_clear_##SHORT          (masked_##TYPE* mv);                                                       \
-void              dom_clear_many_##SHORT     (masked_##TYPE** mvs, uint8_t count, uint32_t skip_mask);                  \
-                                                                                                                        \
 masked_##TYPE*    dom_alloc_##SHORT          (domain_t domain, uint8_t order);                                          \
-masked_##TYPE**   dom_alloc_many_##SHORT     (domain_t domain, uint8_t order, uint8_t count);                           \
-                                                                                                                        \
 masked_##TYPE*    dom_mask_##SHORT           (const TYPE value, domain_t domain, uint8_t order);                        \
-masked_##TYPE**   dom_mask_many_##SHORT      (const TYPE* values, domain_t domain, uint8_t order, uint32_t count);      \
-                                                                                                                        \
 TYPE              dom_unmask_##SHORT         (masked_##TYPE* mv);                                                       \
-void              dom_unmask_many_##SHORT    (masked_##TYPE** mvs, TYPE* out, uint8_t count);                           \
-                                                                                                                        \
 void              dom_refresh_##SHORT        (masked_##TYPE* mv);                                                       \
-void              dom_refresh_many_##SHORT   (masked_##TYPE** mvs, uint8_t count);                                      \
-                                                                                                                        \
 masked_##TYPE*    dom_clone_##SHORT          (const masked_##TYPE* mv, bool zero_shares);                               \
+                                                                                                                        \
+void              dom_free_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, uint32_t skip_mask);                  \
+void              dom_clear_many_##SHORT     (masked_##TYPE** mvs, uint8_t count, uint32_t skip_mask);                  \
+masked_##TYPE**   dom_alloc_many_##SHORT     (domain_t domain, uint8_t order, uint8_t count);                           \
+masked_##TYPE**   dom_mask_many_##SHORT      (const TYPE* values, domain_t domain, uint8_t order, uint32_t count);      \
+void              dom_unmask_many_##SHORT    (masked_##TYPE** mvs, TYPE* out, uint8_t count);                           \
+void              dom_refresh_many_##SHORT   (masked_##TYPE** mvs, uint8_t count);                                      \
 masked_##TYPE**   dom_clone_many_##SHORT     (const masked_##TYPE* mv, bool zero_shares, uint8_t count);                \
                                                                                                                         \
-int               dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
-int               dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \
 int               dom_conv_##SHORT           (masked_##TYPE* mv, domain_t target_domain);                               \
 int               dom_conv_many_##SHORT      (masked_##TYPE** mvs, uint8_t count, domain_t target_domain);              \
+int               dom_conv_btoa_##SHORT      (masked_##TYPE* mv);                                                       \
+int               dom_conv_atob_##SHORT      (masked_##TYPE* mv);                                                       \
                                                                                                                         \
 masked_##TYPE*    dom_ksa_carry_##SHORT      (masked_##TYPE* a, masked_##TYPE* b);                                      \
 masked_##TYPE*    dom_ksa_borrow_##SHORT     (masked_##TYPE* a, masked_##TYPE* b);                                      \
@@ -79,31 +77,26 @@ int               dom_arith_add_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE
 int               dom_arith_sub_##SHORT      (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 int               dom_arith_mult_##SHORT     (masked_##TYPE* mv_a, masked_##TYPE* mv_b, masked_##TYPE* mv_out);         \
 
+
+// ---------------------------------------------------------------------------------------------------------------------
+#define MASKING_FUNCTIONS_CONV_TYPE(L_TYPE, L_SHORT, S_TYPE, S_SHORT)                                                   \
+                                                                                                                        \
+masked_##L_TYPE*    dom_conv_##S_SHORT##_to_##L_SHORT   (masked_##S_TYPE** mvs);                                        \
+masked_##S_TYPE**   dom_conv_##L_SHORT##_to_##S_SHORT   (masked_##L_TYPE* mv);                                          \
+
+
+// ---------------------------------------------------------------------------------------------------------------------
 MASKING_FUNCTIONS(uint8_t, u8)
 MASKING_FUNCTIONS(uint16_t, u16)
 MASKING_FUNCTIONS(uint32_t, u32)
 MASKING_FUNCTIONS(uint64_t, u64)
 
-
-#define MASKING_FUNCTIONS_CONV_TYPE(L_TYPE, L_SHORT, S_TYPE, S_SHORT)                                                   \
-masked_##L_TYPE*    dom_conv_##S_SHORT##_to_##L_SHORT   (masked_##S_TYPE** mvs);                                        \
-masked_##S_TYPE**   dom_conv_##L_SHORT##_to_##S_SHORT   (masked_##L_TYPE* mv);                                          \
-
-// 2-to-1 ratio
-MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint32_t, u32)
-MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint16_t, u16)
-MASKING_FUNCTIONS_CONV_TYPE(uint16_t, u16, uint8_t, u8)
-
-// 4-to-1 ratio
-MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint16_t, u16)
-MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint8_t, u8)
-
-// 8-to-1 ratio
-MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint8_t, u8)
-
-int dom_cmp_lt_u32(masked_uint32_t *mv_a,
-                   masked_uint32_t *mv_b,
-                   masked_uint32_t *mv_out);
+MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint32_t, u32)  // 2/1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint16_t, u16)  // 2/1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint16_t, u16, uint8_t, u8)    // 2/1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint16_t, u16)  // 4/1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint32_t, u32, uint8_t, u8)    // 4/1 ratio
+MASKING_FUNCTIONS_CONV_TYPE(uint64_t, u64, uint8_t, u8)    // 8/1 ratio
 
 
 #ifdef __cplusplus

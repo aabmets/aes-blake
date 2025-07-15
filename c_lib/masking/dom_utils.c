@@ -37,8 +37,8 @@ void secure_memzero(void* ptr, size_t len) {
 }
 
 
-#ifndef DOM_UTILITY_FUNCTIONS
-#define DOM_UTILITY_FUNCTIONS(TYPE, SHORT, BIT_LENGTH)                          \
+#ifndef DOM_UTILS
+#define DOM_UTILS(TYPE, SHORT, BIT_LENGTH)                                      \
                                                                                 \
 void dom_free_##SHORT(masked_##TYPE* mv) {                                      \
     secure_memzero(mv, mv->total_bytes);                                        \
@@ -289,10 +289,10 @@ masked_##TYPE** dom_clone_many_##SHORT(                                         
     return mvs;                                                                 \
 }                                                                               \
 
-#endif //DOM_UTILITY_FUNCTIONS
+#endif //DOM_UTILS
 
 
-DOM_UTILITY_FUNCTIONS(uint8_t, u8, BIT_LENGTH_8)
-DOM_UTILITY_FUNCTIONS(uint16_t, u16, BIT_LENGTH_16)
-DOM_UTILITY_FUNCTIONS(uint32_t, u32, BIT_LENGTH_32)
-DOM_UTILITY_FUNCTIONS(uint64_t, u64, BIT_LENGTH_64)
+DOM_UTILS(uint8_t, u8, BIT_LENGTH_8)
+DOM_UTILS(uint16_t, u16, BIT_LENGTH_16)
+DOM_UTILS(uint32_t, u32, BIT_LENGTH_32)
+DOM_UTILS(uint64_t, u64, BIT_LENGTH_64)
