@@ -11,111 +11,88 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include "csprng.h"
-#include "dom_types.h"
 #include "masking.h"
+#include "dom_types.h"
+#include "dom_internal_defs.h"
 
 
 #ifndef DOM_OPS_BOOL
-#define DOM_OPS_BOOL(TYPE, SHORT)                                               \
+#define DOM_OPS_BOOL(TYPE, BL)                                                  \
                                                                                 \
 /*   Performs multiplication/AND logic on two masked shares    */               \
 /*   using the DOM-independent secure gadget as described by   */               \
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
-int dom_bool_and_##SHORT(                                                       \
-        masked_##TYPE* mv_a,                                                    \
-        masked_##TYPE* mv_b,                                                    \
-        masked_##TYPE* mv_out                                                   \
-) {                                                                             \
-    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
-    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_BOOLEAN))                          \
-        return 1;                                                               \
-    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
+int FN(dom_bool_and, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+{                                                                               \
+    MTP(BL) mvs[3] = { a, b, out };                                             \
+    if (FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN))                          \
         return 1;                                                               \
                                                                                 \
-    const uint8_t order = mv_a->order;                                          \
-    const uint8_t share_count = mv_a->share_count;                              \
-    const uint16_t share_bytes = mv_a->share_bytes;                             \
-    const uint32_t pair_count = (uint32_t)(share_count * order / 2);            \
+    const uint32_t pair_count = out->share_count * out->order / 2;              \
     const uint32_t pair_bytes = pair_count * sizeof(TYPE);                      \
                                                                                 \
     TYPE rnd[pair_count];                                                       \
     csprng_read_array((uint8_t*)rnd, pair_bytes);                               \
                                                                                 \
-    const TYPE* a_shares = mv_a->shares;                                        \
-    const TYPE* b_shares = mv_b->shares;                                        \
-    TYPE out[share_count];                                                      \
+    TYPE sh_out[out->share_count];                                              \
                                                                                 \
-    for (uint8_t i = 0; i < share_count; ++i) {                                 \
-        out[i] = a_shares[i] & b_shares[i];                                     \
+    for (uint8_t i = 0; i < out->share_count; ++i) {                            \
+        sh_out[i] = a->shares[i] & b->shares[i];                                \
     }                                                                           \
     uint16_t r_idx = 0;                                                         \
-    for (uint8_t i = 0; i < order; ++i) {                                       \
-        for (uint8_t j = i + 1; j < share_count; ++j) {                         \
+    for (uint8_t i = 0; i < out->order; ++i) {                                  \
+        for (uint8_t j = i + 1; j < out->share_count; ++j) {                    \
             const TYPE r = rnd[r_idx++];                                        \
-            out[i] ^= (a_shares[i] & b_shares[j]) ^ r;                          \
-            out[j] ^= (a_shares[j] & b_shares[i]) ^ r;                          \
+            sh_out[i] ^= (a->shares[i] & b->shares[j]) ^ r;                     \
+            sh_out[j] ^= (a->shares[j] & b->shares[i]) ^ r;                     \
         }                                                                       \
     }                                                                           \
-    memcpy(mv_out->shares, out, share_bytes);                                   \
-    dom_refresh_##SHORT(mv_out);                                                \
+    memcpy(out->shares, sh_out, out->share_bytes);                              \
+    FN(dom_refresh, BL)(out);                                                   \
                                                                                 \
     secure_memzero(rnd, pair_bytes);                                            \
-    secure_memzero(out, share_bytes);                                           \
+    secure_memzero(sh_out, out->share_bytes);                                   \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_or_##SHORT(                                                        \
-        masked_##TYPE* mv_a,                                                    \
-        masked_##TYPE* mv_b,                                                    \
-        masked_##TYPE* mv_out                                                   \
-) {                                                                             \
-    if (dom_bool_and_##SHORT(mv_a, mv_b, mv_out))                               \
-        return 1;                                                               \
-    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
+int FN(dom_bool_or, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                      \
+{                                                                               \
+    if (FN(dom_bool_and, BL)(a, b, out))                                        \
         return 1;                                                               \
                                                                                 \
-    const uint8_t share_count = mv_out->share_count;                            \
-    const TYPE* x = mv_a->shares;                                               \
-    const TYPE* y = mv_b->shares;                                               \
-    TYPE* out = mv_out->shares;                                                 \
+    TYPE* sh_out = out->shares;                                                 \
                                                                                 \
-    for (uint8_t i = 0; i < share_count; ++i) {                                 \
-        out[i] ^= x[i] ^ y[i];                                                  \
+    for (uint8_t i = 0; i < out->share_count; ++i) {                            \
+        sh_out[i] ^= a->shares[i] ^ b->shares[i];                               \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_xor_##SHORT(                                                       \
-        masked_##TYPE* mv_a,                                                    \
-        masked_##TYPE* mv_b,                                                    \
-        masked_##TYPE* mv_out                                                   \
-) {                                                                             \
-    masked_##TYPE* mvs[] = { mv_a, mv_b, mv_out };                              \
-    if (dom_conv_many_##SHORT(mvs, 3, DOMAIN_BOOLEAN))                          \
-        return 1;                                                               \
-    if (!(mv_a->sig == mv_b->sig && mv_b->sig == mv_out->sig))                  \
+int FN(dom_bool_xor, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+{                                                                               \
+    MTP(BL) mvs[] = { a, b, out };                                              \
+    if (FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN))                          \
         return 1;                                                               \
                                                                                 \
-    const TYPE* x = mv_a->shares;                                               \
-    const TYPE* y = mv_b->shares;                                               \
-    TYPE* out = mv_out->shares;                                                 \
-    const uint8_t sc = mv_out->share_count;                                     \
-    for (uint8_t i = 0; i < sc; ++i) {                                          \
-        out[i] = x[i] ^ y[i];                                                   \
+    TYPE* sh_out = out->shares;                                                 \
+                                                                                \
+    for (uint8_t i = 0; i < out->share_count; ++i) {                            \
+        sh_out[i] = a->shares[i] ^ b->shares[i];                                \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_not_##SHORT(masked_##TYPE* mv) {                                   \
-    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+int FN(dom_bool_not, BL)(MTP(BL) mv) {                                          \
+    if (!mv || FN(dom_conv_atob, BL)(mv))                                       \
         return 1;                                                               \
                                                                                 \
     mv->shares[0] = ~mv->shares[0];                                             \
@@ -124,8 +101,8 @@ int dom_bool_not_##SHORT(masked_##TYPE* mv) {                                   
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_shr_##SHORT(masked_##TYPE* mv, uint8_t n) {                        \
-    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+int FN(dom_bool_shr, BL)(MTP(BL) mv, uint8_t n) {                               \
+    if (!mv || FN(dom_conv_atob, BL)(mv))                                       \
         return 1;                                                               \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
@@ -133,19 +110,16 @@ int dom_bool_shr_##SHORT(masked_##TYPE* mv, uint8_t n) {                        
     if (n == 0)                                                                 \
         return 0;                                                               \
                                                                                 \
-    TYPE* s = mv->shares;                                                       \
-    const uint8_t sc = mv->share_count;                                         \
-                                                                                \
-    for (uint8_t i = 0; i < sc; ++i) {                                          \
-        s[i] >>= n;                                                             \
+    for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
+        mv->shares[i] >>= n;                                                    \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_shl_##SHORT(masked_##TYPE* mv, uint8_t n) {                        \
-    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+int FN(dom_bool_shl, BL)(MTP(BL) mv, uint8_t n) {                               \
+    if (!mv || FN(dom_conv_atob, BL)(mv))                                       \
         return 1;                                                               \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
@@ -153,19 +127,16 @@ int dom_bool_shl_##SHORT(masked_##TYPE* mv, uint8_t n) {                        
     if (n == 0)                                                                 \
         return 0;                                                               \
                                                                                 \
-    TYPE* s = mv->shares;                                                       \
-    const uint8_t sc = mv->share_count;                                         \
-                                                                                \
-    for (uint8_t i = 0; i < sc; ++i) {                                          \
-        s[i] <<= n;                                                             \
+    for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
+        mv->shares[i] <<= n;                                                    \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_rotr_##SHORT(masked_##TYPE* mv, uint8_t n) {                       \
-    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+int FN(dom_bool_rotr, BL)(MTP(BL) mv, uint8_t n) {                              \
+    if (!mv || FN(dom_conv_atob, BL)(mv))                                       \
         return 1;                                                               \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
@@ -173,20 +144,17 @@ int dom_bool_rotr_##SHORT(masked_##TYPE* mv, uint8_t n) {                       
     if (n == 0)                                                                 \
         return 0;                                                               \
                                                                                 \
-    TYPE* s = mv->shares;                                                       \
-    const uint8_t sc = mv->share_count;                                         \
-                                                                                \
-    for (uint8_t i = 0; i < sc; ++i) {                                          \
-        const TYPE v = s[i];                                                    \
-        s[i] = (v >> n) | (v << (bl - n));                                      \
+    for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
+        const TYPE v = mv->shares[i];                                           \
+        mv->shares[i] = (v >> n) | (v << (bl - n));                             \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_rotl_##SHORT(masked_##TYPE* mv, uint8_t n) {                       \
-    if (!mv || dom_conv_atob_##SHORT(mv))                                       \
+int FN(dom_bool_rotl, BL)(MTP(BL) mv, uint8_t n) {                              \
+    if (!mv || FN(dom_conv_atob, BL)(mv))                                       \
         return 1;                                                               \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
@@ -194,51 +162,44 @@ int dom_bool_rotl_##SHORT(masked_##TYPE* mv, uint8_t n) {                       
     if (n == 0)                                                                 \
         return 0;                                                               \
                                                                                 \
-    TYPE* s = mv->shares;                                                       \
-    const uint8_t sc = mv->share_count;                                         \
-                                                                                \
-    for (uint8_t i = 0; i < sc; ++i) {                                          \
-        const TYPE v = s[i];                                                    \
-        s[i] = (v << n) | (v >> (bl - n));                                      \
+    for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
+        const TYPE v = mv->shares[i];                                           \
+        mv->shares[i] = (v << n) | (v >> (bl - n));                             \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_sub_##SHORT(                                                       \
-        masked_##TYPE* mv_a,                                                    \
-        masked_##TYPE* mv_b,                                                    \
-        masked_##TYPE* out                                                      \
-) {                                                                             \
-    masked_##TYPE* mv_brw = dom_ksa_borrow_##SHORT(mv_a, mv_b);                 \
-    if (!mv_brw)                                                                \
+int FN(dom_bool_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+{                                                                               \
+    MTP(BL) brw = FN(dom_ksa_borrow, BL)(a, b);                                 \
+    if (!brw)                                                                   \
         return 1;                                                               \
-    dom_bool_xor_##SHORT(mv_a, mv_b, out);                                      \
-    dom_bool_xor_##SHORT(out, mv_brw, out);                                     \
-    dom_free_##SHORT(mv_brw);                                                   \
+                                                                                \
+    FN(dom_bool_xor, BL)(a, b, out);                                            \
+    FN(dom_bool_xor, BL)(out, brw, out);                                        \
+    FN(dom_free, BL)(brw);                                                      \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_bool_add_##SHORT(                                                       \
-        masked_##TYPE* mv_a,                                                    \
-        masked_##TYPE* mv_b,                                                    \
-        masked_##TYPE* out                                                      \
-) {                                                                             \
-    masked_##TYPE* mv_brw = dom_ksa_carry_##SHORT(mv_a, mv_b);                  \
-    if (!mv_brw)                                                                \
+int FN(dom_bool_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+{                                                                               \
+    MTP(BL) brw = FN(dom_ksa_carry, BL)(a, b);                                  \
+    if (!brw)                                                                   \
         return 1;                                                               \
-    dom_bool_xor_##SHORT(mv_a, mv_b, out);                                      \
-    dom_bool_xor_##SHORT(out, mv_brw, out);                                     \
-    dom_free_##SHORT(mv_brw);                                                   \
+                                                                                \
+    FN(dom_bool_xor, BL)(a, b, out);                                            \
+    FN(dom_bool_xor, BL)(out, brw, out);                                        \
+    FN(dom_free, BL)(brw);                                                      \
     return 0;                                                                   \
 }                                                                               \
 
 #endif //DOM_OPS_BOOL
 
 
-DOM_OPS_BOOL(uint8_t, u8)
-DOM_OPS_BOOL(uint16_t, u16)
-DOM_OPS_BOOL(uint32_t, u32)
-DOM_OPS_BOOL(uint64_t, u64)
+DOM_OPS_BOOL(uint8_t, 8)
+DOM_OPS_BOOL(uint16_t, 16)
+DOM_OPS_BOOL(uint32_t, 32)
+DOM_OPS_BOOL(uint64_t, 64)
