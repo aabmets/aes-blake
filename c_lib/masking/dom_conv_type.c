@@ -10,8 +10,10 @@
  */
 
 #include <stdint.h>
+
 #include "masking.h"
 #include "dom_types.h"
+#include "dom_internal_defs.h"
 
 
 #ifndef DOM_TYPE_CONV_2TO1

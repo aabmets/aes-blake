@@ -10,35 +10,44 @@
  */
 
 #include <stdint.h>
+
 #include "masking.h"
 #include "dom_types.h"
+#include "dom_internal_defs.h"
 
 
 #ifndef DOM_CONV
-#define DOM_CONV(TYPE, SHORT)                                                   \
+#define DOM_CONV(BL)                                                            \
                                                                                 \
-int dom_conv_##SHORT(masked_##TYPE* mv, domain_t target_domain) {               \
-    int(*conv)(masked_##TYPE*) = target_domain == DOMAIN_BOOLEAN                \
-        ? dom_conv_atob_##SHORT                                                 \
-        : dom_conv_btoa_##SHORT;                                                \
-    if (!mv || (mv->domain != target_domain && conv(mv)))                       \
+int FN(dom_conv, BL)(MTP(BL) mv, domain_t domain)                               \
+{                                                                               \
+    int(*conv)(MTP(BL)) = domain == DOMAIN_BOOLEAN                              \
+        ? FN(dom_conv_atob, BL)                                                 \
+        : FN(dom_conv_btoa, BL);                                                \
+                                                                                \
+    if (!mv || (mv->domain != domain && conv(mv)))                              \
         return 1;                                                               \
     return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-int dom_conv_many_##SHORT(                                                      \
-        masked_##TYPE** mvs,                                                    \
-        uint8_t count,                                                          \
-        domain_t target_domain                                                  \
-) {                                                                             \
-    int(*conv)(masked_##TYPE*) = target_domain == DOMAIN_BOOLEAN                \
-        ? dom_conv_atob_##SHORT                                                 \
-        : dom_conv_btoa_##SHORT;                                                \
+int FN(dom_conv_many, BL)(MTPA(BL) mvs, uint8_t count, domain_t domain)         \
+{                                                                               \
+    const uint8_t pair_count = count - 1;                                       \
+                                                                                \
+    for (uint8_t i = 0; i < pair_count; ++i) {                                  \
+        if (mvs[i]->sig != mvs[i+1]->sig) {                                     \
+            return 1;                                                           \
+        }                                                                       \
+    }                                                                           \
+                                                                                \
+    int(*conv)(MTP(BL)) = domain == DOMAIN_BOOLEAN                              \
+        ? FN(dom_conv_atob, BL)                                                 \
+        : FN(dom_conv_btoa, BL);                                                \
                                                                                 \
     for(uint8_t i = 0; i < count; ++i) {                                        \
-        masked_##TYPE* mv = mvs[i];                                             \
-        if (!mv || (mv->domain != target_domain && conv(mv))) {                 \
+        MTP(BL) mv = mvs[i];                                                    \
+        if (!mv || (mv->domain != domain && conv(mv))) {                        \
             return 1;                                                           \
         }                                                                       \
     }                                                                           \
@@ -48,7 +57,7 @@ int dom_conv_many_##SHORT(                                                      
 #endif //DOM_CONV
 
 
-DOM_CONV(uint8_t, u8)
-DOM_CONV(uint16_t, u16)
-DOM_CONV(uint32_t, u32)
-DOM_CONV(uint64_t, u64)
+DOM_CONV(8)
+DOM_CONV(16)
+DOM_CONV(32)
+DOM_CONV(64)
